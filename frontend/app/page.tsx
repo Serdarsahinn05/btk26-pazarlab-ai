@@ -9,6 +9,7 @@ import { simulateProduct } from "@/lib/api";
 import { Beaker } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/ModeToggle";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Home() {
   const [simulationState, setSimulationState] = useState<"idle" | "loading" | "result">("idle");
@@ -38,48 +39,92 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-8">
-      <div className="max-w-6xl mx-auto space-y-8">
+    <main className="min-h-screen relative overflow-hidden bg-background">
+      {/* Dynamic Backgrounds */}
+      <div className="absolute inset-0 bg-grid-black/[0.02] dark:bg-grid-white/[0.02]" />
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[120px] pointer-events-none" />
+      
+      <div className="relative max-w-6xl mx-auto p-4 md:p-8 space-y-8 z-10">
         
         {/* Header */}
-        <header className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
-          <div className="flex items-center gap-3">
-            <div className="bg-primary p-3 rounded-xl">
-              <Beaker className="w-8 h-8 text-white" />
+        <motion.header 
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="flex flex-col md:flex-row items-center justify-between gap-4 glass p-6 rounded-2xl shadow-lg border border-border"
+        >
+          <div className="flex items-center gap-4">
+            <div className="bg-primary/10 p-3 rounded-xl border border-primary/20 relative group">
+              <div className="absolute inset-0 bg-primary/20 blur-xl rounded-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+              <Beaker className="w-8 h-8 text-primary relative z-10" />
             </div>
             <div>
-              <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">PazarLab AI</h1>
-              <p className="text-sm text-slate-500 dark:text-slate-400">Sentetik Tüketici Simülasyon Platformu</p>
+              <h1 className="text-2xl font-black tracking-tight text-foreground">
+                PazarLab <span className="text-gradient">AI</span>
+              </h1>
+              <p className="text-sm text-muted-foreground font-medium">Sentetik Tüketici Simülasyon Platformu</p>
             </div>
           </div>
           
           <div className="flex items-center gap-3">
             <ModeToggle />
-            {simulationState === "result" && (
-              <Button variant="outline" onClick={resetSimulation}>
-                Yeni Simülasyon
-              </Button>
-            )}
+            <AnimatePresence>
+              {simulationState === "result" && (
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.8, opacity: 0 }}
+                >
+                  <Button variant="outline" onClick={resetSimulation} className="border-primary/20 hover:bg-primary/10 transition-colors">
+                    Yeni Simülasyon
+                  </Button>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
-        </header>
+        </motion.header>
 
         {/* Content Area */}
-        <div className="w-full">
-          {simulationState === "idle" && (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-4xl mx-auto">
-              <ProductForm onSubmit={handleSimulate} isLoading={false} />
-            </div>
-          )}
+        <div className="w-full relative">
+          <AnimatePresence mode="wait">
+            {simulationState === "idle" && (
+              <motion.div 
+                key="idle"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.4 }}
+                className="max-w-4xl mx-auto"
+              >
+                <ProductForm onSubmit={handleSimulate} isLoading={false} />
+              </motion.div>
+            )}
 
-          {simulationState === "loading" && (
-            <div className="py-20 animate-in fade-in zoom-in-95 duration-300 flex justify-center">
-              <SimulationLogs motivation={currentMotivation} />
-            </div>
-          )}
+            {simulationState === "loading" && (
+              <motion.div 
+                key="loading"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.05 }}
+                transition={{ duration: 0.4 }}
+                className="py-10 flex justify-center"
+              >
+                <SimulationLogs motivation={currentMotivation} />
+              </motion.div>
+            )}
 
-          {simulationState === "result" && resultData && (
-            <ResultDashboard data={resultData} />
-          )}
+            {simulationState === "result" && resultData && (
+              <motion.div 
+                key="result"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+              >
+                <ResultDashboard data={resultData} />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
         
       </div>
