@@ -1,11 +1,13 @@
-from typing import Any
-
 from fastapi import APIRouter
+
+from app.models.product import SimulationRequest
+from app.models.simulation import SimulationResponse
+from app.services.simulation_service import run_simulation
 
 router = APIRouter(prefix="/api", tags=["simulation"])
 
 
-MOCK_SIMULATION_RESPONSE: dict[str, Any] = {
+MOCK_SIMULATION_RESPONSE = SimulationResponse.model_validate({
     "overallScore": 68,
     "marketBreadthScore": 74,
     "intentConversionScore": 63,
@@ -75,9 +77,9 @@ MOCK_SIMULATION_RESPONSE: dict[str, Any] = {
             "gunluk kullanim icin tasarlanmis modern kislik mont."
         ),
     },
-}
+})
 
 
-@router.post("/simulate")
-async def simulate_product(_: dict[str, Any]) -> dict[str, Any]:
-    return MOCK_SIMULATION_RESPONSE
+@router.post("/simulate", response_model=SimulationResponse)
+async def simulate_product(request: SimulationRequest) -> SimulationResponse:
+    return run_simulation(request)

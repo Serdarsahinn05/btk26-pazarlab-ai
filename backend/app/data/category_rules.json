@@ -1,0 +1,93 @@
+{
+  "categories": {
+    "mont": {
+      "averagePrice": 1800,
+      "marketBreadthBase": 68,
+      "defaultWeights": {
+        "priceFit": 0.14,
+        "qualityScore": 0.18,
+        "trendFit": 0.13,
+        "brandTrust": 0.06,
+        "descriptionCompleteness": 0.08,
+        "visualAppeal": 0.15,
+        "seasonFit": 0.18,
+        "shippingReturnScore": 0.08,
+        "targetAudienceFit": 0.07,
+        "differentiationScore": 0.03
+      }
+    },
+    "telefon": {
+      "averagePrice": 16000,
+      "marketBreadthBase": 62,
+      "defaultWeights": {
+        "priceFit": 0.16,
+        "qualityScore": 0.24,
+        "trendFit": 0.08,
+        "brandTrust": 0.14,
+        "descriptionCompleteness": 0.11,
+        "visualAppeal": 0.05,
+        "seasonFit": 0.03,
+        "shippingReturnScore": 0.10,
+        "targetAudienceFit": 0.06,
+        "differentiationScore": 0.03
+      }
+    },
+    "sapka": {
+      "averagePrice": 350,
+      "marketBreadthBase": 58,
+      "defaultWeights": {
+        "priceFit": 0.17,
+        "qualityScore": 0.13,
+        "trendFit": 0.16,
+        "brandTrust": 0.06,
+        "descriptionCompleteness": 0.08,
+        "visualAppeal": 0.18,
+        "seasonFit": 0.11,
+        "shippingReturnScore": 0.06,
+        "targetAudienceFit": 0.03,
+        "differentiationScore": 0.02
+      }
+    },
+    "ev_yasam": {
+      "averagePrice": 450,
+      "marketBreadthBase": 48,
+      "defaultWeights": {
+        "priceFit": 0.15,
+        "qualityScore": 0.16,
+        "trendFit": 0.05,
+        "brandTrust": 0.08,
+        "descriptionCompleteness": 0.15,
+        "visualAppeal": 0.10,
+        "seasonFit": 0.03,
+        "shippingReturnScore": 0.12,
+        "targetAudienceFit": 0.11,
+        "differentiationScore": 0.05
+      }
+    },
+    "yedek_parca": {
+      "averagePrice": 180,
+      "marketBreadthBase": 24,
+      "defaultWeights": {
+        "priceFit": 0.16,
+        "qualityScore": 0.15,
+        "trendFit": 0.03,
+        "brandTrust": 0.04,
+        "descriptionCompleteness": 0.18,
+        "visualAppeal": 0.03,
+        "seasonFit": 0.02,
+        "shippingReturnScore": 0.15,
+        "targetAudienceFit": 0.14,
+        "differentiationScore": 0.02
+      }
+    }
+  },
+  "motivationModifiers": {
+    "stil_begeni": 8,
+    "ihtiyac": 0,
+    "problem_cozme": -16,
+    "yedek_parca_tamir": -18,
+    "hediye": 5,
+    "trend": 10,
+    "profesyonel_kullanim": -6
+  }
+}

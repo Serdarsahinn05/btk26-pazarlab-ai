@@ -1,0 +1,236 @@
+{
+  "simulationConfig": {
+    "totalBots": 500,
+    "seedSalt": "pazarlab-ai-v1"
+  },
+  "personaTypes": [
+    {
+      "name": "Fiyat Hassas Alici",
+      "count": 42,
+      "preferredMotivations": ["ihtiyac", "yedek_parca_tamir"],
+      "reason": "Fiyat uygunlugu ve kampanya sinyallerine hizli tepki verir.",
+      "advice": "Net fiyat avantajini, ucretsiz kargoyu ve indirim mesajini one cikar.",
+      "ranges": {
+        "priceSensitivity": [0.80, 0.98],
+        "qualityExpectation": [0.45, 0.70],
+        "trendSensitivity": [0.20, 0.45],
+        "brandTrustNeed": [0.35, 0.60],
+        "detailNeed": [0.45, 0.70],
+        "impulsiveness": [0.20, 0.45],
+        "seasonSensitivity": [0.35, 0.65],
+        "shippingSensitivity": [0.65, 0.90],
+        "targetFitSensitivity": [0.40, 0.70],
+        "noveltySeeking": [0.15, 0.40]
+      }
+    },
+    {
+      "name": "Trend Takipcisi",
+      "count": 42,
+      "preferredMotivations": ["stil_begeni", "trend"],
+      "reason": "Stil, gorsel cekicilik ve sosyal medya etkisi bu persona icin gucludur.",
+      "advice": "Kisa video, kombin gorselleri ve trend kelimeleriyle kampanya kur.",
+      "ranges": {
+        "priceSensitivity": [0.35, 0.60],
+        "qualityExpectation": [0.45, 0.70],
+        "trendSensitivity": [0.82, 0.98],
+        "brandTrustNeed": [0.35, 0.60],
+        "detailNeed": [0.25, 0.50],
+        "impulsiveness": [0.65, 0.90],
+        "seasonSensitivity": [0.55, 0.80],
+        "shippingSensitivity": [0.35, 0.60],
+        "targetFitSensitivity": [0.60, 0.85],
+        "noveltySeeking": [0.70, 0.95]
+      }
+    },
+    {
+      "name": "Kalite Odakli Alici",
+      "count": 42,
+      "preferredMotivations": ["profesyonel_kullanim", "ihtiyac"],
+      "reason": "Malzeme, dayaniklilik ve garanti sinyalleriyle ikna olur.",
+      "advice": "Kalite belgelerini, garanti bilgisini ve uzun omurlu kullanim vaadini ekle.",
+      "ranges": {
+        "priceSensitivity": [0.35, 0.60],
+        "qualityExpectation": [0.82, 0.98],
+        "trendSensitivity": [0.20, 0.45],
+        "brandTrustNeed": [0.60, 0.85],
+        "detailNeed": [0.65, 0.90],
+        "impulsiveness": [0.15, 0.35],
+        "seasonSensitivity": [0.40, 0.65],
+        "shippingSensitivity": [0.40, 0.65],
+        "targetFitSensitivity": [0.55, 0.80],
+        "noveltySeeking": [0.25, 0.50]
+      }
+    },
+    {
+      "name": "Detayci Arastirmaci",
+      "count": 42,
+      "preferredMotivations": ["problem_cozme", "profesyonel_kullanim"],
+      "reason": "Ayrintili aciklama, olcu ve kullanim senaryosu gormeden karar vermez.",
+      "advice": "Tablo, olcu, uyumluluk ve sik sorulan sorular bolumu ekle.",
+      "ranges": {
+        "priceSensitivity": [0.45, 0.70],
+        "qualityExpectation": [0.65, 0.90],
+        "trendSensitivity": [0.10, 0.35],
+        "brandTrustNeed": [0.45, 0.70],
+        "detailNeed": [0.85, 0.99],
+        "impulsiveness": [0.05, 0.25],
+        "seasonSensitivity": [0.20, 0.45],
+        "shippingSensitivity": [0.55, 0.80],
+        "targetFitSensitivity": [0.65, 0.90],
+        "noveltySeeking": [0.15, 0.40]
+      }
+    },
+    {
+      "name": "Durtusel Alici",
+      "count": 42,
+      "preferredMotivations": ["hediye", "trend", "stil_begeni"],
+      "reason": "Gorsel etki, hizli karar ve acil tekliflerle satin almaya yaklasir.",
+      "advice": "Sinirli stok, hediye paketi ve hizli teslimat mesajlarini kullan.",
+      "ranges": {
+        "priceSensitivity": [0.30, 0.55],
+        "qualityExpectation": [0.35, 0.60],
+        "trendSensitivity": [0.60, 0.85],
+        "brandTrustNeed": [0.35, 0.65],
+        "detailNeed": [0.15, 0.40],
+        "impulsiveness": [0.82, 0.98],
+        "seasonSensitivity": [0.40, 0.70],
+        "shippingSensitivity": [0.55, 0.85],
+        "targetFitSensitivity": [0.40, 0.70],
+        "noveltySeeking": [0.60, 0.90]
+      }
+    },
+    {
+      "name": "Marka Sadigi",
+      "count": 42,
+      "preferredMotivations": ["hediye", "profesyonel_kullanim"],
+      "reason": "Marka guveni, garanti ve sosyal kanit eksikse mesafeli kalir.",
+      "advice": "Yorum, garanti, marka hikayesi ve iade politikasini gorunur yap.",
+      "ranges": {
+        "priceSensitivity": [0.25, 0.50],
+        "qualityExpectation": [0.65, 0.90],
+        "trendSensitivity": [0.30, 0.55],
+        "brandTrustNeed": [0.82, 0.98],
+        "detailNeed": [0.45, 0.70],
+        "impulsiveness": [0.20, 0.45],
+        "seasonSensitivity": [0.25, 0.50],
+        "shippingSensitivity": [0.35, 0.60],
+        "targetFitSensitivity": [0.45, 0.70],
+        "noveltySeeking": [0.20, 0.45]
+      }
+    },
+    {
+      "name": "Sosyal Onay Arayan",
+      "count": 42,
+      "preferredMotivations": ["stil_begeni", "hediye", "trend"],
+      "reason": "Yorum, puan, populerlik ve paylasilabilir gorsellerden etkilenir.",
+      "advice": "Kullanici yorumu, once-sonra gorseli ve sosyal kanit dilini ekle.",
+      "ranges": {
+        "priceSensitivity": [0.35, 0.60],
+        "qualityExpectation": [0.45, 0.70],
+        "trendSensitivity": [0.65, 0.90],
+        "brandTrustNeed": [0.60, 0.85],
+        "detailNeed": [0.35, 0.60],
+        "impulsiveness": [0.55, 0.80],
+        "seasonSensitivity": [0.35, 0.60],
+        "shippingSensitivity": [0.35, 0.60],
+        "targetFitSensitivity": [0.55, 0.80],
+        "noveltySeeking": [0.55, 0.85]
+      }
+    },
+    {
+      "name": "Pratik Cozum Arayan",
+      "count": 42,
+      "preferredMotivations": ["ihtiyac", "problem_cozme"],
+      "reason": "Urunun gunluk hayatta net fayda saglamasina bakar.",
+      "advice": "Pratik kullanim, kolay kurulum ve hizli sonuc mesajlarini vurgula.",
+      "ranges": {
+        "priceSensitivity": [0.50, 0.75],
+        "qualityExpectation": [0.55, 0.80],
+        "trendSensitivity": [0.15, 0.40],
+        "brandTrustNeed": [0.35, 0.60],
+        "detailNeed": [0.55, 0.80],
+        "impulsiveness": [0.30, 0.55],
+        "seasonSensitivity": [0.30, 0.55],
+        "shippingSensitivity": [0.65, 0.90],
+        "targetFitSensitivity": [0.65, 0.90],
+        "noveltySeeking": [0.20, 0.45]
+      }
+    },
+    {
+      "name": "Premium Alici",
+      "count": 41,
+      "preferredMotivations": ["profesyonel_kullanim", "hediye", "stil_begeni"],
+      "reason": "Kalite, guven ve premium sunum varsa yuksek fiyati tolere eder.",
+      "advice": "Premium malzeme, garanti, paketleme ve marka degerini one cikar.",
+      "ranges": {
+        "priceSensitivity": [0.15, 0.35],
+        "qualityExpectation": [0.85, 0.99],
+        "trendSensitivity": [0.45, 0.70],
+        "brandTrustNeed": [0.70, 0.95],
+        "detailNeed": [0.55, 0.80],
+        "impulsiveness": [0.30, 0.55],
+        "seasonSensitivity": [0.35, 0.60],
+        "shippingSensitivity": [0.35, 0.60],
+        "targetFitSensitivity": [0.55, 0.80],
+        "noveltySeeking": [0.45, 0.70]
+      }
+    },
+    {
+      "name": "Kararsiz Sepet Bekletici",
+      "count": 41,
+      "preferredMotivations": ["ihtiyac", "hediye"],
+      "reason": "Guven, fiyat ve iade bilgisi netlesmeden kararini erteler.",
+      "advice": "Iade kolayligi, garanti ve kisa sureli kampanya ile karar bariyerini azalt.",
+      "ranges": {
+        "priceSensitivity": [0.60, 0.85],
+        "qualityExpectation": [0.55, 0.80],
+        "trendSensitivity": [0.30, 0.55],
+        "brandTrustNeed": [0.60, 0.85],
+        "detailNeed": [0.60, 0.85],
+        "impulsiveness": [0.10, 0.30],
+        "seasonSensitivity": [0.35, 0.60],
+        "shippingSensitivity": [0.55, 0.80],
+        "targetFitSensitivity": [0.50, 0.75],
+        "noveltySeeking": [0.25, 0.50]
+      }
+    },
+    {
+      "name": "Problem Cozum Odakli Kullanici",
+      "count": 41,
+      "preferredMotivations": ["problem_cozme", "yedek_parca_tamir"],
+      "reason": "Belirli bir sorunu hizli ve net bicimde cozmek ister.",
+      "advice": "Problem, uyumluluk, olcu, montaj ve sonuc faydasini cok net yaz.",
+      "ranges": {
+        "priceSensitivity": [0.45, 0.70],
+        "qualityExpectation": [0.60, 0.85],
+        "trendSensitivity": [0.05, 0.25],
+        "brandTrustNeed": [0.25, 0.50],
+        "detailNeed": [0.80, 0.98],
+        "impulsiveness": [0.20, 0.45],
+        "seasonSensitivity": [0.10, 0.30],
+        "shippingSensitivity": [0.75, 0.95],
+        "targetFitSensitivity": [0.75, 0.95],
+        "noveltySeeking": [0.10, 0.30]
+      }
+    },
+    {
+      "name": "Detayci Uyum Kontrolcusu",
+      "count": 41,
+      "preferredMotivations": ["yedek_parca_tamir", "problem_cozme"],
+      "reason": "Model uyumu, olcu ve teknik detay acik degilse satin almaz.",
+      "advice": "Uyumlu modelleri, olculeri ve montaj adimlarini urun basligina kadar tasiyin.",
+      "ranges": {
+        "priceSensitivity": [0.35, 0.60],
+        "qualityExpectation": [0.60, 0.85],
+        "trendSensitivity": [0.02, 0.18],
+        "brandTrustNeed": [0.20, 0.45],
+        "detailNeed": [0.88, 0.99],
+        "impulsiveness": [0.05, 0.25],
+        "seasonSensitivity": [0.05, 0.20],
+        "shippingSensitivity": [0.75, 0.95],
+        "targetFitSensitivity": [0.85, 0.99],
+        "noveltySeeking": [0.05, 0.25]
+      }
+    }
+  ]
+}
