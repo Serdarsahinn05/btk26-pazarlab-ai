@@ -3,6 +3,63 @@
     "totalBots": 500,
     "seedSalt": "pazarlab-ai-v1"
   },
+  "meta": {
+    "version": "1.1",
+    "targetTotalBots": 500,
+    "personaTypes": 10,
+    "parameters": [
+      "priceSensitivity",
+      "qualitySensitivity",
+      "trendSensitivity",
+      "brandTrustNeed",
+      "detailNeed",
+      "shippingSensitivity",
+      "returnPolicyNeed",
+      "impulsiveness",
+      "socialProofNeed",
+      "riskAversion"
+    ],
+    "generation": {
+      "botsPerPersona": 50,
+      "seed": 260512,
+      "clampMin": 0.0,
+      "clampMax": 1.0
+    }
+  },
+  "motivationEmphasis": {
+    "problem_cozme": {
+      "closestPersonaLabel": "Problem Çözüm Odaklı Kullanıcı",
+      "recommendedBias": {
+        "detailNeed": 0.85,
+        "shippingSensitivity": 0.8,
+        "priceSensitivity": 0.6
+      }
+    },
+    "yedek_parca_tamir": {
+      "closestPersonaLabel": "Detaycı Uyum Kontrolcüsü",
+      "recommendedBias": {
+        "detailNeed": 0.9,
+        "brandTrustNeed": 0.3,
+        "shippingSensitivity": 0.85
+      }
+    },
+    "stil_begeni": {
+      "closestPersonaLabel": "Trend Takipçisi",
+      "recommendedBias": {
+        "trendSensitivity": 0.9,
+        "qualitySensitivity": 0.55,
+        "socialProofNeed": 0.75
+      }
+    },
+    "hediye": {
+      "closestPersonaLabel": "Dürtüsel Alıcı",
+      "recommendedBias": {
+        "impulsiveness": 0.85,
+        "brandTrustNeed": 0.7,
+        "socialProofNeed": 0.6
+      }
+    }
+  },
   "personaTypes": [
     {
       "name": "Fiyat Hassas Alici",
@@ -230,6 +287,218 @@
         "shippingSensitivity": [0.75, 0.95],
         "targetFitSensitivity": [0.85, 0.99],
         "noveltySeeking": [0.05, 0.25]
+      }
+    }
+  ],
+  "personaTemplates": [
+    {
+      "persona": "Fiyat Hassas Alıcı",
+      "incomeWeights": {
+        "low": 0.65,
+        "mid": 0.3,
+        "high": 0.05
+      },
+      "ageRange": [18, 55],
+      "ranges": {
+        "priceSensitivity": [0.78, 0.98],
+        "qualitySensitivity": [0.3, 0.55],
+        "trendSensitivity": [0.1, 0.45],
+        "brandTrustNeed": [0.15, 0.45],
+        "detailNeed": [0.3, 0.7],
+        "shippingSensitivity": [0.45, 0.85],
+        "returnPolicyNeed": [0.4, 0.8],
+        "impulsiveness": [0.05, 0.35],
+        "socialProofNeed": [0.15, 0.55],
+        "riskAversion": [0.55, 0.95]
+      }
+    },
+    {
+      "persona": "Trend Takipçisi",
+      "incomeWeights": {
+        "low": 0.25,
+        "mid": 0.55,
+        "high": 0.2
+      },
+      "ageRange": [16, 40],
+      "ranges": {
+        "priceSensitivity": [0.3, 0.7],
+        "qualitySensitivity": [0.35, 0.7],
+        "trendSensitivity": [0.78, 0.98],
+        "brandTrustNeed": [0.25, 0.65],
+        "detailNeed": [0.1, 0.45],
+        "shippingSensitivity": [0.2, 0.65],
+        "returnPolicyNeed": [0.2, 0.55],
+        "impulsiveness": [0.45, 0.9],
+        "socialProofNeed": [0.55, 0.98],
+        "riskAversion": [0.1, 0.55]
+      }
+    },
+    {
+      "persona": "Kalite Odaklı Alıcı",
+      "incomeWeights": {
+        "low": 0.05,
+        "mid": 0.35,
+        "high": 0.6
+      },
+      "ageRange": [22, 60],
+      "ranges": {
+        "priceSensitivity": [0.1, 0.55],
+        "qualitySensitivity": [0.75, 0.98],
+        "trendSensitivity": [0.1, 0.6],
+        "brandTrustNeed": [0.45, 0.9],
+        "detailNeed": [0.45, 0.9],
+        "shippingSensitivity": [0.1, 0.55],
+        "returnPolicyNeed": [0.35, 0.75],
+        "impulsiveness": [0.05, 0.35],
+        "socialProofNeed": [0.1, 0.55],
+        "riskAversion": [0.45, 0.9]
+      }
+    },
+    {
+      "persona": "Detaycı Araştırmacı",
+      "incomeWeights": {
+        "low": 0.15,
+        "mid": 0.65,
+        "high": 0.2
+      },
+      "ageRange": [20, 60],
+      "ranges": {
+        "priceSensitivity": [0.35, 0.75],
+        "qualitySensitivity": [0.45, 0.85],
+        "trendSensitivity": [0.05, 0.45],
+        "brandTrustNeed": [0.25, 0.75],
+        "detailNeed": [0.78, 0.99],
+        "shippingSensitivity": [0.35, 0.85],
+        "returnPolicyNeed": [0.55, 0.95],
+        "impulsiveness": [0.0, 0.2],
+        "socialProofNeed": [0.15, 0.6],
+        "riskAversion": [0.65, 0.98]
+      }
+    },
+    {
+      "persona": "Dürtüsel Alıcı",
+      "incomeWeights": {
+        "low": 0.2,
+        "mid": 0.55,
+        "high": 0.25
+      },
+      "ageRange": [16, 45],
+      "ranges": {
+        "priceSensitivity": [0.15, 0.7],
+        "qualitySensitivity": [0.15, 0.7],
+        "trendSensitivity": [0.25, 0.85],
+        "brandTrustNeed": [0.35, 0.85],
+        "detailNeed": [0.05, 0.4],
+        "shippingSensitivity": [0.1, 0.6],
+        "returnPolicyNeed": [0.1, 0.55],
+        "impulsiveness": [0.78, 0.99],
+        "socialProofNeed": [0.25, 0.8],
+        "riskAversion": [0.05, 0.45]
+      }
+    },
+    {
+      "persona": "Marka Sadığı",
+      "incomeWeights": {
+        "low": 0.05,
+        "mid": 0.35,
+        "high": 0.6
+      },
+      "ageRange": [22, 65],
+      "ranges": {
+        "priceSensitivity": [0.05, 0.45],
+        "qualitySensitivity": [0.55, 0.95],
+        "trendSensitivity": [0.05, 0.6],
+        "brandTrustNeed": [0.78, 0.99],
+        "detailNeed": [0.3, 0.75],
+        "shippingSensitivity": [0.05, 0.45],
+        "returnPolicyNeed": [0.25, 0.7],
+        "impulsiveness": [0.05, 0.35],
+        "socialProofNeed": [0.05, 0.45],
+        "riskAversion": [0.35, 0.85]
+      }
+    },
+    {
+      "persona": "Sosyal Onay Arayan Kullanıcı",
+      "incomeWeights": {
+        "low": 0.3,
+        "mid": 0.55,
+        "high": 0.15
+      },
+      "ageRange": [16, 45],
+      "ranges": {
+        "priceSensitivity": [0.25, 0.8],
+        "qualitySensitivity": [0.25, 0.7],
+        "trendSensitivity": [0.35, 0.95],
+        "brandTrustNeed": [0.2, 0.7],
+        "detailNeed": [0.05, 0.55],
+        "shippingSensitivity": [0.1, 0.7],
+        "returnPolicyNeed": [0.15, 0.65],
+        "impulsiveness": [0.35, 0.9],
+        "socialProofNeed": [0.78, 0.99],
+        "riskAversion": [0.1, 0.65]
+      }
+    },
+    {
+      "persona": "Pratik Çözüm Arayan Kullanıcı",
+      "incomeWeights": {
+        "low": 0.2,
+        "mid": 0.65,
+        "high": 0.15
+      },
+      "ageRange": [18, 60],
+      "ranges": {
+        "priceSensitivity": [0.25, 0.8],
+        "qualitySensitivity": [0.35, 0.8],
+        "trendSensitivity": [0.05, 0.55],
+        "brandTrustNeed": [0.15, 0.65],
+        "detailNeed": [0.2, 0.7],
+        "shippingSensitivity": [0.6, 0.98],
+        "returnPolicyNeed": [0.45, 0.9],
+        "impulsiveness": [0.05, 0.45],
+        "socialProofNeed": [0.1, 0.6],
+        "riskAversion": [0.25, 0.8]
+      }
+    },
+    {
+      "persona": "Premium Alıcı",
+      "incomeWeights": {
+        "low": 0.02,
+        "mid": 0.18,
+        "high": 0.8
+      },
+      "ageRange": [20, 60],
+      "ranges": {
+        "priceSensitivity": [0.0, 0.35],
+        "qualitySensitivity": [0.78, 0.99],
+        "trendSensitivity": [0.25, 0.85],
+        "brandTrustNeed": [0.55, 0.98],
+        "detailNeed": [0.35, 0.85],
+        "shippingSensitivity": [0.05, 0.45],
+        "returnPolicyNeed": [0.25, 0.75],
+        "impulsiveness": [0.05, 0.55],
+        "socialProofNeed": [0.05, 0.45],
+        "riskAversion": [0.15, 0.65]
+      }
+    },
+    {
+      "persona": "Kararsız Sepet Bekletici",
+      "incomeWeights": {
+        "low": 0.2,
+        "mid": 0.65,
+        "high": 0.15
+      },
+      "ageRange": [18, 60],
+      "ranges": {
+        "priceSensitivity": [0.35, 0.9],
+        "qualitySensitivity": [0.35, 0.85],
+        "trendSensitivity": [0.05, 0.65],
+        "brandTrustNeed": [0.25, 0.85],
+        "detailNeed": [0.55, 0.95],
+        "shippingSensitivity": [0.3, 0.85],
+        "returnPolicyNeed": [0.6, 0.99],
+        "impulsiveness": [0.0, 0.25],
+        "socialProofNeed": [0.35, 0.85],
+        "riskAversion": [0.65, 0.99]
       }
     }
   ]

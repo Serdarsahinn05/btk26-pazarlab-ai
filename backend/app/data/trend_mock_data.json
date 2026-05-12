@@ -1,0 +1,40 @@
+{
+  "meta": { "version": "1.0", "source": "mock", "updatedAt": "2026-05-12" },
+  "trends": [
+    {
+      "category": "mont",
+      "season": "kis",
+      "keywords": ["oversize", "su_gecirmez", "siyah", "unisex", "sisme_mont"],
+      "trendIndex": 0.81,
+      "notes": "Kış sezonunda su geçirmez/oversize mont araması yüksek."
+    },
+    {
+      "category": "sapka",
+      "season": "yaz",
+      "keywords": ["bucket_hat", "keten", "pastel", "festival"],
+      "trendIndex": 0.64,
+      "notes": "Yazın açık renk/keten şapka trendi artar."
+    },
+    {
+      "category": "telefon",
+      "season": "dort_mevsim",
+      "keywords": ["garanti", "kamerasi_guclu", "batarya", "hizli_sarj"],
+      "trendIndex": 0.58,
+      "notes": "Telefon alımında kamera/batarya + garanti güveni belirleyici."
+    },
+    {
+      "category": "yedek_parca",
+      "season": "dort_mevsim",
+      "keywords": ["uyumluluk", "olcu", "montaj", "model_adi"],
+      "trendIndex": 0.47,
+      "notes": "Niş ürün; arayan kullanıcıda dönüşüm yüksek."
+    },
+    {
+      "category": "ev_yasam",
+      "season": "dort_mevsim",
+      "keywords": ["paslanmaz_celik", "olcu", "delik_araligi", "ic_kapi"],
+      "trendIndex": 0.52,
+      "notes": "Ev yaşam ürünlerinde ölçü/uyumluluk açıklaması kritik."
+    }
+  ]
+}

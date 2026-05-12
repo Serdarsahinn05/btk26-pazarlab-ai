@@ -1,47 +1,103 @@
+from __future__ import annotations
+
+import json
+import os
+import urllib.request
+from typing import Any, Dict, List, Mapping, Optional
+
 from app.models.product import PurchaseMotivation, SimulationRequest
 from app.models.simulation import AiInsights, NormalizedProduct, PersonaResult
+from app.utils.scoring_utils import infer_product_type, recommend_channels
 
 
-FALLBACK_MAP = {
-    "brand_trust_low": "Marka guveni dusuk. Urun aciklamasina garanti, iade ve kullanici yorumu gibi guven sinyalleri eklenmeli.",
-    "warranty_missing": "Garanti bilgisi eksik. Satin alma guvenini artirmak icin garanti veya iade kosulu net yazilmali.",
-    "price_sensitive_users_rejected": "Fiyat hassas kullanicilar urunu riskli bulabilir. Kampanya, paket avantaji veya ucretsiz kargo test edilebilir.",
-    "description_incomplete": "Urun aciklamasi yetersiz. Teknik detaylar, kullanim senaryosu ve olcu bilgisi eklenmeli.",
-    "shipping_return_weak": "Kargo ve iade guvencesi zayif. Teslimat suresi ve iade kolayligi daha gorunur yapilmali.",
-    "compatibility_unclear": "Uyumluluk bilgisi eksik. Nis urunlerde olcu, model uyumu ve montaj bilgisi satin alma kararini dogrudan etkiler.",
+SYSTEM_PROMPT = """
+Sen deneyimli bir e-ticaret danışmanısın. Aşağıdaki simülasyon sonucunu satıcıya net, kısa ve aksiyona dönüştürülebilir önerilerle sun.
+
+Ürün Bilgisi:
+- Kategori: {category}
+- Satın alma motivasyonu: {purchaseMotivation}
+- Pazar genişliği skoru: {marketBreadthScore}/100
+- Niyetli alıcı dönüşümü: {intentConversionScore}/100
+- Problem çözüm uyumu: {problemSolutionFit}/100
+
+Kurallar:
+- Satıcı küçük/orta ölçekli bir işletme olabilir; teknik jargon kullanma.
+- Her öneri somut ve uygulanabilir olsun.
+- Ürünü şu şekilde sınıflandır: "trend/stil ürünü", "ihtiyaç ürünü", "problem çözüm/yedek parça ürünü", "hediye ürünü"
+- Buna göre kanal önerisi ver: sosyal medya mı, SEO/arama mı, pazar yeri içi optimizasyon mu?
+- Niş ürünlerde (pazar genişliği < 40): "Geniş kitle reklamı yerine arama niyeti yüksek kullanıcılara ulaşmak daha doğru" vurgusu yap.
+- Cevabı SADECE JSON formatında döndür. Başka metin ekleme.
+
+{{
+  "summary": "2 cümlelik genel değerlendirme",
+  "productTypeInsight": "Bu ürün [X] odaklı bir [Y] ürünüdür. Geniş kitleye [hitap eder/hitap etmez]...",
+  "salesRecipe": ["3-5 maddelik aksiyon listesi"],
+  "marketingAdvice": "Hangi kanal, hangi dil?",
+  "descriptionAdvice": "Açıklamada ne eksik?",
+  "pricingAdvice": "Fiyat algısı ve öneri",
+  "seasonAdvice": "Mevsim değerlendirmesi",
+  "channelRecommendation": ["Instagram", "TikTok", "Google Search", "SEO"],
+  "improvedDescription": "Hazır, kullanıma hazır iyileştirilmiş ürün açıklaması"
+}}
+""".strip()
+
+
+FALLBACK_MAP: Dict[str, str] = {
+    "brand_trust_low": "Marka bilinirliği düşük. Ürün açıklamasına garanti ve iade politikası detayı eklenmeli.",
+    "warranty_missing": "Garanti bilgisi eksik. Satın alma güvenini artırmak için garanti süresi belirtilmeli.",
+    "price_sensitive_users_rejected": "Fiyat hassas kullanıcılar ürünü pahalı buluyor. Kampanya veya ücretsiz kargo test edilebilir.",
+    "description_incomplete": "Ürün açıklaması yetersiz. Teknik detaylar, kullanım senaryosu ve ölçü bilgisi eklenmeli.",
+    "season_mismatch": "Mevsim uyumu düşük. Ürün mevsim dışı bir dönemde pazarlanıyor olabilir.",
+    "compatibility_unclear": "Uyumluluk bilgisi eksik. Niş ürünlerde ölçü ve model uyumu satın alma kararının %70'ini etkiler.",
+    "shipping_return_weak": "Kargo ve iade güvencesi zayıf. Teslimat süresi ve iade kolaylığı daha görünür yapılmalı.",
 }
 
 
-MOTIVATION_INSIGHTS = {
-    PurchaseMotivation.STYLE: {
-        "type": "Bu urun stil odakli bir urundur. Gorsel cekicilik, trend uyumu ve sosyal medya dili onemlidir.",
-        "channels": ["Instagram", "TikTok", "YouTube Shorts"],
-    },
-    PurchaseMotivation.NEED: {
-        "type": "Bu urun gunluk ihtiyac urunudur. Fiyat, pratiklik ve hizli kargo satin alma kararini etkiler.",
-        "channels": ["Pazar yeri aramasi", "Google Search", "SEO"],
-    },
-    PurchaseMotivation.PROBLEM_SOLVING: {
-        "type": "Bu urun problem cozum odaklidir. Aciklamada olcu, uyumluluk ve teknik detay kritik rol oynar.",
-        "channels": ["Google Search", "SEO", "Pazar yeri aramasi"],
-    },
-    PurchaseMotivation.SPARE_PART_REPAIR: {
-        "type": "Bu urun yedek parca/tamir urunudur. Genis kitleye degil, ihtiyaci net olan kullaniciya hitap eder.",
-        "channels": ["Google Search", "SEO", "Pazar yeri aramasi"],
-    },
-    PurchaseMotivation.GIFT: {
-        "type": "Bu urun hediye potansiyeli tasir. Gorsel sunum, marka guveni ve paketleme one cikarilmalidir.",
-        "channels": ["Instagram", "TikTok", "Pazar yeri vitrinleri"],
-    },
-    PurchaseMotivation.TREND: {
-        "type": "Bu urun trend odaklidir. Sosyal medya reklamlari, kisa videolar ve populer kullanim senaryolari etkilidir.",
-        "channels": ["TikTok", "Instagram", "YouTube Shorts"],
-    },
-    PurchaseMotivation.PROFESSIONAL_USE: {
-        "type": "Bu urun profesyonel kullanima yoneliktir. Teknik detay, dayaniklilik ve garanti bilgisi onemlidir.",
-        "channels": ["Google Search", "SEO", "LinkedIn"],
-    },
+MOTIVATION_INSIGHTS: Dict[str, str] = {
+    "stil_begeni": "Bu ürün stil odaklı bir üründür. Görsel çekicilik, trend uyumu ve sosyal medya reklamları önemlidir.",
+    "ihtiyac": "Bu ürün günlük ihtiyaç ürünüdür. Fiyat, pratiklik ve hızlı kargo satın alma kararını etkiler.",
+    "problem_cozme": "Bu ürün problem çözüm odaklıdır. Açıklamada ölçü, uyumluluk ve teknik detay kritiktir. Arama motoru optimizasyonu daha değerlidir.",
+    "yedek_parca_tamir": "Bu ürün yedek parça/tamir ürünüdür. Geniş kitleye hitap etmez ama arayan kişide yüksek dönüşüm sağlar. SEO ve pazar yeri araması önemlidir.",
+    "hediye": "Bu ürün hediye potansiyeli taşır. Görsel sunum, marka güveni ve ambalaj/paketleme öne çıkarılmalıdır.",
+    "trend": "Bu ürün trend odaklıdır. Sosyal medya reklamları, influencer işbirlikleri ve kısa videolar etkili olur.",
+    "profesyonel_kullanim": "Bu ürün profesyonel kullanıma yöneliktir. Teknik detay, dayanıklılık ve garanti bilgisi önemlidir."
 }
+
+
+def _call_gemini_generate_content(system_prompt: str, user_payload: Mapping[str, Any]) -> Dict[str, Any]:
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        raise RuntimeError("GEMINI_API_KEY missing")
+
+    model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+    body = {
+        "systemInstruction": {
+            "parts": [{"text": system_prompt}]
+        },
+        "contents": [{
+            "role": "user",
+            "parts": [{"text": json.dumps(user_payload, ensure_ascii=False)}]
+        }],
+        "generationConfig": {
+            "responseMimeType": "application/json",
+            "temperature": 0.4
+        }
+    }
+
+    req = urllib.request.Request(
+        url,
+        data=json.dumps(body).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=20) as resp:
+        raw = resp.read().decode("utf-8")
+    data = json.loads(raw)
+    content = data["candidates"][0]["content"]["parts"][0]["text"]
+    return json.loads(content)
 
 
 def generate_insights(
@@ -54,136 +110,204 @@ def generate_insights(
     top_personas: list[PersonaResult],
     weakness_signals: list[str],
 ) -> AiInsights:
-    return _fallback_insights(
-        request=request,
-        normalized_product=normalized_product,
-        overall_score=overall_score,
-        market_breadth_score=market_breadth_score,
-        intent_conversion_score=intent_conversion_score,
-        problem_solution_fit=problem_solution_fit,
-        top_personas=top_personas,
-        weakness_signals=weakness_signals,
+    """
+    Ana simülasyon servisi tarafından çağrılan, Pydantic model döndüren asıl fonksiyon.
+    Eğer GEMINI_API_KEY tanımlıysa LLM çağrısı yapar, aksi halde zenginleştirilmiş fallback üretir.
+    """
+    motivation_str = request.purchase_motivation.value if hasattr(request.purchase_motivation, "value") else str(request.purchase_motivation)
+    category_str = request.category.value if hasattr(request.category, "value") else str(request.category)
+
+    payload = {
+        "productName": request.product_name,
+        "category": category_str,
+        "purchaseMotivation": motivation_str,
+        "overallScore": overall_score,
+        "marketBreadthScore": market_breadth_score,
+        "intentConversionScore": intent_conversion_score,
+        "problemSolutionFit": problem_solution_fit,
+        "weaknessSignals": weakness_signals,
+        "topPersonas": [p.model_dump(by_alias=True) for p in top_personas],
+        "normalizedProduct": normalized_product.model_dump(by_alias=True),
+    }
+
+    prompt = SYSTEM_PROMPT.format(
+        category=category_str,
+        purchaseMotivation=motivation_str,
+        marketBreadthScore=market_breadth_score,
+        intentConversionScore=intent_conversion_score,
+        problemSolutionFit=problem_solution_fit,
     )
 
+    try:
+        model_json = _call_gemini_generate_content(prompt, payload)
+        summary_str = str(model_json.get("summary", "")).strip() or "Genel değerlendirme hazır."
+        pt_insight = str(model_json.get("productTypeInsight", "") or model_json.get("product_type_insight", "")).strip() or "Ürün tipi yorumu hazır."
+        recipe = list(model_json.get("salesRecipe", []) or model_json.get("sales_recipe", []))[:5] or ["Listeleme ve açıklamayı güçlendir."]
+        m_advice = str(model_json.get("marketingAdvice", "") or model_json.get("marketing_advice", "")).strip() or "Kanal stratejisini belirle."
+        d_advice = str(model_json.get("descriptionAdvice", "") or model_json.get("description_advice", "")).strip() or "Açıklamayı netleştir."
+        p_advice = str(model_json.get("pricingAdvice", "") or model_json.get("pricing_advice", "")).strip() or "Fiyat duyarlılığını test et."
+        s_advice = str(model_json.get("seasonAdvice", "") or model_json.get("season_advice", "")).strip() or "Sezon uyumunu vurgula."
+        ch_rec = list(model_json.get("channelRecommendation", []) or model_json.get("channel_recommendation", [])) or recommend_channels(motivation_str, float(market_breadth_score))
+        imp_desc = str(model_json.get("improvedDescription", "") or model_json.get("improved_description", "")).strip() or "İyileştirilmiş açıklama hazır."
 
-def _fallback_insights(
-    request: SimulationRequest,
-    normalized_product: NormalizedProduct,
-    overall_score: int,
-    market_breadth_score: int,
-    intent_conversion_score: int,
-    problem_solution_fit: int,
-    top_personas: list[PersonaResult],
-    weakness_signals: list[str],
-) -> AiInsights:
-    motivation = MOTIVATION_INSIGHTS[request.purchase_motivation]
-    channels = _channel_recommendations(request.purchase_motivation, market_breadth_score, motivation["channels"])
-    top_persona_names = ", ".join(persona.name for persona in top_personas[:3])
-    weakness_texts = [FALLBACK_MAP[signal] for signal in weakness_signals if signal in FALLBACK_MAP]
-
-    summary = (
-        f"{request.product_name} icin genel satis potansiyeli {overall_score}/100. "
-        f"Pazar genisligi {market_breadth_score}/100, niyetli alici donusumu {intent_conversion_score}/100."
-    )
-    if market_breadth_score < 40:
-        summary += " Urun nis kitleye hitap ediyor; bu dusuk pazar skoru tek basina kotu bir sinyal degil."
-
-    product_type_insight = motivation["type"]
-    if market_breadth_score < 40:
-        product_type_insight += " Genis kitle reklami yerine arama niyeti yuksek kullanicilara ulasmak daha dogru olur."
-
-    sales_recipe = _sales_recipe(
-        request=request,
-        normalized_product=normalized_product,
-        top_persona_names=top_persona_names,
-        weakness_texts=weakness_texts,
-    )
-
-    return AiInsights(
-        summary=summary,
-        productTypeInsight=product_type_insight,
-        salesRecipe=sales_recipe,
-        marketingAdvice=_marketing_advice(channels, top_persona_names),
-        descriptionAdvice=_description_advice(request, weakness_signals),
-        pricingAdvice=_pricing_advice(normalized_product),
-        seasonAdvice=_season_advice(normalized_product),
-        channelRecommendation=channels,
-        improvedDescription=_improved_description(request, problem_solution_fit),
-    )
-
-
-def _channel_recommendations(
-    motivation: PurchaseMotivation,
-    market_breadth_score: int,
-    default_channels: list[str],
-) -> list[str]:
-    if market_breadth_score < 40:
-        return ["Google Search", "SEO", "Pazar yeri aramasi"]
-    if motivation in {PurchaseMotivation.STYLE, PurchaseMotivation.TREND, PurchaseMotivation.GIFT}:
-        return default_channels
-    return ["Pazar yeri aramasi", "Google Search", "SEO"]
-
-
-def _sales_recipe(
-    request: SimulationRequest,
-    normalized_product: NormalizedProduct,
-    top_persona_names: str,
-    weakness_texts: list[str],
-) -> list[str]:
-    recipe = [
-        f"Baslikta {request.product_name} icin ana faydayi ve satin alma motivasyonunu netlestir.",
-        f"Ilk kampanya hedefini su personalara gore kur: {top_persona_names}.",
-    ]
-    if normalized_product.description_completeness < 0.65:
-        recipe.append("Aciklamaya olcu, kullanim senaryosu, malzeme ve iade bilgisini ekle.")
-    if normalized_product.brand_trust < 0.50:
-        recipe.append("Guven bariyerini azaltmak icin garanti, iade ve yorum sinyallerini one cikar.")
-    if weakness_texts:
-        recipe.append(weakness_texts[0])
-    return recipe[:5]
-
-
-def _marketing_advice(channels: list[str], top_persona_names: str) -> str:
-    return (
-        f"Oncelikli kanallar: {', '.join(channels)}. "
-        f"Mesaj dili {top_persona_names} personalarinin karar bariyerlerine gore kurulmali."
-    )
-
-
-def _description_advice(request: SimulationRequest, weakness_signals: list[str]) -> str:
-    if "compatibility_unclear" in weakness_signals:
-        return "Uyumlu model, olcu, montaj ve hangi problemi cozdulugu urun basliginda ve aciklamada netlesmeli."
-    if request.purchase_motivation in {PurchaseMotivation.PROBLEM_SOLVING, PurchaseMotivation.SPARE_PART_REPAIR}:
-        return "Nis urunlerde teknik detay ve uyumluluk bilgisi gorselden bile once karar verdirir."
-    if "description_incomplete" in weakness_signals:
-        return "Aciklamada malzeme, kullanim senaryosu, hedef kitle ve iade bilgisi eksik kalmis."
-    return "Aciklama temel bilgileri tasiyor; daha guclu fayda cumleleri ve guven sinyalleri eklenebilir."
-
-
-def _pricing_advice(normalized_product: NormalizedProduct) -> str:
-    if normalized_product.price_risk > 0.45:
-        return "Fiyat riski yuksek. Indirim, ucretsiz kargo veya paket avantajiyla fiyat algisi test edilmeli."
-    if normalized_product.price_fit > 0.75:
-        return "Fiyat algisi kategori ortalamasiyla uyumlu gorunuyor. Kampanya yerine deger vurgusu oncelenebilir."
-    return "Fiyat kabul edilebilir seviyede; guven ve aciklama guclenirse donusum artabilir."
-
-
-def _season_advice(normalized_product: NormalizedProduct) -> str:
-    if normalized_product.season_fit > 0.75:
-        return "Sezon uyumu guclu. Kampanya zamanlamasi urunun dogal talep donemine denk geliyor."
-    if normalized_product.season_fit < 0.45:
-        return "Sezon uyumu dusuk. Urun sezon disi donemde daha cok indirim veya stok eritme diliyle sunulmali."
-    return "Sezon etkisi orta seviyede. Urun dilinde mevsim yerine fayda ve kullanim senaryosu one alinmali."
-
-
-def _improved_description(request: SimulationRequest, problem_solution_fit: int) -> str:
-    if request.purchase_motivation in {PurchaseMotivation.PROBLEM_SOLVING, PurchaseMotivation.SPARE_PART_REPAIR}:
-        return (
-            f"{request.product_name}, belirli bir ihtiyaci hizli ve pratik sekilde tamamlamak icin tasarlanmistir. "
-            "Uyumlu model, olcu, malzeme ve montaj bilgileri net bicimde kontrol edilerek satin alinmalidir. "
-            f"Problem cozum uyumu {problem_solution_fit}/100 seviyesindedir."
+        return AiInsights(
+            summary=summary_str,
+            product_type_insight=pt_insight,
+            sales_recipe=recipe,
+            marketing_advice=m_advice,
+            description_advice=d_advice,
+            pricing_advice=p_advice,
+            season_advice=s_advice,
+            channel_recommendation=ch_rec,
+            improved_description=imp_desc,
         )
-    return (
-        f"{request.product_name}, hedef kitlenin kullanim beklentisine uygun sekilde konumlandirilmis bir urundur. "
-        "Urun aciklamasinda ana fayda, malzeme, kullanim senaryosu, iade ve guven bilgileri birlikte sunulmalidir."
+    except Exception:
+        # Fallback akışı
+        motivation_line = MOTIVATION_INSIGHTS.get(
+            motivation_str, "Bu ürün için motivasyon bazlı öneriler uygulanabilir."
+        )
+        product_type = infer_product_type(motivation_str)
+        channels = recommend_channels(motivation_str, float(market_breadth_score))
+
+        top_weakness = [FALLBACK_MAP.get(s, "") for s in weakness_signals]
+        top_weakness = [t for t in top_weakness if t][:3]
+        weakness_sentence = " ".join(top_weakness) if top_weakness else "Genel olarak ürün bilgisini daha net ve güven verici hale getirmek faydalı olur."
+
+        niche_note = ""
+        if market_breadth_score < 40:
+            niche_note = " Pazar genişliği düşük; geniş kitle reklamı yerine arama niyeti yüksek kullanıcılara ulaşmak daha doğru."
+
+        summary = (
+            f"{request.product_name} için genel satış potansiyeli {overall_score}/100. "
+            f"Pazar genişliği {market_breadth_score}/100, niyetli alıcı dönüşümü {intent_conversion_score}/100."
+            f" Problem uyumu {problem_solution_fit}/100. {weakness_sentence}{niche_note}"
+        )
+
+        product_type_insight = (
+            f"Bu ürün {motivation_str} motivasyonuyla alınan bir {product_type}. {motivation_line}{niche_note}"
+        )
+
+        sales_recipe = [
+            f"Ürün başlığına {request.product_name} için ana faydayı ve ayırt edici özelliği ekle.",
+            "İade/garanti/kargo bilgisini görünür hale getir.",
+            "Açıklamaya ölçü/uyumluluk/kullanım senaryosu gibi karar verdiren detayları ekle.",
+            "En güçlü kanalda 1 hafta A/B test ile görsel + fiyat mesajını dene."
+        ]
+        if product_type == "trend/stil ürünü":
+            sales_recipe.insert(0, "Görselleri 1:1 + kısa video formatına optimize et.")
+
+        top_persona_names = ", ".join(p.name for p in top_personas[:3])
+        marketing_advice = (
+            f"Kanal odağı: {', '.join(channels)}. Mesaj dili {top_persona_names} personalarının beklentilerine göre kurulmalı."
+        )
+
+        description_advice = "Açıklamada ölçü/uyumluluk, malzeme, kullanım ve paket içeriği gibi karar kriterlerini netleştir."
+        pricing_advice = "Fiyat hassasiyetini ölçmek için sınırlı süreli kupon veya ücretsiz kargo eşiği test edebilirsin."
+        season_advice = "Sezon uyumunu güçlendirmek için başlık ve görsellerde mevsimsel kullanım senaryosu vurgula."
+
+        improved_description = (
+            f"{request.product_name} ({category_str} ürünü). "
+            "Öne çıkan özellik: Hedef kitlenin kullanım beklentisine tam uyum. "
+            "Malzeme/Ölçü/Uyumluluk kontrolleri yapılarak listelenmiştir. "
+            "Kargo & iade kolaylığı ve müşteri memnuniyeti odaklı hizmet sunulmaktadır."
+        )
+
+        return AiInsights(
+            summary=summary.strip(),
+            product_type_insight=product_type_insight.strip(),
+            sales_recipe=sales_recipe[:5],
+            marketing_advice=marketing_advice.strip(),
+            description_advice=description_advice.strip(),
+            pricing_advice=pricing_advice.strip(),
+            season_advice=season_advice.strip(),
+            channel_recommendation=channels,
+            improved_description=improved_description.strip(),
+        )
+
+
+def build_ai_insights(simulation_summary: Mapping[str, Any], category: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Alternatif çağrılar ve geriye dönük uyumluluk için sağlanan, sözlük döndüren fonksiyon.
+    """
+    purchase_motivation = str(simulation_summary.get("purchaseMotivation", "") or "")
+    market_breadth_score = float(simulation_summary.get("marketBreadthScore", 0) or 0)
+    intent_conversion_score = float(simulation_summary.get("intentConversionScore", 0) or 0)
+    problem_solution_fit = float(simulation_summary.get("problemSolutionFit", 0) or 0)
+    weakness_signals = list(simulation_summary.get("weaknessSignals", []) or [])
+
+    category_final = category or str(simulation_summary.get("category", ""))
+    if not category_final:
+        category_final = "Genel"
+
+    prompt = SYSTEM_PROMPT.format(
+        category=category_final,
+        purchaseMotivation=purchase_motivation,
+        marketBreadthScore=int(market_breadth_score),
+        intentConversionScore=int(intent_conversion_score),
+        problemSolutionFit=int(problem_solution_fit),
     )
+
+    payload = dict(simulation_summary)
+    payload["category"] = category_final
+
+    try:
+        model_json = _call_gemini_generate_content(prompt, payload)
+        return {
+            "aiInsights": {
+                "summary": str(model_json.get("summary", "")).strip() or "Genel değerlendirme hazır.",
+                "productTypeInsight": str(model_json.get("productTypeInsight", "") or model_json.get("product_type_insight", "")).strip() or "Ürün tipi yorumu hazır.",
+                "salesRecipe": list(model_json.get("salesRecipe", []) or model_json.get("sales_recipe", []))[:5] or ["Listeleme ve açıklamayı güçlendir."],
+                "marketingAdvice": str(model_json.get("marketingAdvice", "") or model_json.get("marketing_advice", "")).strip() or "Kanal stratejisini belirle.",
+                "descriptionAdvice": str(model_json.get("descriptionAdvice", "") or model_json.get("description_advice", "")).strip() or "Açıklamayı netleştir.",
+                "pricingAdvice": str(model_json.get("pricingAdvice", "") or model_json.get("pricing_advice", "")).strip() or "Fiyat duyarlılığını test et.",
+                "seasonAdvice": str(model_json.get("seasonAdvice", "") or model_json.get("season_advice", "")).strip() or "Sezon uyumunu vurgula.",
+                "channelRecommendation": list(model_json.get("channelRecommendation", []) or model_json.get("channel_recommendation", [])) or recommend_channels(purchase_motivation, float(market_breadth_score)),
+                "improvedDescription": str(model_json.get("improvedDescription", "") or model_json.get("improved_description", "")).strip() or "İyileştirilmiş açıklama hazır."
+            }
+        }
+    except Exception:
+        motivation_line = MOTIVATION_INSIGHTS.get(
+            purchase_motivation, "Bu ürün için motivasyon bazlı öneriler uygulanabilir."
+        )
+        product_type = infer_product_type(purchase_motivation)
+        channels = recommend_channels(purchase_motivation, float(market_breadth_score))
+
+        top_weakness = [FALLBACK_MAP.get(s, "") for s in weakness_signals]
+        top_weakness = [t for t in top_weakness if t][:3]
+        weakness_sentence = " ".join(top_weakness) if top_weakness else "Genel olarak ürün bilgisini daha net ve güven verici hale getirmek faydalı olur."
+
+        niche_note = ""
+        if float(market_breadth_score) < 40:
+            niche_note = " Pazar genişliği düşük; geniş kitle reklamı yerine arama niyeti yüksek kullanıcılara ulaşmak daha doğru."
+
+        summary = (
+            f"{category_final} kategorisinde skorlar: pazar genişliği {int(market_breadth_score)}/100, dönüşüm {int(intent_conversion_score)}/100."
+            f" Problem uyumu {int(problem_solution_fit)}/100. {weakness_sentence}{niche_note}"
+        )
+
+        product_type_insight = (
+            f"Bu ürün {purchase_motivation} motivasyonuyla alınan bir {product_type}. {motivation_line}{niche_note}"
+        )
+
+        sales_recipe = [
+            "Ürün başlığına net faydayı ve ayırt edici özelliği ekle.",
+            "İade/garanti/kargo bilgisini görünür hale getir.",
+            "Açıklamaya ölçü/uyumluluk/kullanım senaryosu gibi karar verdiren detayları ekle.",
+            "En güçlü kanalda 1 hafta A/B test ile görsel + fiyat mesajını dene."
+        ]
+        if product_type == "trend/stil ürünü":
+            sales_recipe.insert(0, "Görselleri 1:1 + kısa video formatına optimize et.")
+
+        return {
+            "aiInsights": {
+                "summary": summary.strip(),
+                "productTypeInsight": product_type_insight.strip(),
+                "salesRecipe": sales_recipe[:5],
+                "marketingAdvice": f"Kanal odağı: {', '.join(channels)}. Kısa, net fayda + güven unsurlarıyla mesajlaş.",
+                "descriptionAdvice": "Açıklamada ölçü/uyumluluk, malzeme, kullanım ve paket içeriği gibi karar kriterlerini netleştir.",
+                "pricingAdvice": "Fiyat hassasiyetini ölçmek için sınırlı süreli kupon test edebilirsin.",
+                "seasonAdvice": "Sezon uyumunu güçlendirmek için kullanım senaryolarını vurgula.",
+                "channelRecommendation": channels,
+                "improvedDescription": f"{category_final} ürünü. Öne çıkan fayda ve güven garantisiyle listelenmiştir."
+            }
+        }

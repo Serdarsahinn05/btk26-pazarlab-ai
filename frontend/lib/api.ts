@@ -65,7 +65,7 @@ export const mockSimulationResponse: SimulationResponse = {
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 // For development, we'll use mock data to ensure frontend works independently
-const USE_MOCK = true;
+const USE_MOCK = false;
 
 export const simulateProduct = async (data: SimulationRequest): Promise<SimulationResponse> => {
   if (USE_MOCK) {
