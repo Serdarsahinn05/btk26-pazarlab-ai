@@ -1,6 +1,33 @@
 {
+  "meta": {
+    "version": "1.0",
+    "categories": ["mont", "telefon", "sapka", "ev_yasam", "yedek_parca"],
+    "motivations": ["stil_begeni", "problem_cozme", "ihtiyac", "yedek_parca_tamir", "hediye"]
+  },
+  "commonParameters": [
+    "priceFit",
+    "qualityScore",
+    "trendFit",
+    "brandTrust",
+    "descriptionCompleteness",
+    "visualAppeal",
+    "seasonFit",
+    "shippingReturnScore",
+    "targetAudienceFit",
+    "differentiationScore"
+  ],
+  "motivationModifiers": {
+    "stil_begeni": 8,
+    "ihtiyac": 0,
+    "problem_cozme": -16,
+    "yedek_parca_tamir": -18,
+    "hediye": 5,
+    "trend": 10,
+    "profesyonel_kullanim": -6
+  },
   "categories": {
     "mont": {
+      "label": "Giyim / Mont",
       "averagePrice": 1800,
       "marketBreadthBase": 68,
       "defaultWeights": {
@@ -14,57 +41,68 @@
         "shippingReturnScore": 0.08,
         "targetAudienceFit": 0.07,
         "differentiationScore": 0.03
-      }
-    },
-    "telefon": {
-      "averagePrice": 16000,
-      "marketBreadthBase": 62,
-      "defaultWeights": {
-        "priceFit": 0.16,
-        "qualityScore": 0.24,
-        "trendFit": 0.08,
-        "brandTrust": 0.14,
-        "descriptionCompleteness": 0.11,
-        "visualAppeal": 0.05,
-        "seasonFit": 0.03,
-        "shippingReturnScore": 0.10,
-        "targetAudienceFit": 0.06,
-        "differentiationScore": 0.03
-      }
-    },
-    "sapka": {
-      "averagePrice": 350,
-      "marketBreadthBase": 58,
-      "defaultWeights": {
-        "priceFit": 0.17,
-        "qualityScore": 0.13,
-        "trendFit": 0.16,
-        "brandTrust": 0.06,
-        "descriptionCompleteness": 0.08,
-        "visualAppeal": 0.18,
-        "seasonFit": 0.11,
-        "shippingReturnScore": 0.06,
-        "targetAudienceFit": 0.03,
-        "differentiationScore": 0.02
-      }
-    },
-    "ev_yasam": {
-      "averagePrice": 450,
-      "marketBreadthBase": 48,
-      "defaultWeights": {
-        "priceFit": 0.15,
-        "qualityScore": 0.16,
-        "trendFit": 0.05,
-        "brandTrust": 0.08,
-        "descriptionCompleteness": 0.15,
-        "visualAppeal": 0.10,
-        "seasonFit": 0.03,
-        "shippingReturnScore": 0.12,
-        "targetAudienceFit": 0.11,
-        "differentiationScore": 0.05
+      },
+      "formFields": [
+        { "key": "price", "type": "number", "label": "Fiyat (TL)", "required": true },
+        { "key": "material", "type": "text", "label": "Malzeme", "required": false },
+        { "key": "waterproof", "type": "boolean", "label": "Su geçirmez mi?", "required": false },
+        { "key": "windproof", "type": "boolean", "label": "Rüzgar geçirmez mi?", "required": false },
+        { "key": "styleTags", "type": "multi", "label": "Stil etiketleri (oversize, klasik, sportif...)", "required": false },
+        { "key": "season", "type": "select", "label": "Sezon", "options": ["kis", "sonbahar", "ilkbahar", "yaz", "dort_mevsim"], "required": true },
+        { "key": "targetAge", "type": "range", "label": "Hedef yaş aralığı", "required": false },
+        { "key": "gender", "type": "select", "label": "Cinsiyet", "options": ["unisex", "kadin", "erkek"], "required": true },
+        { "key": "brandKnown", "type": "select", "label": "Marka bilinirliği", "options": ["dusuk", "orta", "yuksek"], "required": false },
+        { "key": "returnsPolicy", "type": "select", "label": "İade kolaylığı", "options": ["zor", "orta", "kolay"], "required": false }
+      ],
+      "normalization": {
+        "notes": "Bu MVP’de normalizasyon simülasyon katmanında yapılır; burada ortak parametrelerin nasıl etkilendiğine dair kılavuz verilir.",
+        "heuristics": {
+          "descriptionCompleteness": { "source": ["material", "styleTags", "season", "targetAge", "gender"], "hint": "Alan doluluğu arttıkça artar." },
+          "brandTrust": { "source": ["brandKnown"], "hint": "Marka bilinirliği arttıkça artar." },
+          "shippingReturnScore": { "source": ["returnsPolicy"], "hint": "İade kolaylığı arttıkça artar." }
+        }
+      },
+      "motivationWeights": {
+        "stil_begeni": {
+          "priceFit": 0.14,
+          "qualityScore": 0.18,
+          "trendFit": 0.13,
+          "brandTrust": 0.06,
+          "descriptionCompleteness": 0.08,
+          "visualAppeal": 0.15,
+          "seasonFit": 0.18,
+          "shippingReturnScore": 0.08,
+          "targetAudienceFit": 0.07,
+          "differentiationScore": 0.03
+        },
+        "problem_cozme": {
+          "priceFit": 0.15,
+          "qualityScore": 0.20,
+          "trendFit": 0.05,
+          "brandTrust": 0.07,
+          "descriptionCompleteness": 0.14,
+          "visualAppeal": 0.06,
+          "seasonFit": 0.18,
+          "shippingReturnScore": 0.08,
+          "targetAudienceFit": 0.05,
+          "differentiationScore": 0.02
+        },
+        "ihtiyac": {
+          "priceFit": 0.18,
+          "qualityScore": 0.18,
+          "trendFit": 0.06,
+          "brandTrust": 0.08,
+          "descriptionCompleteness": 0.14,
+          "visualAppeal": 0.08,
+          "seasonFit": 0.14,
+          "shippingReturnScore": 0.10,
+          "targetAudienceFit": 0.03,
+          "differentiationScore": 0.01
+        }
       }
     },
     "yedek_parca": {
+      "label": "Yedek Parça",
       "averagePrice": 180,
       "marketBreadthBase": 24,
       "defaultWeights": {
@@ -78,16 +116,251 @@
         "shippingReturnScore": 0.15,
         "targetAudienceFit": 0.14,
         "differentiationScore": 0.02
+      },
+      "formFields": [
+        { "key": "price", "type": "number", "label": "Fiyat (TL)", "required": true },
+        { "key": "compatibleModels", "type": "text", "label": "Uyumlu model(ler)", "required": true },
+        { "key": "dimensions", "type": "text", "label": "Ölçü / boyut", "required": true },
+        { "key": "material", "type": "text", "label": "Malzeme", "required": false },
+        { "key": "installation", "type": "select", "label": "Montaj tipi", "options": ["tak_cikar", "vida", "profesyonel"], "required": false },
+        { "key": "warranty", "type": "select", "label": "Garanti", "options": ["yok", "var"], "required": false },
+        { "key": "returnsPolicy", "type": "select", "label": "İade kolaylığı", "options": ["zor", "orta", "kolay"], "required": false },
+        { "key": "brandKnown", "type": "select", "label": "Marka bilinirliği", "options": ["dusuk", "orta", "yuksek"], "required": false }
+      ],
+      "normalization": {
+        "heuristics": {
+          "descriptionCompleteness": { "source": ["compatibleModels", "dimensions", "material", "installation"], "hint": "Uyumluluk ve ölçü alanları kritik." },
+          "brandTrust": { "source": ["brandKnown", "warranty"], "hint": "Garanti + bilinirlik güveni artırır." },
+          "shippingReturnScore": { "source": ["returnsPolicy"], "hint": "İade kolaylığı arttıkça artar." }
+        }
+      },
+      "motivationWeights": {
+        "problem_cozme": {
+          "priceFit": 0.16,
+          "qualityScore": 0.15,
+          "trendFit": 0.03,
+          "brandTrust": 0.04,
+          "descriptionCompleteness": 0.18,
+          "visualAppeal": 0.03,
+          "seasonFit": 0.02,
+          "shippingReturnScore": 0.15,
+          "targetAudienceFit": 0.14,
+          "differentiationScore": 0.02
+        },
+        "yedek_parca_tamir": {
+          "priceFit": 0.14,
+          "qualityScore": 0.14,
+          "trendFit": 0.02,
+          "brandTrust": 0.04,
+          "descriptionCompleteness": 0.22,
+          "visualAppeal": 0.02,
+          "seasonFit": 0.01,
+          "shippingReturnScore": 0.17,
+          "targetAudienceFit": 0.22,
+          "differentiationScore": 0.02
+        },
+        "ihtiyac": {
+          "priceFit": 0.18,
+          "qualityScore": 0.14,
+          "trendFit": 0.02,
+          "brandTrust": 0.05,
+          "descriptionCompleteness": 0.18,
+          "visualAppeal": 0.03,
+          "seasonFit": 0.02,
+          "shippingReturnScore": 0.18,
+          "targetAudienceFit": 0.18,
+          "differentiationScore": 0.02
+        }
+      }
+    },
+    "ev_yasam": {
+      "label": "Ev & Yaşam",
+      "averagePrice": 450,
+      "marketBreadthBase": 48,
+      "defaultWeights": {
+        "priceFit": 0.15,
+        "qualityScore": 0.16,
+        "trendFit": 0.05,
+        "brandTrust": 0.08,
+        "descriptionCompleteness": 0.15,
+        "visualAppeal": 0.10,
+        "seasonFit": 0.03,
+        "shippingReturnScore": 0.12,
+        "targetAudienceFit": 0.11,
+        "differentiationScore": 0.05
+      },
+      "formFields": [
+        { "key": "price", "type": "number", "label": "Fiyat (TL)", "required": true },
+        { "key": "material", "type": "text", "label": "Malzeme", "required": false },
+        { "key": "dimensions", "type": "text", "label": "Ölçü", "required": true },
+        { "key": "compatibility", "type": "text", "label": "Uyumluluk / delik aralığı / kapı tipi", "required": false },
+        { "key": "brandKnown", "type": "select", "label": "Marka bilinirliği", "options": ["dusuk", "orta", "yuksek"], "required": false },
+        { "key": "returnsPolicy", "type": "select", "label": "İade kolaylığı", "options": ["zor", "orta", "kolay"], "required": false }
+      ],
+      "motivationWeights": {
+        "ihtiyac": {
+          "priceFit": 0.15,
+          "qualityScore": 0.16,
+          "trendFit": 0.05,
+          "brandTrust": 0.08,
+          "descriptionCompleteness": 0.15,
+          "visualAppeal": 0.10,
+          "seasonFit": 0.03,
+          "shippingReturnScore": 0.12,
+          "targetAudienceFit": 0.11,
+          "differentiationScore": 0.05
+        },
+        "problem_cozme": {
+          "priceFit": 0.15,
+          "qualityScore": 0.16,
+          "trendFit": 0.03,
+          "brandTrust": 0.07,
+          "descriptionCompleteness": 0.20,
+          "visualAppeal": 0.06,
+          "seasonFit": 0.02,
+          "shippingReturnScore": 0.14,
+          "targetAudienceFit": 0.14,
+          "differentiationScore": 0.03
+        },
+        "stil_begeni": {
+          "priceFit": 0.13,
+          "qualityScore": 0.16,
+          "trendFit": 0.10,
+          "brandTrust": 0.08,
+          "descriptionCompleteness": 0.14,
+          "visualAppeal": 0.16,
+          "seasonFit": 0.03,
+          "shippingReturnScore": 0.10,
+          "targetAudienceFit": 0.07,
+          "differentiationScore": 0.03
+        }
+      }
+    },
+    "telefon": {
+      "label": "Elektronik / Telefon (MVP)",
+      "averagePrice": 16000,
+      "marketBreadthBase": 62,
+      "defaultWeights": {
+        "priceFit": 0.16,
+        "qualityScore": 0.24,
+        "trendFit": 0.08,
+        "brandTrust": 0.14,
+        "descriptionCompleteness": 0.11,
+        "visualAppeal": 0.05,
+        "seasonFit": 0.03,
+        "shippingReturnScore": 0.10,
+        "targetAudienceFit": 0.06,
+        "differentiationScore": 0.03
+      },
+      "formFields": [
+        { "key": "price", "type": "number", "label": "Fiyat (TL)", "required": true },
+        { "key": "brandKnown", "type": "select", "label": "Marka bilinirliği", "options": ["dusuk", "orta", "yuksek"], "required": true },
+        { "key": "warranty", "type": "select", "label": "Garanti", "options": ["yok", "var"], "required": false },
+        { "key": "specCompleteness", "type": "range01", "label": "Teknik özellik detayı (0-1)", "required": false },
+        { "key": "visualQuality", "type": "range01", "label": "Görsel kalite (0-1)", "required": false },
+        { "key": "returnsPolicy", "type": "select", "label": "İade kolaylığı", "options": ["zor", "orta", "kolay"], "required": false }
+      ],
+      "motivationWeights": {
+        "ihtiyac": {
+          "priceFit": 0.18,
+          "qualityScore": 0.18,
+          "trendFit": 0.06,
+          "brandTrust": 0.14,
+          "descriptionCompleteness": 0.16,
+          "visualAppeal": 0.06,
+          "seasonFit": 0.00,
+          "shippingReturnScore": 0.12,
+          "targetAudienceFit": 0.08,
+          "differentiationScore": 0.02
+        },
+        "problem_cozme": {
+          "priceFit": 0.16,
+          "qualityScore": 0.18,
+          "trendFit": 0.05,
+          "brandTrust": 0.15,
+          "descriptionCompleteness": 0.18,
+          "visualAppeal": 0.05,
+          "seasonFit": 0.00,
+          "shippingReturnScore": 0.13,
+          "targetAudienceFit": 0.08,
+          "differentiationScore": 0.02
+        },
+        "stil_begeni": {
+          "priceFit": 0.15,
+          "qualityScore": 0.16,
+          "trendFit": 0.12,
+          "brandTrust": 0.12,
+          "descriptionCompleteness": 0.14,
+          "visualAppeal": 0.12,
+          "seasonFit": 0.00,
+          "shippingReturnScore": 0.10,
+          "targetAudienceFit": 0.07,
+          "differentiationScore": 0.02
+        }
+      }
+    },
+    "sapka": {
+      "label": "Aksesuar / Şapka (MVP)",
+      "averagePrice": 350,
+      "marketBreadthBase": 58,
+      "defaultWeights": {
+        "priceFit": 0.17,
+        "qualityScore": 0.13,
+        "trendFit": 0.16,
+        "brandTrust": 0.06,
+        "descriptionCompleteness": 0.08,
+        "visualAppeal": 0.18,
+        "seasonFit": 0.11,
+        "shippingReturnScore": 0.06,
+        "targetAudienceFit": 0.03,
+        "differentiationScore": 0.02
+      },
+      "formFields": [
+        { "key": "price", "type": "number", "label": "Fiyat (TL)", "required": true },
+        { "key": "material", "type": "text", "label": "Malzeme", "required": false },
+        { "key": "season", "type": "select", "label": "Sezon", "options": ["kis", "sonbahar", "ilkbahar", "yaz", "dort_mevsim"], "required": false },
+        { "key": "visualQuality", "type": "range01", "label": "Görsel kalite (0-1)", "required": false },
+        { "key": "brandKnown", "type": "select", "label": "Marka bilinirliği", "options": ["dusuk", "orta", "yuksek"], "required": false },
+        { "key": "returnsPolicy", "type": "select", "label": "İade kolaylığı", "options": ["zor", "orta", "kolay"], "required": false }
+      ],
+      "motivationWeights": {
+        "stil_begeni": {
+          "priceFit": 0.14,
+          "qualityScore": 0.15,
+          "trendFit": 0.18,
+          "brandTrust": 0.06,
+          "descriptionCompleteness": 0.10,
+          "visualAppeal": 0.20,
+          "seasonFit": 0.10,
+          "shippingReturnScore": 0.05,
+          "targetAudienceFit": 0.01,
+          "differentiationScore": 0.01
+        },
+        "ihtiyac": {
+          "priceFit": 0.20,
+          "qualityScore": 0.16,
+          "trendFit": 0.08,
+          "brandTrust": 0.06,
+          "descriptionCompleteness": 0.14,
+          "visualAppeal": 0.12,
+          "seasonFit": 0.14,
+          "shippingReturnScore": 0.08,
+          "targetAudienceFit": 0.01,
+          "differentiationScore": 0.01
+        },
+        "hediye": {
+          "priceFit": 0.16,
+          "qualityScore": 0.14,
+          "trendFit": 0.12,
+          "brandTrust": 0.10,
+          "descriptionCompleteness": 0.12,
+          "visualAppeal": 0.16,
+          "seasonFit": 0.10,
+          "shippingReturnScore": 0.08,
+          "targetAudienceFit": 0.01,
+          "differentiationScore": 0.01
+        }
       }
     }
-  },
-  "motivationModifiers": {
-    "stil_begeni": 8,
-    "ihtiyac": 0,
-    "problem_cozme": -16,
-    "yedek_parca_tamir": -18,
-    "hediye": 5,
-    "trend": 10,
-    "profesyonel_kullanim": -6
   }
 }
