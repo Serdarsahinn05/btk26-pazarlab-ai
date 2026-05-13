@@ -10,8 +10,8 @@ from app.utils.math_utils import clamp, normalize_weights
 
 
 DATA_DIR = Path(__file__).resolve().parents[1] / "data"
-CLOTHING_CATEGORIES = {"tisort", "pantolon", "mont"}
-TECH_CATEGORIES = {"telefon", "laptop", "kulaklik"}
+CLOTHING_CATEGORIES = {"tisort", "pantolon", "mont", "elbise", "etek"}
+TECH_CATEGORIES = {"telefon", "laptop", "kulaklik", "tablet", "akilli_saat"}
 
 
 @lru_cache(maxsize=1)
@@ -112,14 +112,14 @@ def _score_quality(category: str, features: Any, commerce: Any) -> float:
         score += 0.14 if features.waterproof else 0
         score += 0.10 if features.windproof else 0
         score += 0.05 if _feature(features, "hood") else 0
-    elif category in {"tisort", "pantolon"}:
+    elif category in {"tisort", "pantolon", "elbise", "etek"}:
         score += 0.14 if features.fabric else 0
         score += 0.08 if features.fit else 0
         score += 0.08 if _feature(features, "size_range") else 0
         score += 0.06 if features.season else 0
-        score += 0.06 if _any_feature(features, "print_type", "collar_type", "waist_type", "leg_type") else 0
+        score += 0.06 if _any_feature(features, "print_type", "collar_type", "waist_type", "leg_type", "use_case") else 0
         score += 0.05 if _feature(features, "stretch") else 0
-    elif category in {"telefon", "laptop"}:
+    elif category in {"telefon", "laptop", "tablet", "akilli_saat"}:
         score += 0.08 if features.brand else 0
         score += 0.10 if features.ram else 0
         score += 0.10 if features.storage else 0
@@ -127,6 +127,8 @@ def _score_quality(category: str, features: Any, commerce: Any) -> float:
         score += 0.07 if features.battery else 0
         score += 0.08 if _feature(features, "screen_size") else 0
         score += 0.08 if category == "laptop" and _feature(features, "gpu") else 0
+        score += 0.08 if category == "tablet" and _feature(features, "connectivity") else 0
+        score += 0.08 if category == "akilli_saat" and _any_feature(features, "sensors", "water_resistance") else 0
     elif category == "kulaklik":
         score += 0.07 if features.brand else 0
         score += 0.12 if _feature(features, "connection_type") else 0
@@ -148,7 +150,7 @@ def _score_trend(motivation: PurchaseMotivation, category: str, features: Any, d
         score += 0.30
     if category in CLOTHING_CATEGORIES:
         score += 0.12
-    if category == "kulaklik":
+    if category in {"kulaklik", "akilli_saat"}:
         score += 0.06
     if features.style or features.colors or features.fit or _feature(features, "print_type"):
         score += 0.10
@@ -226,6 +228,8 @@ def _score_season(category: str, features: Any) -> float:
         return 0.90
     if category == "tisort" and features.season in {"summer", "yaz"}:
         return 0.88
+    if category in {"elbise", "etek"} and features.season in {"spring", "summer", "bahar", "yaz"}:
+        return 0.86
     if features.season in {"all", "dort_mevsim"}:
         return 0.76
     if features.season:
@@ -257,6 +261,8 @@ def _score_target_audience(request: SimulationRequest, description: str) -> floa
         score += 0.10 if features.use_case else 0
         score += 0.08 if features.battery or features.camera or _feature(features, "processor") else 0
         score += 0.06 if request.category == "kulaklik" and _any_feature(features, "connection_type", "latency", "microphone") else 0
+        score += 0.06 if request.category == "tablet" and _any_feature(features, "screen_size", "connectivity") else 0
+        score += 0.06 if request.category == "akilli_saat" and _any_feature(features, "sensors", "water_resistance") else 0
         return clamp(score)
 
     score = 0.52

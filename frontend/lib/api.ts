@@ -1,5 +1,5 @@
 import axios from "axios";
-import { InputAnalysisResponse, SimulationRequest, SimulationResponse } from "@/types";
+import { InputAnalysisResponse, ProductLinkReadResponse, SimulationRequest, SimulationResponse } from "@/types";
 
 // Default mock response based on the specification
 export const mockSimulationResponse: SimulationResponse = {
@@ -88,6 +88,11 @@ export const simulateProduct = async (data: SimulationRequest): Promise<Simulati
 
 export const analyzeProductInput = async (data: SimulationRequest): Promise<InputAnalysisResponse> => {
   const response = await axios.post(`${API_BASE_URL}/api/analyze-input`, data);
+  return response.data;
+};
+
+export const readProductLink = async (url: string): Promise<ProductLinkReadResponse> => {
+  const response = await axios.post(`${API_BASE_URL}/api/read-product-link`, { url });
   return response.data;
 };
 

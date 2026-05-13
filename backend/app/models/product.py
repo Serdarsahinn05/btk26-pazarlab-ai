@@ -49,8 +49,12 @@ class ProductFeatures(BaseModel):
     battery: Optional[str] = None
     refresh_rate: Optional[str] = Field(default=None, alias="refreshRate")
     screen_size: Optional[str] = Field(default=None, alias="screenSize")
+    display_type: Optional[str] = Field(default=None, alias="displayType")
     gpu: Optional[str] = None
     weight: Optional[str] = None
+    operating_system: Optional[str] = Field(default=None, alias="operatingSystem")
+    connectivity: Optional[str] = None
+    sensors: Optional[str] = None
     connection_type: Optional[str] = Field(default=None, alias="connectionType")
     noise_cancellation: Optional[bool] = Field(default=None, alias="noiseCancellation")
     microphone: Optional[str] = None
@@ -83,6 +87,7 @@ class SimulationRequest(BaseModel):
     category: str = Field(min_length=1)
     purchase_motivation: PurchaseMotivation = Field(alias="purchaseMotivation")
     product_name: str = Field(alias="productName", min_length=4)
+    product_url: Optional[str] = Field(default=None, alias="productUrl")
     price: float = Field(gt=0)
     description: str = Field(min_length=40)
     target_audience: TargetAudience = Field(alias="targetAudience")

@@ -40,8 +40,12 @@ export interface Features {
   battery?: string;
   refreshRate?: string;
   screenSize?: string;
+  displayType?: string;
   gpu?: string;
   weight?: string;
+  operatingSystem?: string;
+  connectivity?: string;
+  sensors?: string;
   connectionType?: string;
   noiseCancellation?: boolean;
   microphone?: string;
@@ -96,6 +100,7 @@ export interface SimulationRequest {
   category: string;
   purchaseMotivation: PurchaseMotivation;
   productName: string;
+  productUrl?: string;
   price: number;
   description: string;
   targetAudience: TargetAudience;
@@ -149,4 +154,16 @@ export interface SimulationResponse {
   normalizedProduct: NormalizedProduct;
   aiInsights: AiInsights;
   inputAnalysis?: InputAnalysisResponse;
+}
+
+export interface ProductLinkReadResponse {
+  url: string;
+  title?: string | null;
+  description?: string | null;
+  price?: number | null;
+  currency?: string | null;
+  image?: string | null;
+  brand?: string | null;
+  source: "metadata" | "json_ld" | "fallback";
+  warnings: string[];
 }

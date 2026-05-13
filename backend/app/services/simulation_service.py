@@ -64,7 +64,7 @@ def run_simulation(request: SimulationRequest) -> SimulationResponse:
     simulated_consumers = sum(persona["count"] for persona in persona_data["personaTypes"])
     overall_score = int(round((total_probability / simulated_consumers) * 100))
     top_personas = _top_personas(persona_stats)
-    intent_conversion = _intent_conversion_score(request.purchase_motivation, market_breadth, normalized)
+    intent_conversion = _intent_conversion_score(request.purchase_motivation, market_breadth, normalized, input_analysis)
     problem_solution = _problem_solution_fit(request.purchase_motivation, normalized)
     weakness_signals = _weakness_signals(request, normalized, input_analysis)
     weaknesses = [_weakness_message(signal) for signal in weakness_signals]
@@ -182,25 +182,41 @@ def _intent_conversion_score(
     motivation: PurchaseMotivation,
     market_breadth_score: int,
     product: NormalizedProduct,
+    input_analysis: Any,
 ) -> int:
+    input_factor = 0.65 + input_analysis.signals.plausibility * 0.20 + input_analysis.signals.category_fit * 0.15
     if motivation in {PurchaseMotivation.PROBLEM_SOLVING, PurchaseMotivation.SPARE_PART_REPAIR}:
-        score = 45 - (market_breadth_score * 0.20)
-        score += product.description_completeness * 22
-        score += product.shipping_return_score * 12
+        score = 34 - (market_breadth_score * 0.12)
+        score += product.description_completeness * 18
+        score += product.shipping_return_score * 10
+        score += product.target_audience_fit * 10
         score += 12
-        return clamp_score(score)
+        return clamp_score(score * input_factor)
 
-    score = 30 + (market_breadth_score * 0.30)
-    score += product.description_completeness * 16
-    score += product.shipping_return_score * 8
+    score = 18 + (market_breadth_score * 0.18)
+    score += product.description_completeness * 12
+    score += product.quality_score * 14
+    score += product.brand_trust * 8
+    score += product.target_audience_fit * 8
+    score += product.shipping_return_score * 6
+    score -= product.price_risk * 12
     if motivation in {PurchaseMotivation.STYLE, PurchaseMotivation.TREND}:
-        score -= 4
-    return clamp_score(score)
+        score -= 3
+    if motivation == PurchaseMotivation.PROFESSIONAL_USE:
+        score += product.differentiation_score * 4
+    return clamp_score(score * input_factor)
 
 
 def _problem_solution_fit(motivation: PurchaseMotivation, product: NormalizedProduct) -> int:
     if motivation not in {PurchaseMotivation.PROBLEM_SOLVING, PurchaseMotivation.SPARE_PART_REPAIR}:
-        return clamp_score(35 + product.description_completeness * 15)
+        score = (
+            product.description_completeness * 24
+            + product.quality_score * 24
+            + product.target_audience_fit * 18
+            + product.shipping_return_score * 12
+            + product.price_fit * 10
+        )
+        return clamp_score(score)
     score = (
         product.description_completeness * 35
         + product.shipping_return_score * 25

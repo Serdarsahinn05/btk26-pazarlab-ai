@@ -46,9 +46,13 @@ CATEGORY_TERMS = {
     "tisort": {"tisort", "tshirt", "kumas", "pamuk", "yaka", "kol", "baski", "beden", "oversize"},
     "pantolon": {"pantolon", "denim", "keten", "bel", "paca", "fit", "beden", "esnek"},
     "mont": {"mont", "kaban", "ceket", "kumas", "dolgu", "su", "ruzgar", "kapuson", "kis"},
+    "elbise": {"elbise", "kumas", "kesim", "astar", "boy", "askili", "kol", "beden", "abiye"},
+    "etek": {"etek", "kumas", "bel", "boy", "pile", "kalem", "mini", "midi", "beden"},
     "telefon": {"telefon", "gb", "kamera", "batarya", "ekran", "ram", "islemci", "hz", "5g"},
     "laptop": {"laptop", "notebook", "ram", "ssd", "islemci", "ekran", "gpu", "batarya", "kg"},
     "kulaklik": {"kulaklik", "bluetooth", "anc", "mikrofon", "pil", "saat", "gecikme", "kablolu"},
+    "tablet": {"tablet", "ekran", "kalem", "gb", "batarya", "wifi", "lte", "ram", "hafiza"},
+    "akilli_saat": {"akilli", "saat", "nabiz", "gps", "batarya", "spor", "su", "amoled", "bildirim"},
 }
 
 
@@ -56,9 +60,13 @@ IMPORTANT_FIELDS = {
     "tisort": ["fabric", "fit", "size_range", "collar_type", "sleeve_length", "print_type", "season"],
     "pantolon": ["fabric", "fit", "waist_type", "leg_type", "size_range", "use_case", "season"],
     "mont": ["fabric", "inner_filling", "season", "fit", "size_range", "waterproof", "windproof"],
+    "elbise": ["fabric", "fit", "size_range", "sleeve_length", "season", "use_case", "colors"],
+    "etek": ["fabric", "waist_type", "size_range", "leg_type", "season", "use_case", "colors"],
     "telefon": ["brand", "ram", "storage", "processor", "camera", "battery", "screen_size", "refresh_rate"],
     "laptop": ["brand", "processor", "ram", "storage", "gpu", "screen_size", "battery", "weight", "use_case"],
     "kulaklik": ["brand", "connection_type", "battery", "noise_cancellation", "microphone", "water_resistance", "latency", "use_case"],
+    "tablet": ["brand", "processor", "ram", "storage", "screen_size", "battery", "connectivity", "use_case"],
+    "akilli_saat": ["brand", "battery", "screen_size", "display_type", "water_resistance", "sensors", "connectivity", "use_case"],
 }
 
 
@@ -75,6 +83,7 @@ def _payload(request: SimulationRequest) -> Dict[str, Any]:
         "category": request.category,
         "purchaseMotivation": request.purchase_motivation.value,
         "productName": request.product_name,
+        "productUrl": request.product_url,
         "price": request.price,
         "description": request.description,
         "targetAudience": request.target_audience.model_dump(by_alias=True),
@@ -118,6 +127,7 @@ def _fallback_analysis(request: SimulationRequest) -> InputAnalysisResponse:
         [
             request.category,
             request.product_name,
+            request.product_url or "",
             request.description,
             " ".join(str(value) for value in raw_features.values()),
         ]
@@ -141,7 +151,7 @@ def _fallback_analysis(request: SimulationRequest) -> InputAnalysisResponse:
     if category_fit < 0.40:
         warnings.append("Urun bilgileri secilen kategoriyle tam uyusmuyor olabilir.")
         suggestions.append("Kategori ve alt urunu tekrar kontrol et.")
-    if request.category in {"telefon", "laptop"} and not features.brand:
+    if request.category in {"telefon", "laptop", "tablet", "akilli_saat"} and not features.brand:
         warnings.append("Marka/model bilgisi net degil.")
         suggestions.append("Marka ve modeli yazarsan guven ve teknik uyum daha dogru hesaplanir.")
     if description_quality < 0.45:
@@ -239,7 +249,7 @@ def _brand_trust_from_input(features: Any, commerce: Any, description: str) -> f
 def _visual_signal(category: str, features: Any, description: str) -> float:
     text = description.lower()
     score = 0.42
-    if category in {"tisort", "pantolon", "mont"}:
+    if category in {"tisort", "pantolon", "mont", "elbise", "etek"}:
         if getattr(features, "colors", None):
             score += 0.15
         if getattr(features, "fit", None):

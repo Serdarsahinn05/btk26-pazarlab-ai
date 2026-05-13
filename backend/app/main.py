@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 
 from app.api.analyze import router as analyze_router
 from app.api.health import router as health_router
+from app.api.product_link import router as product_link_router
 from app.api.simulate import router as simulate_router
 
 load_dotenv()
@@ -41,6 +42,7 @@ def create_app() -> FastAPI:
 
     app.include_router(health_router)
     app.include_router(analyze_router)
+    app.include_router(product_link_router)
     app.include_router(simulate_router)
     return app
 

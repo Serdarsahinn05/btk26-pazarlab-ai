@@ -17,7 +17,7 @@ Sen deneyimli bir e-ticaret danışmanısın. Aşağıdaki simülasyon sonucunu 
 - Kategori: {category}
 - Satın alma motivasyonu: {purchaseMotivation}
 - Pazar genişliği skoru: {marketBreadthScore}/100
-- Niyetli alıcı dönüşümü: {intentConversionScore}/100
+- Satın alma niyeti skoru: {intentConversionScore}/100
 - Problem çözüm uyumu: {problemSolutionFit}/100
 
 Kurallar:
@@ -26,6 +26,7 @@ Kurallar:
 - Ürünü şu şekilde sınıflandır: "trend/stil ürünü", "ihtiyaç ürünü", "problem çözüm/yedek parça ürünü", "hediye ürünü"
 - Buna göre kanal önerisi ver: sosyal medya mı, SEO/arama mı, pazar yeri içi optimizasyon mu?
 - Niş ürünlerde (pazar genişliği < 40): "Geniş kitle reklamı yerine arama niyeti yüksek kullanıcılara ulaşmak daha doğru" vurgusu yap.
+- Satın alma niyeti skorunu gerçek site dönüşüm oranı gibi yorumlama; bu skor fiyat, güven, açıklama ve teknik detaylardan türetilmiş bir eğilim skorudur.
 - Cevabı SADECE JSON formatında döndür. Başka metin ekleme.
 
 {{
@@ -119,6 +120,7 @@ def generate_insights(
 
     payload = {
         "productName": request.product_name,
+        "productUrl": request.product_url,
         "category": category_str,
         "purchaseMotivation": motivation_str,
         "overallScore": overall_score,
@@ -187,30 +189,27 @@ def generate_insights(
             f"Bu ürün {motivation_str} motivasyonuyla alınan bir {product_type}. {motivation_line}{niche_note}"
         )
 
-        sales_recipe = [
-            f"Ürün başlığına {request.product_name} için ana faydayı ve ayırt edici özelliği ekle.",
-            "İade/garanti/kargo bilgisini görünür hale getir.",
-            "Açıklamaya ölçü/uyumluluk/kullanım senaryosu gibi karar verdiren detayları ekle.",
-            "En güçlü kanalda 1 hafta A/B test ile görsel + fiyat mesajını dene."
-        ]
-        if product_type == "trend/stil ürünü":
-            sales_recipe.insert(0, "Görselleri 1:1 + kısa video formatına optimize et.")
+        sales_recipe = _build_sales_recipe(
+            request=request,
+            product_type=product_type,
+            channels=channels,
+            weakness_signals=weakness_signals,
+            market_breadth_score=market_breadth_score,
+        )
 
         top_persona_names = ", ".join(p.name for p in top_personas[:3])
-        marketing_advice = (
-            f"Kanal odağı: {', '.join(channels)}. Mesaj dili {top_persona_names} personalarının beklentilerine göre kurulmalı."
+        marketing_advice = _build_marketing_advice(
+            category=category_str,
+            product_type=product_type,
+            channels=channels,
+            top_persona_names=top_persona_names,
+            market_breadth_score=market_breadth_score,
+            intent_conversion_score=intent_conversion_score,
         )
-
-        description_advice = "Açıklamada ölçü/uyumluluk, malzeme, kullanım ve paket içeriği gibi karar kriterlerini netleştir."
-        pricing_advice = "Fiyat hassasiyetini ölçmek için sınırlı süreli kupon veya ücretsiz kargo eşiği test edebilirsin."
-        season_advice = "Sezon uyumunu güçlendirmek için başlık ve görsellerde mevsimsel kullanım senaryosu vurgula."
-
-        improved_description = (
-            f"{request.product_name} ({category_str} ürünü). "
-            "Öne çıkan özellik: Hedef kitlenin kullanım beklentisine tam uyum. "
-            "Malzeme/Ölçü/Uyumluluk kontrolleri yapılarak listelenmiştir. "
-            "Kargo & iade kolaylığı ve müşteri memnuniyeti odaklı hizmet sunulmaktadır."
-        )
+        description_advice = _build_description_advice(request, normalized_product)
+        pricing_advice = _build_pricing_advice(request, normalized_product)
+        season_advice = _build_season_advice(request, normalized_product)
+        improved_description = _build_improved_description(request, category_str)
 
         return AiInsights(
             summary=summary.strip(),
@@ -223,6 +222,105 @@ def generate_insights(
             channel_recommendation=channels,
             improved_description=improved_description.strip(),
         )
+
+
+def _build_sales_recipe(
+    request: SimulationRequest,
+    product_type: str,
+    channels: List[str],
+    weakness_signals: List[str],
+    market_breadth_score: int,
+) -> List[str]:
+    features = request.features
+    category = str(request.category)
+    first_channel = channels[0] if channels else "en guclu kanal"
+    recipe = [
+        f"Basligi '{request.product_name}' + ana fayda + hedef kullanim senaryosu seklinde netlestir.",
+        "Ilk gorselde urunun karar verdiren ozelligini goster: kiyafette kalip/renk, teknolojide ekran-batarya-performans.",
+        f"{first_channel} icin 7 gunluk A/B test kur: bir varyant fayda odakli, digeri fiyat/guven odakli olsun.",
+        "Iade, kargo ve garanti/fatura bilgisini fiyat alanina yakin gosterecek sekilde listelemeyi duzenle.",
+    ]
+    if category in {"telefon", "laptop", "tablet", "akilli_saat", "kulaklik"}:
+        recipe.insert(1, "Teknik ozellikleri karsilastirilabilir yaz: model, kapasite, pil, ekran ve garanti ayni blokta dursun.")
+    if category in {"tisort", "pantolon", "mont", "elbise", "etek"}:
+        recipe.insert(1, "Beden/kalip bilgisini ve gercek kullanim/kombin senaryosunu aciklamanin ilk 2 satirina al.")
+    if "price_sensitive_users_rejected" in weakness_signals or market_breadth_score < 50:
+        recipe.append("Fiyat bariyerini olcmek icin ucretsiz kargo veya kupon varyantini ana fiyati dusurmeden test et.")
+    if product_type == "trend/stil ürünü" and getattr(features, "colors", None):
+        recipe.append("Renk varyantlarini ayri gorsel setleriyle test et; tek ilanda tum renkleri gizleme.")
+    return recipe[:5]
+
+
+def _build_marketing_advice(
+    category: str,
+    product_type: str,
+    channels: List[str],
+    top_persona_names: str,
+    market_breadth_score: int,
+    intent_conversion_score: int,
+) -> str:
+    channel_text = ", ".join(channels) if channels else "pazar yeri ici arama ve sosyal medya"
+    if category in {"telefon", "laptop", "tablet", "akilli_saat", "kulaklik"}:
+        angle = "teknik kanit + guven + karsilastirma"
+    elif category in {"tisort", "pantolon", "mont", "elbise", "etek"}:
+        angle = "stil, beden uyumu ve gercek kullanim gorselleri"
+    else:
+        angle = "net fayda ve guven"
+    scope = "genis kitle kreatifleri" if market_breadth_score >= 55 else "arama niyeti yuksek daha dar kitle"
+    return (
+        f"Kanal odagi: {channel_text}. Mesaj dili {angle} uzerine kurulsun. "
+        f"{scope} ile basla; donusum skoru {intent_conversion_score}/100 oldugu icin personalar ({top_persona_names}) bazinda iki farkli metin test et."
+    )
+
+
+def _build_description_advice(request: SimulationRequest, normalized_product: NormalizedProduct) -> str:
+    if normalized_product.description_completeness >= 0.75:
+        return "Aciklama temel olarak guclu; ilk paragrafi daha net fayda, ikinci paragrafi teknik/beden detaylari olacak sekilde duzenle."
+    if request.category in {"telefon", "laptop", "tablet", "akilli_saat", "kulaklik"}:
+        return "Aciklamaya model, kapasite, pil/ekran, garanti-fatura ve kimler icin uygun oldugunu tablo gibi okunacak netlikte ekle."
+    return "Aciklamaya kumas, kalip, beden araligi, sezon, kombin/kullanim senaryosu ve iade bilgisini ayri cumlelerle ekle."
+
+
+def _build_pricing_advice(request: SimulationRequest, normalized_product: NormalizedProduct) -> str:
+    if normalized_product.price_risk >= 0.45:
+        return "Fiyat algisi riskli. Ana fiyati hemen dusurmek yerine kupon, set indirimi veya ucretsiz kargo varyanti test et."
+    if normalized_product.price_fit >= 0.75:
+        return "Fiyat kategori ortalamasina yakin gorunuyor. Premium algi icin garanti, kalite kaniti ve hizli kargo mesajini fiyatla birlikte goster."
+    return "Fiyat testi icin iki varyant yeterli: mevcut fiyat + guven vurgusu ve kucuk indirim + aciliyet mesaji."
+
+
+def _build_season_advice(request: SimulationRequest, normalized_product: NormalizedProduct) -> str:
+    category = request.category
+    season = getattr(request.features, "season", None)
+    if category in {"telefon", "laptop", "tablet", "akilli_saat", "kulaklik"}:
+        return "Teknoloji urunlerinde sezon etkisi dusuk; okul donemi, yilbasi, maas haftasi ve kampanya donemleri ayri test edilmeli."
+    if normalized_product.season_fit >= 0.80:
+        return f"Sezon uyumu guclu ({season or 'belirtilen sezon'}). Baslik, ilk gorsel ve kampanya metninde bu kullanim donemini one cikar."
+    return "Sezon uyumu zayifsa urunu indirim/alternatif kullanim senaryosuyla konumlandir; ana reklam butcesini sezon pikine sakla."
+
+
+def _build_improved_description(request: SimulationRequest, category_str: str) -> str:
+    features = request.features
+    feature_parts = []
+    for label, value in [
+        ("Marka/model", getattr(features, "brand", None)),
+        ("Kumas", getattr(features, "fabric", None)),
+        ("Kalip", getattr(features, "fit", None)),
+        ("Beden", getattr(features, "size_range", None)),
+        ("Ekran", getattr(features, "screen_size", None)),
+        ("RAM", getattr(features, "ram", None)),
+        ("Depolama", getattr(features, "storage", None)),
+        ("Batarya", getattr(features, "battery", None)),
+        ("Kullanim", getattr(features, "use_case", None)),
+    ]:
+        if value:
+            feature_parts.append(f"{label}: {value}")
+    details = "; ".join(feature_parts[:6]) or "urun detaylari acik ve karar vermeyi kolaylastiracak sekilde sunulur"
+    trust = "Garanti/fatura bilgisi ve kolay iade secenegiyle guvenli alisveris desteklenir." if request.commerce.warranty else "Kolay iade ve net kargo bilgisiyle satin alma riski azaltilir."
+    return (
+        f"{request.product_name}, {category_str} kategorisinde {request.target_audience.income_level} segment icin konumlanan bir urundur. "
+        f"{details}. {request.description.strip()} {trust}"
+    )
 
 
 def build_ai_insights(simulation_summary: Mapping[str, Any], category: Optional[str] = None) -> Dict[str, Any]:

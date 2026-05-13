@@ -608,6 +608,390 @@
           "differentiationScore": 0.03
         }
       }
+    },
+    "elbise": {
+      "label": "Kiyafet / Elbise",
+      "averagePrice": 1300,
+      "marketBreadthBase": 66,
+      "applicableAudienceFields": [
+        "ageRange",
+        "gender",
+        "incomeLevel"
+      ],
+      "defaultMotivation": "stil_begeni",
+      "defaultWeights": {
+        "priceFit": 0.14,
+        "qualityScore": 0.14,
+        "trendFit": 0.15,
+        "brandTrust": 0.05,
+        "descriptionCompleteness": 0.1,
+        "visualAppeal": 0.21,
+        "seasonFit": 0.11,
+        "shippingReturnScore": 0.06,
+        "targetAudienceFit": 0.04,
+        "differentiationScore": 0.01
+      },
+      "formFields": [
+        {
+          "key": "fabric",
+          "type": "text",
+          "label": "Kumas icerigi"
+        },
+        {
+          "key": "fit",
+          "type": "select",
+          "label": "Kesim / kalip"
+        },
+        {
+          "key": "sizeRange",
+          "type": "text",
+          "label": "Beden araligi"
+        },
+        {
+          "key": "sleeveLength",
+          "type": "select",
+          "label": "Kol / askili tipi"
+        },
+        {
+          "key": "legType",
+          "type": "select",
+          "label": "Boy / etek kesimi"
+        },
+        {
+          "key": "colors",
+          "type": "multi",
+          "label": "Renk secenekleri"
+        },
+        {
+          "key": "useCase",
+          "type": "text",
+          "label": "Kullanim alani"
+        },
+        {
+          "key": "season",
+          "type": "select",
+          "label": "Sezon"
+        }
+      ],
+      "motivationWeights": {
+        "stil_begeni": {
+          "priceFit": 0.13,
+          "qualityScore": 0.13,
+          "trendFit": 0.19,
+          "brandTrust": 0.05,
+          "descriptionCompleteness": 0.09,
+          "visualAppeal": 0.22,
+          "seasonFit": 0.09,
+          "shippingReturnScore": 0.06,
+          "targetAudienceFit": 0.03,
+          "differentiationScore": 0.01
+        },
+        "ihtiyac": {
+          "priceFit": 0.2,
+          "qualityScore": 0.17,
+          "trendFit": 0.08,
+          "brandTrust": 0.06,
+          "descriptionCompleteness": 0.14,
+          "visualAppeal": 0.12,
+          "seasonFit": 0.11,
+          "shippingReturnScore": 0.08,
+          "targetAudienceFit": 0.03,
+          "differentiationScore": 0.01
+        },
+        "trend": {
+          "priceFit": 0.11,
+          "qualityScore": 0.12,
+          "trendFit": 0.23,
+          "brandTrust": 0.05,
+          "descriptionCompleteness": 0.08,
+          "visualAppeal": 0.24,
+          "seasonFit": 0.08,
+          "shippingReturnScore": 0.05,
+          "targetAudienceFit": 0.03,
+          "differentiationScore": 0.01
+        }
+      }
+    },
+    "etek": {
+      "label": "Kiyafet / Etek",
+      "averagePrice": 750,
+      "marketBreadthBase": 58,
+      "applicableAudienceFields": [
+        "ageRange",
+        "gender",
+        "incomeLevel"
+      ],
+      "defaultMotivation": "stil_begeni",
+      "defaultWeights": {
+        "priceFit": 0.16,
+        "qualityScore": 0.14,
+        "trendFit": 0.14,
+        "brandTrust": 0.05,
+        "descriptionCompleteness": 0.1,
+        "visualAppeal": 0.2,
+        "seasonFit": 0.12,
+        "shippingReturnScore": 0.06,
+        "targetAudienceFit": 0.04,
+        "differentiationScore": 0.01
+      },
+      "formFields": [
+        {
+          "key": "fabric",
+          "type": "text",
+          "label": "Kumas icerigi"
+        },
+        {
+          "key": "waistType",
+          "type": "select",
+          "label": "Bel tipi"
+        },
+        {
+          "key": "legType",
+          "type": "select",
+          "label": "Boy / kesim"
+        },
+        {
+          "key": "fit",
+          "type": "select",
+          "label": "Kalip"
+        },
+        {
+          "key": "sizeRange",
+          "type": "text",
+          "label": "Beden araligi"
+        },
+        {
+          "key": "colors",
+          "type": "multi",
+          "label": "Renk secenekleri"
+        },
+        {
+          "key": "useCase",
+          "type": "text",
+          "label": "Kullanim alani"
+        },
+        {
+          "key": "season",
+          "type": "select",
+          "label": "Sezon"
+        }
+      ],
+      "motivationWeights": {
+        "ihtiyac": {
+          "priceFit": 0.19,
+          "qualityScore": 0.19,
+          "trendFit": 0.06,
+          "brandTrust": 0.06,
+          "descriptionCompleteness": 0.16,
+          "visualAppeal": 0.1,
+          "seasonFit": 0.1,
+          "shippingReturnScore": 0.08,
+          "targetAudienceFit": 0.05,
+          "differentiationScore": 0.01
+        },
+        "stil_begeni": {
+          "priceFit": 0.14,
+          "qualityScore": 0.16,
+          "trendFit": 0.16,
+          "brandTrust": 0.05,
+          "descriptionCompleteness": 0.12,
+          "visualAppeal": 0.18,
+          "seasonFit": 0.09,
+          "shippingReturnScore": 0.06,
+          "targetAudienceFit": 0.03,
+          "differentiationScore": 0.01
+        }
+      }
+    },
+    "tablet": {
+      "label": "Teknoloji / Tablet",
+      "averagePrice": 12000,
+      "marketBreadthBase": 54,
+      "applicableAudienceFields": [
+        "incomeLevel"
+      ],
+      "defaultMotivation": "ihtiyac",
+      "defaultWeights": {
+        "priceFit": 0.17,
+        "qualityScore": 0.23,
+        "trendFit": 0.06,
+        "brandTrust": 0.11,
+        "descriptionCompleteness": 0.16,
+        "visualAppeal": 0.06,
+        "seasonFit": 0,
+        "shippingReturnScore": 0.12,
+        "targetAudienceFit": 0.09,
+        "differentiationScore": 0.02
+      },
+      "formFields": [
+        {
+          "key": "brand",
+          "type": "text",
+          "label": "Marka / model"
+        },
+        {
+          "key": "screenSize",
+          "type": "text",
+          "label": "Ekran"
+        },
+        {
+          "key": "ram",
+          "type": "text",
+          "label": "RAM"
+        },
+        {
+          "key": "storage",
+          "type": "text",
+          "label": "Depolama"
+        },
+        {
+          "key": "processor",
+          "type": "text",
+          "label": "Islemci"
+        },
+        {
+          "key": "battery",
+          "type": "text",
+          "label": "Batarya"
+        },
+        {
+          "key": "connectivity",
+          "type": "text",
+          "label": "Baglanti"
+        },
+        {
+          "key": "useCase",
+          "type": "text",
+          "label": "Kullanim amaci"
+        }
+      ],
+      "motivationWeights": {
+        "ihtiyac": {
+          "priceFit": 0.18,
+          "qualityScore": 0.22,
+          "trendFit": 0.04,
+          "brandTrust": 0.1,
+          "descriptionCompleteness": 0.16,
+          "visualAppeal": 0.04,
+          "seasonFit": 0,
+          "shippingReturnScore": 0.13,
+          "targetAudienceFit": 0.1,
+          "differentiationScore": 0.03
+        },
+        "trend": {
+          "priceFit": 0.14,
+          "qualityScore": 0.2,
+          "trendFit": 0.14,
+          "brandTrust": 0.1,
+          "descriptionCompleteness": 0.13,
+          "visualAppeal": 0.1,
+          "seasonFit": 0,
+          "shippingReturnScore": 0.09,
+          "targetAudienceFit": 0.07,
+          "differentiationScore": 0.03
+        },
+        "profesyonel_kullanim": {
+          "priceFit": 0.12,
+          "qualityScore": 0.27,
+          "trendFit": 0.03,
+          "brandTrust": 0.12,
+          "descriptionCompleteness": 0.2,
+          "visualAppeal": 0.03,
+          "seasonFit": 0,
+          "shippingReturnScore": 0.1,
+          "targetAudienceFit": 0.1,
+          "differentiationScore": 0.03
+        }
+      }
+    },
+    "akilli_saat": {
+      "label": "Teknoloji / Akilli Saat",
+      "averagePrice": 4500,
+      "marketBreadthBase": 57,
+      "applicableAudienceFields": [
+        "incomeLevel"
+      ],
+      "defaultMotivation": "ihtiyac",
+      "defaultWeights": {
+        "priceFit": 0.17,
+        "qualityScore": 0.19,
+        "trendFit": 0.1,
+        "brandTrust": 0.09,
+        "descriptionCompleteness": 0.15,
+        "visualAppeal": 0.1,
+        "seasonFit": 0,
+        "shippingReturnScore": 0.1,
+        "targetAudienceFit": 0.09,
+        "differentiationScore": 0.03
+      },
+      "formFields": [
+        {
+          "key": "brand",
+          "type": "text",
+          "label": "Marka / model"
+        },
+        {
+          "key": "screenSize",
+          "type": "text",
+          "label": "Ekran boyutu"
+        },
+        {
+          "key": "displayType",
+          "type": "text",
+          "label": "Ekran tipi"
+        },
+        {
+          "key": "battery",
+          "type": "text",
+          "label": "Pil suresi"
+        },
+        {
+          "key": "waterResistance",
+          "type": "text",
+          "label": "Su dayanimi"
+        },
+        {
+          "key": "sensors",
+          "type": "text",
+          "label": "Sensorler"
+        },
+        {
+          "key": "connectivity",
+          "type": "text",
+          "label": "Baglanti"
+        },
+        {
+          "key": "useCase",
+          "type": "text",
+          "label": "Kullanim amaci"
+        }
+      ],
+      "motivationWeights": {
+        "ihtiyac": {
+          "priceFit": 0.18,
+          "qualityScore": 0.21,
+          "trendFit": 0.06,
+          "brandTrust": 0.09,
+          "descriptionCompleteness": 0.16,
+          "visualAppeal": 0.07,
+          "seasonFit": 0,
+          "shippingReturnScore": 0.1,
+          "targetAudienceFit": 0.1,
+          "differentiationScore": 0.03
+        },
+        "trend": {
+          "priceFit": 0.14,
+          "qualityScore": 0.18,
+          "trendFit": 0.16,
+          "brandTrust": 0.08,
+          "descriptionCompleteness": 0.12,
+          "visualAppeal": 0.14,
+          "seasonFit": 0,
+          "shippingReturnScore": 0.08,
+          "targetAudienceFit": 0.07,
+          "differentiationScore": 0.03
+        }
+      }
     }
   }
 }
