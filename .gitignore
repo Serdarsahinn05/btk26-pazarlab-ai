@@ -7,6 +7,7 @@ __pycache__/
 .env
 .env.local
 backend/.env
+BTK'26/
 
 .venv/
 venv/

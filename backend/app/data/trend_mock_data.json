@@ -1,40 +1,51 @@
 {
-  "meta": { "version": "1.0", "source": "mock", "updatedAt": "2026-05-12" },
+  "meta": {
+    "version": "2.0",
+    "source": "mock",
+    "updatedAt": "2026-05-14"
+  },
   "trends": [
+    {
+      "category": "tisort",
+      "season": "yaz",
+      "keywords": ["oversize", "pamuk", "baski", "unisex", "minimal"],
+      "trendIndex": 0.74,
+      "notes": "Tisortte kumas, kalip ve baski kalitesi trend/stil kararini guclendirir."
+    },
+    {
+      "category": "pantolon",
+      "season": "dort_mevsim",
+      "keywords": ["regular_fit", "keten", "bel_tipi", "paca", "beden"],
+      "trendIndex": 0.62,
+      "notes": "Pantolonda kalip, bel-paca bilgisi ve beden araligi iade riskini azaltir."
+    },
     {
       "category": "mont",
       "season": "kis",
-      "keywords": ["oversize", "su_gecirmez", "siyah", "unisex", "sisme_mont"],
+      "keywords": ["oversize", "su_gecirmez", "ruzgar", "dolgu", "kapuson"],
       "trendIndex": 0.81,
-      "notes": "Kış sezonunda su geçirmez/oversize mont araması yüksek."
-    },
-    {
-      "category": "sapka",
-      "season": "yaz",
-      "keywords": ["bucket_hat", "keten", "pastel", "festival"],
-      "trendIndex": 0.64,
-      "notes": "Yazın açık renk/keten şapka trendi artar."
+      "notes": "Montta sezon uyumu ve koruma ozellikleri satin alma kararinda belirleyicidir."
     },
     {
       "category": "telefon",
       "season": "dort_mevsim",
-      "keywords": ["garanti", "kamerasi_guclu", "batarya", "hizli_sarj"],
+      "keywords": ["garanti", "kamera", "batarya", "ram", "depolama"],
       "trendIndex": 0.58,
-      "notes": "Telefon alımında kamera/batarya + garanti güveni belirleyici."
+      "notes": "Telefonda marka/model netligi, teknik detay ve garanti guven sinyali uretir."
     },
     {
-      "category": "yedek_parca",
+      "category": "laptop",
       "season": "dort_mevsim",
-      "keywords": ["uyumluluk", "olcu", "montaj", "model_adi"],
-      "trendIndex": 0.47,
-      "notes": "Niş ürün; arayan kullanıcıda dönüşüm yüksek."
+      "keywords": ["islemci", "ram", "ssd", "ekran", "kullanim_amaci"],
+      "trendIndex": 0.56,
+      "notes": "Laptopta kullanim amaci ile teknik ozelliklerin uyumu donusumu etkiler."
     },
     {
-      "category": "ev_yasam",
+      "category": "kulaklik",
       "season": "dort_mevsim",
-      "keywords": ["paslanmaz_celik", "olcu", "delik_araligi", "ic_kapi"],
-      "trendIndex": 0.52,
-      "notes": "Ev yaşam ürünlerinde ölçü/uyumluluk açıklaması kritik."
+      "keywords": ["bluetooth", "anc", "mikrofon", "pil", "gecikme"],
+      "trendIndex": 0.60,
+      "notes": "Kulaklikta baglanti, pil, mikrofon ve ANC bilgisi urun kalitesini aciklar."
     }
   ]
 }
