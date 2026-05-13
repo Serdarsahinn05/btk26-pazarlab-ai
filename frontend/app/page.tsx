@@ -5,7 +5,7 @@ import ProductForm from "@/components/ProductForm";
 import SimulationLogs from "@/components/SimulationLogs";
 import ResultDashboard from "@/components/ResultDashboard";
 import { PurchaseMotivation, SimulationRequest, SimulationResponse } from "@/types";
-import { simulateProduct } from "@/lib/api";
+import { analyzeProductInput, simulateProduct } from "@/lib/api";
 import { Beaker } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/ModeToggle";
@@ -22,7 +22,26 @@ export default function Home() {
     setResultData(null);
     
     try {
-      const response = await simulateProduct(data);
+      const inputAnalysis = await analyzeProductInput(data);
+      if (inputAnalysis.shouldWarn) {
+        const warningText = [
+          "AI girdilerde emin olunmasi gereken noktalar buldu:",
+          ...inputAnalysis.warnings.map((warning) => `- ${warning}`),
+          ...inputAnalysis.suggestions.map((suggestion) => `Oneri: ${suggestion}`),
+          inputAnalysis.suspectedCategory ? `Olasi kategori: ${inputAnalysis.suspectedCategory}` : "",
+          inputAnalysis.correctedProductName ? `Olasi urun adi: ${inputAnalysis.correctedProductName}` : "",
+          "",
+          "Yine de simulasyona devam edilsin mi?"
+        ].filter(Boolean).join("\n");
+
+        const shouldContinue = window.confirm(warningText);
+        if (!shouldContinue) {
+          setSimulationState("idle");
+          return;
+        }
+      }
+
+      const response = await simulateProduct({ ...data, inputAnalysis });
       setResultData(response);
       setSimulationState("result");
     } catch (error) {

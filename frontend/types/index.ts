@@ -21,6 +21,15 @@ export interface Features {
   season?: string;
   colors?: string[];
   sizes?: string[];
+  sizeRange?: string;
+  printType?: string;
+  collarType?: string;
+  sleeveLength?: string;
+  waistType?: string;
+  legType?: string;
+  stretch?: boolean;
+  hood?: boolean;
+  pocketCount?: string;
   
   // Electronics
   brand?: string;
@@ -30,12 +39,23 @@ export interface Features {
   camera?: string;
   battery?: string;
   refreshRate?: string;
+  screenSize?: string;
+  gpu?: string;
+  weight?: string;
+  connectionType?: string;
+  noiseCancellation?: boolean;
+  microphone?: string;
+  waterResistance?: string;
+  latency?: string;
   
   // Accessories & Home
   material?: string;
   style?: string;
   fit?: string;
   useCase?: string;
+  upholstery?: string;
+  frameMaterial?: string;
+  loadCapacity?: string;
   
   // Spare parts / Problem solving
   compatibleModel?: string;
@@ -50,6 +70,28 @@ export interface Commerce {
   warrantyMonths?: number;
 }
 
+export interface InputQualitySignals {
+  plausibility: number;
+  categoryFit: number;
+  brandTrust: number;
+  descriptionCompleteness: number;
+  specCompleteness: number;
+  qualitySignal: number;
+  visualAppealSignal: number;
+  targetFitSignal: number;
+}
+
+export interface InputAnalysisResponse {
+  aiUsed: boolean;
+  shouldWarn: boolean;
+  confidence: number;
+  warnings: string[];
+  suggestions: string[];
+  suspectedCategory?: string | null;
+  correctedProductName?: string | null;
+  signals: InputQualitySignals;
+}
+
 export interface SimulationRequest {
   category: string;
   purchaseMotivation: PurchaseMotivation;
@@ -59,6 +101,7 @@ export interface SimulationRequest {
   targetAudience: TargetAudience;
   features: Features;
   commerce: Commerce;
+  inputAnalysis?: InputAnalysisResponse;
 }
 
 export interface Persona {
@@ -105,4 +148,5 @@ export interface SimulationResponse {
   weaknesses: string[];
   normalizedProduct: NormalizedProduct;
   aiInsights: AiInsights;
+  inputAnalysis?: InputAnalysisResponse;
 }
