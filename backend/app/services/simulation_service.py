@@ -8,9 +8,11 @@ from typing import Any
 from app.models.product import PurchaseMotivation, SimulationRequest
 from app.models.simulation import NormalizedProduct, PersonaResult, SimulationResponse
 from app.services.ai_insight_service import generate_insights
+from app.services.input_analysis_service import analyze_input
 from app.services.normalization_service import (
     get_category_rule,
     get_motivation_modifier,
+    get_normalized_weights,
     normalize_product,
 )
 from app.utils.math_utils import clamp, clamp_score, stable_seed
@@ -26,13 +28,15 @@ def load_persona_data() -> dict[str, Any]:
 
 
 def run_simulation(request: SimulationRequest) -> SimulationResponse:
-    normalized = normalize_product(request)
+    input_analysis = request.input_analysis or analyze_input(request)
+    normalized = normalize_product(request, input_analysis.signals)
     persona_data = load_persona_data()
     config = persona_data["simulationConfig"]
     seed = stable_seed(request.model_dump(mode="json", by_alias=True), config["seedSalt"])
     rng = random.Random(seed)
     market_breadth = _market_breadth_score(request)
     market_relevance_factor = _market_relevance_factor(market_breadth)
+    weights = get_normalized_weights(request.category, request.purchase_motivation)
 
     persona_stats: dict[str, dict[str, Any]] = defaultdict(
         lambda: {"count": 0, "buyers": 0, "prob_sum": 0.0, "reason": "", "advice": ""}
@@ -46,7 +50,7 @@ def run_simulation(request: SimulationRequest) -> SimulationResponse:
         persona_stats[persona_name]["advice"] = persona_type["advice"]
         for _ in range(persona_type["count"]):
             bot = _generate_bot(persona_type, rng)
-            probability = _purchase_probability(normalized, bot)
+            probability = _purchase_probability(normalized, bot, weights)
             if request.purchase_motivation.value in persona_type.get("preferredMotivations", []):
                 probability = clamp(probability + 0.06)
             probability = clamp(probability * market_relevance_factor)
@@ -62,7 +66,7 @@ def run_simulation(request: SimulationRequest) -> SimulationResponse:
     top_personas = _top_personas(persona_stats)
     intent_conversion = _intent_conversion_score(request.purchase_motivation, market_breadth, normalized)
     problem_solution = _problem_solution_fit(request.purchase_motivation, normalized)
-    weakness_signals = _weakness_signals(request, normalized)
+    weakness_signals = _weakness_signals(request, normalized, input_analysis)
     weaknesses = [_weakness_message(signal) for signal in weakness_signals]
 
     return SimulationResponse(
@@ -76,6 +80,7 @@ def run_simulation(request: SimulationRequest) -> SimulationResponse:
         weaknesses=weaknesses,
         weaknessSignals=weakness_signals,
         normalizedProduct=normalized,
+        inputAnalysis=input_analysis,
         aiInsights=generate_insights(
             request=request,
             normalized_product=normalized,
@@ -96,23 +101,53 @@ def _generate_bot(persona_type: dict[str, Any], rng: random.Random) -> dict[str,
     }
 
 
-def _purchase_probability(product: NormalizedProduct, bot: dict[str, float]) -> float:
-    score = 0.35
-    score += product.quality_score * bot["qualityExpectation"] * 0.15
-    score += product.trend_fit * bot["trendSensitivity"] * 0.12
-    score += product.season_fit * bot["seasonSensitivity"] * 0.12
-    score += product.brand_trust * bot["brandTrustNeed"] * 0.10
-    score += product.description_completeness * bot["detailNeed"] * 0.10
-    score += product.visual_appeal * bot["impulsiveness"] * 0.10
-    score += product.shipping_return_score * bot["shippingSensitivity"] * 0.08
-    score += product.target_audience_fit * bot["targetFitSensitivity"] * 0.10
-    score += product.differentiation_score * bot["noveltySeeking"] * 0.08
-    score -= product.price_risk * bot["priceSensitivity"] * 0.20
+def _purchase_probability(
+    product: NormalizedProduct,
+    bot: dict[str, float],
+    weights: dict[str, float],
+) -> float:
+    product_values = {
+        "priceFit": product.price_fit,
+        "qualityScore": product.quality_score,
+        "trendFit": product.trend_fit,
+        "brandTrust": product.brand_trust,
+        "descriptionCompleteness": product.description_completeness,
+        "visualAppeal": product.visual_appeal,
+        "seasonFit": product.season_fit,
+        "shippingReturnScore": product.shipping_return_score,
+        "targetAudienceFit": product.target_audience_fit,
+        "differentiationScore": product.differentiation_score,
+    }
+    bot_sensitivities = {
+        "priceFit": 1.0 - bot["priceSensitivity"],
+        "qualityScore": bot["qualityExpectation"],
+        "trendFit": bot["trendSensitivity"],
+        "brandTrust": bot["brandTrustNeed"],
+        "descriptionCompleteness": bot["detailNeed"],
+        "visualAppeal": bot["impulsiveness"],
+        "seasonFit": bot["seasonSensitivity"],
+        "shippingReturnScore": bot["shippingSensitivity"],
+        "targetAudienceFit": bot["targetFitSensitivity"],
+        "differentiationScore": bot["noveltySeeking"],
+    }
+
+    weighted_product_fit = sum(product_values[key] * weights.get(key, 0.0) for key in product_values)
+    weighted_persona_fit = sum(
+        product_values[key] * bot_sensitivities[key] * weights.get(key, 0.0)
+        for key in product_values
+    )
+    price_weight = weights.get("priceFit", 0.12)
+    price_penalty = product.price_risk * bot["priceSensitivity"] * (0.10 + price_weight * 0.35)
+
+    score = 0.18
+    score += weighted_product_fit * 0.52
+    score += weighted_persona_fit * 0.38
+    score -= price_penalty
     return clamp(score)
 
 
 def _market_relevance_factor(market_breadth_score: int) -> float:
-    return clamp(0.55 + (market_breadth_score / 100) * 0.45, 0.45, 0.95)
+    return clamp(0.38 + (market_breadth_score / 100) * 0.58, 0.35, 0.95)
 
 
 def _top_personas(persona_stats: dict[str, dict[str, Any]]) -> list[PersonaResult]:
@@ -133,9 +168,13 @@ def _top_personas(persona_stats: dict[str, dict[str, Any]]) -> list[PersonaResul
 
 
 def _market_breadth_score(request: SimulationRequest) -> int:
-    base = int(get_category_rule(request.category)["marketBreadthBase"])
+    category_rule = get_category_rule(request.category)
+    base = int(category_rule["marketBreadthBase"])
     modifier = get_motivation_modifier(request.purchase_motivation)
-    audience_bonus = 4 if request.target_audience.gender == "unisex" else 0
+    if base < 30 and modifier < 0:
+        modifier = int(round(modifier * 0.35))
+    audience_fields = set(category_rule.get("applicableAudienceFields", []))
+    audience_bonus = 4 if "gender" in audience_fields and request.target_audience.gender == "unisex" else 0
     return clamp_score(base + modifier + audience_bonus)
 
 
@@ -172,8 +211,14 @@ def _problem_solution_fit(motivation: PurchaseMotivation, product: NormalizedPro
     return clamp_score(score)
 
 
-def _weakness_signals(request: SimulationRequest, product: NormalizedProduct) -> list[str]:
+def _weakness_signals(request: SimulationRequest, product: NormalizedProduct, input_analysis: Any) -> list[str]:
     signals: list[str] = []
+    if input_analysis.should_warn:
+        signals.append("input_needs_review")
+    if input_analysis.signals.category_fit < 0.45:
+        signals.append("category_mismatch")
+    if input_analysis.signals.plausibility < 0.45:
+        signals.append("input_plausibility_low")
     if product.brand_trust < 0.45:
         signals.append("brand_trust_low")
     if not request.commerce.warranty:
@@ -200,6 +245,8 @@ def _weakness_message(signal: str) -> str:
         "description_incomplete": "Urun aciklamasi karar icin yeterince detayli degil.",
         "shipping_return_weak": "Kargo, iade veya teslimat guvencesi zayif.",
         "compatibility_unclear": "Uyumlu model ve olcu bilgisi yeterince net degil.",
+        "input_needs_review": "Urun bilgileri analizden once gozden gecirilmeli.",
+        "category_mismatch": "Secilen kategori ile girilen urun bilgileri uyumsuz olabilir.",
+        "input_plausibility_low": "Urun adi veya aciklama anlamsiz gorunuyor.",
     }
     return messages.get(signal, "Urun kararini etkileyen bir zayif sinyal var.")
-
