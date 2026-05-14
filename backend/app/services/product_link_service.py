@@ -34,7 +34,7 @@ logger = logging.getLogger("product_scraper")
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class ScraperConfig:
     max_html_bytes: int = 5_000_000
     ai_html_max_bytes: int = 300_000
@@ -71,7 +71,7 @@ class SourceType(str, Enum):
     HYBRID = "hybrid"
 
 
-@dataclass(slots=True)
+@dataclass
 class ProductVariant:
     name: Optional[str] = None
     color: Optional[str] = None
@@ -83,7 +83,7 @@ class ProductVariant:
     sku: Optional[str] = None
 
 
-@dataclass(slots=True)
+@dataclass
 class ProductLinkReadResponse:
     url: str
     title: Optional[str] = None

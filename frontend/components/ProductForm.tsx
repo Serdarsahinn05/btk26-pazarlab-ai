@@ -322,11 +322,9 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const [category, setCategory] = useState<string>("tisort");
   const [motivation, setMotivation] = useState<PurchaseMotivation>("stil_begeni");
-  const [activeFamily, setActiveFamily] = useState<FamilyKey>("kiyafet");
   const [linkStatus, setLinkStatus] = useState<string>("");
   const [isReadingLink, setIsReadingLink] = useState(false);
   const [images, setImages] = useState<string[]>([]);
-  const [newImageUrl, setNewImageUrl] = useState("");
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const activeCategory = useMemo(() => categoryConfig[category] || categoryConfig.tisort, [category]);
@@ -335,7 +333,6 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
     const nextCategory = value || "tisort";
     setCategory(nextCategory);
     const nextConfig = categoryConfig[nextCategory] || categoryConfig.tisort;
-    setActiveFamily(nextConfig.family);
     setMotivation(nextConfig.defaultMotivation);
   };
 
@@ -468,7 +465,7 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
         if (result.features) {
           Object.entries(result.features).forEach(([key, value]) => {
             if (value !== undefined && value !== null && value !== "") {
-              setFormValue(key as any, value);
+              setFormValue(key, value);
             }
           });
         }
@@ -483,8 +480,9 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
         setImages([]);
       }
       setLinkStatus(result.warnings[0] || "Linkten tum bilgiler, kategori ve teknik detaylar okundu.");
-    } catch (err: any) {
-      const errorMsg = err.response?.data?.detail || "Link okunamadı. Site erişimi engelliyor olabilir.";
+    } catch (err: unknown) {
+      const apiError = err as { response?: { data?: { detail?: string } } };
+      const errorMsg = apiError.response?.data?.detail || "Link okunamadı. Site erişimi engelliyor olabilir.";
       setLinkStatus(errorMsg);
     } finally {
       setIsReadingLink(false);

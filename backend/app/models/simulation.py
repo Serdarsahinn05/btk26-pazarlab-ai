@@ -10,6 +10,12 @@ class PersonaResult(BaseModel):
     purchase_probability: float = Field(alias="purchaseProbability", ge=0, le=1)
     reason: str
     advice: str
+    rank: int = 0
+    buyer_count: int = Field(default=0, alias="buyerCount", ge=0)
+    sample_size: int = Field(default=0, alias="sampleSize", ge=0)
+    decision: str = "watch"
+    decision_label: str = Field(default="KARARSIZ", alias="decisionLabel")
+    micro_feedback: str = Field(default="", alias="microFeedback")
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -30,6 +36,14 @@ class NormalizedProduct(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
 
+class PersonaFeedback(BaseModel):
+    name: str
+    feedback: str
+    action: str = ""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
 class AiInsights(BaseModel):
     summary: str
     product_type_insight: str = Field(alias="productTypeInsight")
@@ -40,6 +54,7 @@ class AiInsights(BaseModel):
     season_advice: str = Field(alias="seasonAdvice")
     channel_recommendation: list[str] = Field(alias="channelRecommendation")
     improved_description: str = Field(alias="improvedDescription")
+    persona_feedback: list[PersonaFeedback] = Field(default_factory=list, alias="personaFeedback")
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -52,6 +67,7 @@ class SimulationResponse(BaseModel):
     simulated_consumers: int = Field(alias="simulatedConsumers", ge=0)
     estimated_buyers: int = Field(alias="estimatedBuyers", ge=0)
     top_personas: list[PersonaResult] = Field(alias="topPersonas")
+    all_personas: list[PersonaResult] = Field(default_factory=list, alias="allPersonas")
     weaknesses: list[str]
     weakness_signals: list[str] = Field(default_factory=list, alias="weaknessSignals")
     normalized_product: NormalizedProduct = Field(alias="normalizedProduct")

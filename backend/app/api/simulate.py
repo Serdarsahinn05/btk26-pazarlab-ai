@@ -34,6 +34,56 @@ MOCK_SIMULATION_RESPONSE = SimulationResponse.model_validate({
             "advice": "Urun aciklamasina kumas, dikis, ic dolgu ve iade bilgisi eklenmeli.",
         },
     ],
+    "allPersonas": [
+        {
+            "name": "Trend Takipcisi",
+            "purchaseProbability": 0.82,
+            "reason": "Oversize stil ve renk secenekleri bu persona icin guclu.",
+            "advice": "TikTok ve Instagram Reels odakli kisa kombin videolari onerilir.",
+            "rank": 1,
+            "buyerCount": 37,
+            "sampleSize": 42,
+            "decision": "buy",
+            "decisionLabel": "ALDI",
+            "microFeedback": "Trend ve gorsel cekicilik bu grubu hizli ikna ediyor.",
+        },
+        {
+            "name": "Pratik Cozum Arayan",
+            "purchaseProbability": 0.74,
+            "reason": "Su ve ruzgar gecirmezlik gunluk kullanim ihtiyacini karsiliyor.",
+            "advice": "Reklamda koruma, konfor ve gunluk kullanim vurgulanmali.",
+            "rank": 2,
+            "buyerCount": 31,
+            "sampleSize": 42,
+            "decision": "buy",
+            "decisionLabel": "ALDI",
+            "microFeedback": "Genel profil uyumu yuksek; bu grup birincil hedeflenebilir.",
+        },
+        {
+            "name": "Kalite Odakli Alici",
+            "purchaseProbability": 0.69,
+            "reason": "Fonksiyonel ozellikler guclu fakat kumas ve garanti bilgisi daha net olmali.",
+            "advice": "Urun aciklamasina kumas, dikis, ic dolgu ve iade bilgisi eklenmeli.",
+            "rank": 3,
+            "buyerCount": 29,
+            "sampleSize": 42,
+            "decision": "buy",
+            "decisionLabel": "ALDI",
+            "microFeedback": "Kalite algisi fiyat bariyerini dengeliyor.",
+        },
+        {
+            "name": "Marka Sadigi",
+            "purchaseProbability": 0.47,
+            "reason": "Marka guveni, garanti ve sosyal kanit eksikse mesafeli kalir.",
+            "advice": "Yorum, garanti, marka hikayesi ve iade politikasini gorunur yap.",
+            "rank": 4,
+            "buyerCount": 19,
+            "sampleSize": 42,
+            "decision": "watch",
+            "decisionLabel": "KARARSIZ",
+            "microFeedback": "Marka guveni ve garanti kaniti olmadan temkinli kalir.",
+        },
+    ],
     "weaknesses": [
         "Marka guveni dusuk.",
         "Garanti bilgisi eksik.",
@@ -76,6 +126,18 @@ MOCK_SIMULATION_RESPONSE = SimulationResponse.model_validate({
             "Su gecirmez dis yuzeyi ve oversize kesimiyle soguk ve yagisli havalarda "
             "gunluk kullanim icin tasarlanmis modern kislik mont."
         ),
+        "personaFeedback": [
+            {
+                "name": "Trend Takipcisi",
+                "feedback": "Trend ve gorsel cekicilik satin alma niyetini yukseltir.",
+                "action": "Kisa video kreatifleriyle hedefle.",
+            },
+            {
+                "name": "Marka Sadigi",
+                "feedback": "Guven kaniti eksik oldugu icin karar yavaslar.",
+                "action": "Garanti ve yorumlari one cikar.",
+            },
+        ],
     },
 })
 

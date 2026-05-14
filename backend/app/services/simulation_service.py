@@ -63,11 +63,12 @@ def run_simulation(request: SimulationRequest) -> SimulationResponse:
 
     simulated_consumers = sum(persona["count"] for persona in persona_data["personaTypes"])
     overall_score = int(round((total_probability / simulated_consumers) * 100))
-    top_personas = _top_personas(persona_stats)
     intent_conversion = _intent_conversion_score(request.purchase_motivation, market_breadth, normalized, input_analysis)
     problem_solution = _problem_solution_fit(request.purchase_motivation, normalized)
     weakness_signals = _weakness_signals(request, normalized, input_analysis)
     weaknesses = [_weakness_message(signal) for signal in weakness_signals]
+    all_personas = _ranked_personas(persona_stats, normalized, weakness_signals)
+    top_personas = all_personas[:3]
 
     return SimulationResponse(
         overallScore=overall_score,
@@ -77,6 +78,7 @@ def run_simulation(request: SimulationRequest) -> SimulationResponse:
         simulatedConsumers=simulated_consumers,
         estimatedBuyers=estimated_buyers,
         topPersonas=top_personas,
+        allPersonas=all_personas,
         weaknesses=weaknesses,
         weaknessSignals=weakness_signals,
         normalizedProduct=normalized,
@@ -90,6 +92,7 @@ def run_simulation(request: SimulationRequest) -> SimulationResponse:
             intent_conversion_score=intent_conversion,
             problem_solution_fit=problem_solution,
             top_personas=top_personas,
+            all_personas=all_personas,
             weakness_signals=weakness_signals,
         ),
     )
@@ -151,7 +154,11 @@ def _market_relevance_factor(market_breadth_score: int) -> float:
     return clamp(0.38 + (market_breadth_score / 100) * 0.58, 0.35, 0.95)
 
 
-def _top_personas(persona_stats: dict[str, dict[str, Any]]) -> list[PersonaResult]:
+def _ranked_personas(
+    persona_stats: dict[str, dict[str, Any]],
+    product: NormalizedProduct,
+    weakness_signals: list[str],
+) -> list[PersonaResult]:
     ranked = sorted(
         persona_stats.items(),
         key=lambda item: item[1]["prob_sum"] / max(item[1]["count"], 1),
@@ -163,9 +170,56 @@ def _top_personas(persona_stats: dict[str, dict[str, Any]]) -> list[PersonaResul
             purchaseProbability=round(stats["prob_sum"] / max(stats["count"], 1), 2),
             reason=stats["reason"],
             advice=stats["advice"],
+            rank=index + 1,
+            buyerCount=int(stats["buyers"]),
+            sampleSize=int(stats["count"]),
+            decision=_persona_decision(stats["prob_sum"] / max(stats["count"], 1))[0],
+            decisionLabel=_persona_decision(stats["prob_sum"] / max(stats["count"], 1))[1],
+            microFeedback=_persona_micro_feedback(
+                name=name,
+                probability=stats["prob_sum"] / max(stats["count"], 1),
+                product=product,
+                weakness_signals=weakness_signals,
+            ),
         )
-        for name, stats in ranked[:3]
+        for index, (name, stats) in enumerate(ranked)
     ]
+
+
+def _persona_decision(probability: float) -> tuple[str, str]:
+    if probability >= 0.55:
+        return "buy", "ALDI"
+    if probability >= 0.42:
+        return "watch", "KARARSIZ"
+    return "skip", "ALMADI"
+
+
+def _persona_micro_feedback(
+    name: str,
+    probability: float,
+    product: NormalizedProduct,
+    weakness_signals: list[str],
+) -> str:
+    if probability >= 0.62:
+        if product.trend_fit >= 0.72 and name in {"Trend Takipcisi", "Durtusel Alici", "Sosyal Onay Arayan"}:
+            return "Trend ve gorsel cekicilik bu grubu hizli ikna ediyor."
+        if product.quality_score >= 0.72 and name in {"Premium Alici", "Kalite Odakli Alici"}:
+            return "Kalite algisi fiyat bariyerini dengeliyor."
+        if product.description_completeness >= 0.72 and "Detayci" in name:
+            return "Detay seviyesi karar vermesini kolaylastiriyor."
+        return "Genel profil uyumu yuksek; bu grup birincil hedeflenebilir."
+
+    if "brand_trust_low" in weakness_signals and name in {"Marka Sadigi", "Premium Alici", "Kalite Odakli Alici"}:
+        return "Marka guveni ve garanti kaniti olmadan temkinli kalir."
+    if "price_sensitive_users_rejected" in weakness_signals and name in {"Fiyat Hassas Alici", "Kararsiz Sepet Bekletici"}:
+        return "Kupon, kargo avantaji veya net fiyat faydasi bekler."
+    if "description_incomplete" in weakness_signals and ("Detayci" in name or "Problem" in name):
+        return "Olcu, uyumluluk ve kullanim detayi eksikse satin alma ertelenir."
+    if "shipping_return_weak" in weakness_signals and name in {"Pratik Cozum Arayan", "Kararsiz Sepet Bekletici"}:
+        return "Iade ve teslimat guvencesi netlesirse niyet artar."
+    if probability >= 0.42:
+        return "Kucuk guven sinyalleriyle tekrar hedeflenebilir."
+    return "Bu urunle profil uyumu dusuk; reklam butcesinde ikincil kalmali."
 
 
 def _market_breadth_score(request: SimulationRequest) -> int:
