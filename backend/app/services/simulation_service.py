@@ -1,5 +1,6 @@
 import json
 import random
+import logging
 from collections import defaultdict
 from functools import lru_cache
 from pathlib import Path
@@ -19,6 +20,7 @@ from app.utils.math_utils import clamp, clamp_score, stable_seed
 
 
 DATA_DIR = Path(__file__).resolve().parents[1] / "data"
+logger = logging.getLogger("simulation")
 
 
 @lru_cache(maxsize=1)
@@ -28,6 +30,7 @@ def load_persona_data() -> dict[str, Any]:
 
 
 def run_simulation(request: SimulationRequest) -> SimulationResponse:
+    logger.info(f"Simülasyon başlatıldı: {request.product_name}")
     input_analysis = request.input_analysis or analyze_input(request)
     normalized = normalize_product(request, input_analysis.signals)
     persona_data = load_persona_data()
@@ -67,8 +70,27 @@ def run_simulation(request: SimulationRequest) -> SimulationResponse:
     problem_solution = _problem_solution_fit(request.purchase_motivation, normalized)
     weakness_signals = _weakness_signals(request, normalized, input_analysis)
     weaknesses = [_weakness_message(signal) for signal in weakness_signals]
-    all_personas = _ranked_personas(persona_stats, normalized, weakness_signals)
+    all_personas = _ranked_personas(persona_stats, normalized, weakness_signals, persona_data)
     top_personas = all_personas[:3]
+
+    ai_insights = generate_insights(
+        request=request,
+        normalized_product=normalized,
+        overall_score=overall_score,
+        market_breadth_score=market_breadth,
+        intent_conversion_score=intent_conversion,
+        problem_solution_fit=problem_solution,
+        top_personas=top_personas,
+        all_personas=all_personas,
+        weakness_signals=weakness_signals,
+    )
+    
+    # Map AI persona comments back to persona results
+    logger.info("AI persona yorumları sonuçlara ekleniyor...")
+    feedback_map = {f.name: f.feedback for f in ai_insights.persona_feedback}
+    for p in all_personas:
+        if p.name in feedback_map:
+            p.ai_comment = feedback_map[p.name]
 
     return SimulationResponse(
         overallScore=overall_score,
@@ -84,17 +106,7 @@ def run_simulation(request: SimulationRequest) -> SimulationResponse:
         normalizedProduct=normalized,
         images=request.images,
         inputAnalysis=input_analysis,
-        aiInsights=generate_insights(
-            request=request,
-            normalized_product=normalized,
-            overall_score=overall_score,
-            market_breadth_score=market_breadth,
-            intent_conversion_score=intent_conversion,
-            problem_solution_fit=problem_solution,
-            top_personas=top_personas,
-            all_personas=all_personas,
-            weakness_signals=weakness_signals,
-        ),
+        aiInsights=ai_insights,
     )
 
 
@@ -158,13 +170,14 @@ def _ranked_personas(
     persona_stats: dict[str, dict[str, Any]],
     product: NormalizedProduct,
     weakness_signals: list[str],
+    persona_data: dict[str, Any],
 ) -> list[PersonaResult]:
     ranked = sorted(
         persona_stats.items(),
         key=lambda item: item[1]["prob_sum"] / max(item[1]["count"], 1),
         reverse=True,
     )
-    return [
+    results = [
         PersonaResult(
             name=name,
             purchaseProbability=round(stats["prob_sum"] / max(stats["count"], 1), 2),
@@ -184,6 +197,17 @@ def _ranked_personas(
         )
         for index, (name, stats) in enumerate(ranked)
     ]
+    
+    # Enrich with personality data
+    persona_map = {p["name"]: p for p in persona_data["personaTypes"]}
+    for p_result in results:
+        if p_result.name in persona_map:
+            p_data = persona_map[p_result.name]
+            p_result.personality_type = p_data.get("personalityType")
+            p_result.ai_roleplay_prompt = p_data.get("aiRoleplayPrompt")
+            p_result.personality_traits = p_data.get("personalityTraits", {})
+            
+    return results
 
 
 def _persona_decision(probability: float) -> tuple[str, str]:

@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -16,6 +16,10 @@ class PersonaResult(BaseModel):
     decision: str = "watch"
     decision_label: str = Field(default="KARARSIZ", alias="decisionLabel")
     micro_feedback: str = Field(default="", alias="microFeedback")
+    ai_comment: Optional[str] = Field(default=None, alias="aiComment")
+    personality_type: Optional[str] = Field(default=None, alias="personalityType")
+    ai_roleplay_prompt: Optional[str] = Field(default=None, alias="aiRoleplayPrompt")
+    personality_traits: Dict[str, Any] = Field(default_factory=dict, alias="personalityTraits")
 
     model_config = ConfigDict(populate_by_name=True)
 

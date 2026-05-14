@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import urllib.request
 from typing import Any, Dict, List, Mapping, Optional
@@ -8,6 +9,8 @@ from typing import Any, Dict, List, Mapping, Optional
 from app.models.product import PurchaseMotivation, SimulationRequest
 from app.models.simulation import AiInsights, NormalizedProduct, PersonaFeedback, PersonaResult
 from app.utils.scoring_utils import infer_product_type, recommend_channels
+
+logger = logging.getLogger("ai_insights")
 
 
 SYSTEM_PROMPT = """
@@ -27,6 +30,7 @@ Kurallar:
 - Buna göre kanal önerisi ver: sosyal medya mı, SEO/arama mı, pazar yeri içi optimizasyon mu?
 - Niş ürünlerde (pazar genişliği < 40): "Geniş kitle reklamı yerine arama niyeti yüksek kullanıcılara ulaşmak daha doğru" vurgusu yap.
 - Satın alma niyeti skorunu gerçek site dönüşüm oranı gibi yorumlama; bu skor fiyat, güven, açıklama ve teknik detaylardan türetilmiş bir eğilim skorudur.
+- Persona Yorumları: 'topPersonas' listesindeki her bir personanın 'aiRoleplayPrompt' içeriğine sadık kalarak, o kişinin ağzından (birinci şahıs - 'ben') 1-2 cümlelik dürüst ve karakterine uygun bir yorum yap.
 - Cevabı SADECE JSON formatında döndür. Başka metin ekleme.
 
 {{
@@ -40,7 +44,7 @@ Kurallar:
   "channelRecommendation": ["Instagram", "TikTok", "Google Search", "SEO"],
   "improvedDescription": "Hazır, kullanıma hazır iyileştirilmiş ürün açıklaması",
   "personaFeedback": [
-    {{"name": "Persona adi", "feedback": "En fazla 12 kelimelik karar nedeni", "action": "En fazla 10 kelimelik aksiyon"}}
+    {{"name": "Persona adı", "feedback": "Persona karakterine uygun 1. şahıs yorumu (örn: 'Bu fiyata bu kaliteyi başka yerde bulamam, hemen alırım.')", "action": "Bu personayı ikna etmek için satıcının yapması gereken kritik dokunuş"}}
   ]
 }}
 """.strip()

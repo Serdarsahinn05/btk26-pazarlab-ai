@@ -979,14 +979,19 @@ class GeminiAIExtractor:
         models = self._get_models()
 
         last_error: Optional[Exception] = None
+        quota_errors_count = 0
         
         for model_name in models:
             try:
                 return self._call_model(model_name, cleaned_html)
             except urllib.error.HTTPError as e:
                 if e.code == 429:
+                    quota_errors_count += 1
                     last_error = AIQuotaError(f"Quota exceeded for {model_name}")
-                    logger.warning(f"Model {model_name} quota exceeded (429). Trying next...")
+                    logger.warning(f"Model {model_name} quota exceeded (429). [Hata Sayısı: {quota_errors_count}]")
+                    
+                    if quota_errors_count == 3:
+                        logger.info("Birden fazla modelde kota hatası alındı, denemeye devam ediliyor...")
                     continue
                 raise AIQuotaError(f"AI Service Error ({e.code}): {e.reason}") from e
             except Exception as e:
