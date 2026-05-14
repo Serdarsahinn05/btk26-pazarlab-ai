@@ -1,7 +1,7 @@
 "use client";
 
 import { InputAnalysisResponse } from "@/types";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { AlertTriangle, Lightbulb, ArrowRight, X, CheckCircle2, Info } from "lucide-react";
 import { Button } from "./ui/button";
 

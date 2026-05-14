@@ -6,7 +6,7 @@ import urllib.request
 from typing import Any, Dict, List, Mapping, Optional
 
 from app.models.product import PurchaseMotivation, SimulationRequest
-from app.models.simulation import AiInsights, NormalizedProduct, PersonaResult
+from app.models.simulation import AiInsights, NormalizedProduct, PersonaFeedback, PersonaResult
 from app.utils.scoring_utils import infer_product_type, recommend_channels
 
 
@@ -38,7 +38,10 @@ Kurallar:
   "pricingAdvice": "Fiyat algısı ve öneri",
   "seasonAdvice": "Mevsim değerlendirmesi",
   "channelRecommendation": ["Instagram", "TikTok", "Google Search", "SEO"],
-  "improvedDescription": "Hazır, kullanıma hazır iyileştirilmiş ürün açıklaması"
+  "improvedDescription": "Hazır, kullanıma hazır iyileştirilmiş ürün açıklaması",
+  "personaFeedback": [
+    {{"name": "Persona adi", "feedback": "En fazla 12 kelimelik karar nedeni", "action": "En fazla 10 kelimelik aksiyon"}}
+  ]
 }}
 """.strip()
 
@@ -109,6 +112,7 @@ def generate_insights(
     intent_conversion_score: int,
     problem_solution_fit: int,
     top_personas: list[PersonaResult],
+    all_personas: list[PersonaResult],
     weakness_signals: list[str],
 ) -> AiInsights:
     """
@@ -129,6 +133,7 @@ def generate_insights(
         "problemSolutionFit": problem_solution_fit,
         "weaknessSignals": weakness_signals,
         "topPersonas": [p.model_dump(by_alias=True) for p in top_personas],
+        "allPersonas": [p.model_dump(by_alias=True) for p in all_personas],
         "normalizedProduct": normalized_product.model_dump(by_alias=True),
     }
 
@@ -151,6 +156,7 @@ def generate_insights(
         s_advice = str(model_json.get("seasonAdvice", "") or model_json.get("season_advice", "")).strip() or "Sezon uyumunu vurgula."
         ch_rec = list(model_json.get("channelRecommendation", []) or model_json.get("channel_recommendation", [])) or recommend_channels(motivation_str, float(market_breadth_score))
         imp_desc = str(model_json.get("improvedDescription", "") or model_json.get("improved_description", "")).strip() or "İyileştirilmiş açıklama hazır."
+        persona_feedback = _parse_persona_feedback(model_json.get("personaFeedback") or model_json.get("persona_feedback"), all_personas)
 
         return AiInsights(
             summary=summary_str,
@@ -162,6 +168,7 @@ def generate_insights(
             season_advice=s_advice,
             channel_recommendation=ch_rec,
             improved_description=imp_desc,
+            persona_feedback=persona_feedback,
         )
     except Exception:
         # Fallback akışı
@@ -210,6 +217,7 @@ def generate_insights(
         pricing_advice = _build_pricing_advice(request, normalized_product)
         season_advice = _build_season_advice(request, normalized_product)
         improved_description = _build_improved_description(request, category_str)
+        persona_feedback = _build_persona_feedback(all_personas)
 
         return AiInsights(
             summary=summary.strip(),
@@ -221,7 +229,42 @@ def generate_insights(
             season_advice=season_advice.strip(),
             channel_recommendation=channels,
             improved_description=improved_description.strip(),
+            persona_feedback=persona_feedback,
         )
+
+
+def _parse_persona_feedback(raw_value: Any, all_personas: list[PersonaResult]) -> list[PersonaFeedback]:
+    valid_names = {persona.name for persona in all_personas}
+    if not isinstance(raw_value, list):
+        return _build_persona_feedback(all_personas)
+
+    feedback_items: list[PersonaFeedback] = []
+    for item in raw_value:
+        if not isinstance(item, dict):
+            continue
+        name = str(item.get("name", "")).strip()
+        if name not in valid_names:
+            continue
+        feedback = str(item.get("feedback", "")).strip()
+        action = str(item.get("action", "")).strip()
+        if feedback:
+            feedback_items.append(PersonaFeedback(name=name, feedback=feedback[:160], action=action[:120]))
+
+    missing_names = valid_names.difference({item.name for item in feedback_items})
+    fallback_by_name = {item.name: item for item in _build_persona_feedback(all_personas)}
+    feedback_items.extend(fallback_by_name[name] for name in missing_names if name in fallback_by_name)
+    return sorted(feedback_items, key=lambda item: next((p.rank for p in all_personas if p.name == item.name), 999))
+
+
+def _build_persona_feedback(all_personas: list[PersonaResult]) -> list[PersonaFeedback]:
+    return [
+        PersonaFeedback(
+            name=persona.name,
+            feedback=persona.micro_feedback or persona.reason,
+            action=persona.advice,
+        )
+        for persona in all_personas
+    ]
 
 
 def _build_sales_recipe(

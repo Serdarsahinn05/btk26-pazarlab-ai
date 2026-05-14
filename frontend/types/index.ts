@@ -115,6 +115,12 @@ export interface Persona {
   purchaseProbability: number;
   reason: string;
   advice: string;
+  rank?: number;
+  buyerCount?: number;
+  sampleSize?: number;
+  decision?: "buy" | "watch" | "skip" | string;
+  decisionLabel?: string;
+  microFeedback?: string;
 }
 
 export interface NormalizedProduct {
@@ -141,6 +147,13 @@ export interface AiInsights {
   seasonAdvice: string;
   channelRecommendation: string[];
   improvedDescription: string;
+  personaFeedback?: PersonaFeedback[];
+}
+
+export interface PersonaFeedback {
+  name: string;
+  feedback: string;
+  action?: string;
 }
 
 export interface SimulationResponse {
@@ -151,6 +164,7 @@ export interface SimulationResponse {
   simulatedConsumers: number;
   estimatedBuyers: number;
   topPersonas: Persona[];
+  allPersonas?: Persona[];
   weaknesses: string[];
   normalizedProduct: NormalizedProduct;
   aiInsights: AiInsights;

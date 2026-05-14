@@ -29,6 +29,68 @@ export const mockSimulationResponse: SimulationResponse = {
       advice: "Garanti süresi ve kumaş kalitesi detayları ön plana çıkarılmalı."
     }
   ],
+  allPersonas: [
+    {
+      name: "Trend Takipçisi",
+      purchaseProbability: 0.82,
+      reason: "Oversize stil ve renk seçenekleri bu persona için güçlü.",
+      advice: "TikTok ve Instagram Reels odaklı kısa kombin videoları önerilir.",
+      rank: 1,
+      buyerCount: 37,
+      sampleSize: 42,
+      decision: "buy",
+      decisionLabel: "ALDI",
+      microFeedback: "Trend ve görsel çekicilik bu grubu hızlı ikna ediyor."
+    },
+    {
+      name: "Fiyat Hassas Genç",
+      purchaseProbability: 0.65,
+      reason: "Su geçirmezlik özelliği dikkat çekiyor ancak fiyat limiti zorluyor.",
+      advice: "Öğrenci veya ilk alışveriş indirimleri kurgulanabilir.",
+      rank: 2,
+      buyerCount: 29,
+      sampleSize: 42,
+      decision: "buy",
+      decisionLabel: "ALDI",
+      microFeedback: "Kupon veya ücretsiz kargo ile niyet güçlenir."
+    },
+    {
+      name: "Kalite Odaklı Alıcı",
+      purchaseProbability: 0.55,
+      reason: "Detaylı malzeme bilgisi arıyor, güven unsurları eksik.",
+      advice: "Garanti süresi ve kumaş kalitesi detayları ön plana çıkarılmalı.",
+      rank: 3,
+      buyerCount: 24,
+      sampleSize: 42,
+      decision: "buy",
+      decisionLabel: "ALDI",
+      microFeedback: "Kalite kanıtı netleşirse fiyat bariyeri düşer."
+    },
+    {
+      name: "Premium Alıcı",
+      purchaseProbability: 0.52,
+      reason: "Premium sunum var ama marka kanıtı zayıf.",
+      advice: "Garanti, paketleme ve marka hikayesini öne çıkar.",
+      rank: 4,
+      buyerCount: 21,
+      sampleSize: 41,
+      decision: "watch",
+      decisionLabel: "KARARSIZ",
+      microFeedback: "Marka güveni ve garanti kanıtı bekler."
+    },
+    {
+      name: "Kararsız Sepet Bekletici",
+      purchaseProbability: 0.46,
+      reason: "İade ve fiyat bilgisi netleşmeden bekler.",
+      advice: "Kısa süreli kampanya ve kolay iade mesajı ekle.",
+      rank: 5,
+      buyerCount: 18,
+      sampleSize: 41,
+      decision: "watch",
+      decisionLabel: "KARARSIZ",
+      microFeedback: "Güven sinyaliyle tekrar hedeflenebilir."
+    }
+  ],
   weaknesses: [
     "Marka güveni düşük.",
     "Garanti bilgisi eksik."
@@ -58,7 +120,19 @@ export const mockSimulationResponse: SimulationResponse = {
     pricingAdvice: "1800TL premium algıyı koruyor ancak fiyat hassas kullanıcılar için kampanya gerekebilir.",
     seasonAdvice: "Kış sezonu için yüksek uyum var. Yaz döneminde sezon sonu indirimi olarak konumlandırılabilir.",
     channelRecommendation: ["Instagram", "TikTok", "YouTube Shorts"],
-    improvedDescription: "Su geçirmez dış yüzeyi ve oversize kesimiyle soğuk ve yağışlı havalarda günlük kullanım için tasarlanmış modern kışlık mont..."
+    improvedDescription: "Su geçirmez dış yüzeyi ve oversize kesimiyle soğuk ve yağışlı havalarda günlük kullanım için tasarlanmış modern kışlık mont...",
+    personaFeedback: [
+      {
+        name: "Trend Takipçisi",
+        feedback: "Trend ve görsel çekicilik satın alma niyetini yükseltiyor.",
+        action: "Kısa video kreatifleriyle hedefle."
+      },
+      {
+        name: "Premium Alıcı",
+        feedback: "Marka güveni eksik olduğu için karar yavaşlıyor.",
+        action: "Garanti ve premium paketleme göster."
+      }
+    ]
   }
 };
 

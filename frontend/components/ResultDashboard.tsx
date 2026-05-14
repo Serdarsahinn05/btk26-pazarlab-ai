@@ -8,6 +8,7 @@ import WeaknessList from "./WeaknessList";
 import AiFeedbackPanel from "./AiFeedbackPanel";
 import ProductTypeInsight from "./ProductTypeInsight";
 import ChannelRecommendation from "./ChannelRecommendation";
+import NormalizedScoresPanel from "./NormalizedScoresPanel";
 import confetti from "canvas-confetti";
 import { motion, type Variants } from "framer-motion";
 
@@ -98,6 +99,10 @@ export default function ResultDashboard({ data }: ResultDashboardProps) {
         <motion.div variants={itemVariants} className="col-span-1 md:col-span-3">
           <OverallScoreCard data={data} />
         </motion.div>
+
+        <motion.div variants={itemVariants} className="col-span-1 md:col-span-3">
+          <NormalizedScoresPanel product={data.normalizedProduct} />
+        </motion.div>
         
         {/* Karakteristik ve Kanallar (Yeni Küçük Kartlar) */}
         <motion.div variants={itemVariants}>
@@ -112,7 +117,7 @@ export default function ResultDashboard({ data }: ResultDashboardProps) {
 
         {/* Personalar */}
         <motion.div variants={itemVariants} className="col-span-1 md:col-span-3">
-          <TopPersonaCards personas={data.topPersonas} />
+          <TopPersonaCards personas={data.topPersonas} allPersonas={data.allPersonas} insights={data.aiInsights} />
         </motion.div>
 
         {/* AI Reçetesi */}
