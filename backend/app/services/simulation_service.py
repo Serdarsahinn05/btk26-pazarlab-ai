@@ -80,6 +80,7 @@ def run_simulation(request: SimulationRequest) -> SimulationResponse:
         weaknesses=weaknesses,
         weaknessSignals=weakness_signals,
         normalizedProduct=normalized,
+        images=request.images,
         inputAnalysis=input_analysis,
         aiInsights=generate_insights(
             request=request,

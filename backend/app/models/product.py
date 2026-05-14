@@ -93,6 +93,7 @@ class SimulationRequest(BaseModel):
     target_audience: TargetAudience = Field(alias="targetAudience")
     features: ProductFeatures = Field(default_factory=ProductFeatures)
     commerce: CommerceInfo
+    images: list[str] = Field(default_factory=list)
     input_analysis: Optional[InputAnalysisResponse] = Field(default=None, alias="inputAnalysis")
 
     model_config = ConfigDict(populate_by_name=True)

@@ -76,6 +76,22 @@ export default function ResultDashboard({ data }: ResultDashboardProps) {
           {data.simulatedConsumers} Tüketici Analiz Edildi
         </span>
       </motion.div>
+
+      {/* Product Images Gallery in Results */}
+      {data.images && data.images.length > 0 && (
+        <motion.div variants={itemVariants} className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 p-4 glass rounded-2xl border border-border/30">
+          {data.images.map((url, idx) => (
+            <motion.div 
+              key={idx}
+              whileHover={{ scale: 1.05 }}
+              className="aspect-square rounded-xl overflow-hidden border border-border/50 shadow-md bg-background group relative"
+            >
+              <img src={url} alt={`Urun ${idx}`} className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </motion.div>
+          ))}
+        </motion.div>
+      )}
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* En üst skorlar */}

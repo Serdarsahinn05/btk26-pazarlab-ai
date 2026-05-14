@@ -106,6 +106,7 @@ export interface SimulationRequest {
   targetAudience: TargetAudience;
   features: Features;
   commerce: Commerce;
+  images?: string[];
   inputAnalysis?: InputAnalysisResponse;
 }
 
@@ -153,7 +154,19 @@ export interface SimulationResponse {
   weaknesses: string[];
   normalizedProduct: NormalizedProduct;
   aiInsights: AiInsights;
+  images?: string[];
   inputAnalysis?: InputAnalysisResponse;
+}
+
+export interface ProductVariant {
+  name?: string | null;
+  color?: string | null;
+  size?: string | null;
+  material?: string | null;
+  price?: number | null;
+  currency?: string | null;
+  availability?: string | null;
+  sku?: string | null;
 }
 
 export interface ProductLinkReadResponse {
@@ -161,9 +174,18 @@ export interface ProductLinkReadResponse {
   title?: string | null;
   description?: string | null;
   price?: number | null;
+  original_price?: number | null;
   currency?: string | null;
   image?: string | null;
+  images: string[];
   brand?: string | null;
-  source: "metadata" | "json_ld" | "fallback";
+  category?: string | null;
+  features: Record<string, any>;
+  availability?: string | null;
+  sku?: string | null;
+  mpn?: string | null;
+  gtin?: string | null;
+  variants: ProductVariant[];
+  source: string;
   warnings: string[];
 }
