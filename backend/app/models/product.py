@@ -1,7 +1,9 @@
 from enum import Enum
-from typing import Any
+from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
+
+from app.models.input_analysis import InputAnalysisResponse
 
 
 class PurchaseMotivation(str, Enum):
@@ -23,27 +25,51 @@ class TargetAudience(BaseModel):
 
 
 class ProductFeatures(BaseModel):
-    fabric: str | None = None
-    inner_filling: str | None = Field(default=None, alias="innerFilling")
-    waterproof: bool | None = None
-    windproof: bool | None = None
-    season: str | None = None
-    colors: list[str] | None = None
-    sizes: list[str] | None = None
-    brand: str | None = None
-    ram: str | None = None
-    storage: str | None = None
-    processor: str | None = None
-    camera: str | None = None
-    battery: str | None = None
-    refresh_rate: str | None = Field(default=None, alias="refreshRate")
-    material: str | None = None
-    style: str | None = None
-    fit: str | None = None
-    use_case: str | None = Field(default=None, alias="useCase")
-    compatible_model: str | None = Field(default=None, alias="compatibleModel")
-    dimensions: str | None = None
-    installation_ease: str | None = Field(default=None, alias="installationEase")
+    fabric: Optional[str] = None
+    inner_filling: Optional[str] = Field(default=None, alias="innerFilling")
+    waterproof: Optional[bool] = None
+    windproof: Optional[bool] = None
+    season: Optional[str] = None
+    colors: Optional[list[str]] = None
+    sizes: Optional[list[str]] = None
+    size_range: Optional[str] = Field(default=None, alias="sizeRange")
+    print_type: Optional[str] = Field(default=None, alias="printType")
+    collar_type: Optional[str] = Field(default=None, alias="collarType")
+    sleeve_length: Optional[str] = Field(default=None, alias="sleeveLength")
+    waist_type: Optional[str] = Field(default=None, alias="waistType")
+    leg_type: Optional[str] = Field(default=None, alias="legType")
+    stretch: Optional[bool] = None
+    hood: Optional[bool] = None
+    pocket_count: Optional[str] = Field(default=None, alias="pocketCount")
+    brand: Optional[str] = None
+    ram: Optional[str] = None
+    storage: Optional[str] = None
+    processor: Optional[str] = None
+    camera: Optional[str] = None
+    battery: Optional[str] = None
+    refresh_rate: Optional[str] = Field(default=None, alias="refreshRate")
+    screen_size: Optional[str] = Field(default=None, alias="screenSize")
+    display_type: Optional[str] = Field(default=None, alias="displayType")
+    gpu: Optional[str] = None
+    weight: Optional[str] = None
+    operating_system: Optional[str] = Field(default=None, alias="operatingSystem")
+    connectivity: Optional[str] = None
+    sensors: Optional[str] = None
+    connection_type: Optional[str] = Field(default=None, alias="connectionType")
+    noise_cancellation: Optional[bool] = Field(default=None, alias="noiseCancellation")
+    microphone: Optional[str] = None
+    water_resistance: Optional[str] = Field(default=None, alias="waterResistance")
+    latency: Optional[str] = None
+    material: Optional[str] = None
+    style: Optional[str] = None
+    fit: Optional[str] = None
+    use_case: Optional[str] = Field(default=None, alias="useCase")
+    upholstery: Optional[str] = None
+    frame_material: Optional[str] = Field(default=None, alias="frameMaterial")
+    load_capacity: Optional[str] = Field(default=None, alias="loadCapacity")
+    compatible_model: Optional[str] = Field(default=None, alias="compatibleModel")
+    dimensions: Optional[str] = None
+    installation_ease: Optional[str] = Field(default=None, alias="installationEase")
 
     model_config = ConfigDict(populate_by_name=True, extra="allow")
 
@@ -52,7 +78,7 @@ class CommerceInfo(BaseModel):
     shipping_days: int = Field(alias="shippingDays", ge=0, le=60)
     return_available: bool = Field(alias="returnAvailable")
     warranty: bool
-    warranty_months: int | None = Field(default=None, alias="warrantyMonths", ge=0, le=120)
+    warranty_months: Optional[int] = Field(default=None, alias="warrantyMonths", ge=0, le=120)
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -60,12 +86,14 @@ class CommerceInfo(BaseModel):
 class SimulationRequest(BaseModel):
     category: str = Field(min_length=1)
     purchase_motivation: PurchaseMotivation = Field(alias="purchaseMotivation")
-    product_name: str = Field(alias="productName", min_length=1)
+    product_name: str = Field(alias="productName", min_length=4)
+    product_url: Optional[str] = Field(default=None, alias="productUrl")
     price: float = Field(gt=0)
-    description: str = Field(min_length=1)
+    description: str = Field(min_length=40)
     target_audience: TargetAudience = Field(alias="targetAudience")
     features: ProductFeatures = Field(default_factory=ProductFeatures)
     commerce: CommerceInfo
+    input_analysis: Optional[InputAnalysisResponse] = Field(default=None, alias="inputAnalysis")
 
     model_config = ConfigDict(populate_by_name=True)
 

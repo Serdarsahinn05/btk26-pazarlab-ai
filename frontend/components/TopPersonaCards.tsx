@@ -31,9 +31,9 @@ export default function TopPersonaCards({ personas }: TopPersonaCardsProps) {
                 <h3 className="font-bold text-lg text-foreground">{persona.name}</h3>
                 <div className="flex flex-col items-end">
                   <span className="text-2xl font-black text-primary">
-                    {Math.round(persona.purchaseProbability * 100)}%
+                    {Math.round(persona.purchaseProbability * 100)}
                   </span>
-                  <span className="text-[10px] text-muted-foreground -mt-1">Dönüşüm</span>
+                  <span className="text-[10px] text-muted-foreground -mt-1">Niyet Skoru</span>
                 </div>
               </div>
               

@@ -103,39 +103,39 @@ export default function OverallScoreCard({ data }: OverallScoreCardProps) {
                   Pazar Genişliği
                 </span>
                 <span className={`font-bold ${getScoreColor(data.marketBreadthScore)}`}>
-                  {data.marketBreadthScore}%
+                  {data.marketBreadthScore}/100
                 </span>
               </div>
               <Progress value={data.marketBreadthScore} className="h-2 bg-muted dark:bg-white/5" indicatorColor={getProgressColorClass(data.marketBreadthScore)} />
-              <p className="text-xs text-muted-foreground">Kategorideki toplam potansiyel alıcı havuzu.</p>
+              <p className="text-xs text-muted-foreground">Kategori ve hedef kitleye gore erisilebilir talep skoru.</p>
             </motion.div>
 
             <motion.div whileHover={{ y: -5 }} className="space-y-3 p-4 bg-black/5 dark:bg-black/40 rounded-xl border border-border/50 dark:border-white/5 shadow-lg backdrop-blur-md transition-all">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-semibold flex items-center gap-2">
                   <Users className="w-4 h-4 text-purple-500" />
-                  Niyetli Dönüşüm
+                  Satin Alma Niyeti
                 </span>
                 <span className={`font-bold ${getScoreColor(data.intentConversionScore)}`}>
-                  {data.intentConversionScore}%
+                  {data.intentConversionScore}/100
                 </span>
               </div>
               <Progress value={data.intentConversionScore} className="h-2 bg-muted dark:bg-white/5" indicatorColor={getProgressColorClass(data.intentConversionScore)} />
-              <p className="text-xs text-muted-foreground">Ürün sayfasına girenlerin alma eğilimi.</p>
+              <p className="text-xs text-muted-foreground">Gercek donusum orani degil; fiyat, guven ve detaylardan uretilen niyet skoru.</p>
             </motion.div>
 
             <motion.div whileHover={{ y: -5 }} className="space-y-3 p-4 bg-black/5 dark:bg-black/40 rounded-xl border border-border/50 dark:border-white/5 shadow-lg backdrop-blur-md transition-all">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-semibold flex items-center gap-2">
                   <Wrench className="w-4 h-4 text-amber-500" />
-                  Problem / Çözüm
+                  Ihtiyac Uyumu
                 </span>
                 <span className={`font-bold ${getScoreColor(data.problemSolutionFit)}`}>
-                  {data.problemSolutionFit}%
+                  {data.problemSolutionFit}/100
                 </span>
               </div>
               <Progress value={data.problemSolutionFit} className="h-2 bg-muted dark:bg-white/5" indicatorColor={getProgressColorClass(data.problemSolutionFit)} />
-              <p className="text-xs text-muted-foreground">İhtiyacı olan kullanıcının sorununu çözme skoru.</p>
+              <p className="text-xs text-muted-foreground">Urunun hedef kullanim ihtiyacini karsilama skoru.</p>
             </motion.div>
 
           </div>
