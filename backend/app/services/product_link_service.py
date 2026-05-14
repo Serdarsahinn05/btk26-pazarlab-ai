@@ -979,22 +979,14 @@ class GeminiAIExtractor:
         models = self._get_models()
 
         last_error: Optional[Exception] = None
-        quota_errors_count = 0
         
         for model_name in models:
             try:
                 return self._call_model(model_name, cleaned_html)
             except urllib.error.HTTPError as e:
                 if e.code == 429:
-                    quota_errors_count += 1
                     last_error = AIQuotaError(f"Quota exceeded for {model_name}")
-                    logger.warning(f"Model {model_name} quota exceeded (429).")
-                    
-                    # If the first 3 models (likely the best ones) all hit 429, 
-                    # it's probably a project-wide limit. Stop to save time.
-                    if quota_errors_count >= 3:
-                        logger.error("Multiple models hit 429. Suspected global quota limit. Stopping.")
-                        break
+                    logger.warning(f"Model {model_name} quota exceeded (429). Trying next...")
                     continue
                 raise AIQuotaError(f"AI Service Error ({e.code}): {e.reason}") from e
             except Exception as e:
@@ -1033,11 +1025,12 @@ class GeminiAIExtractor:
 
             def priority(m: str) -> int:
                 if m == default: return 0
-                if m == "gemini-1.5-flash": return 1
-                if m == "gemini-1.5-pro": return 2
-                if "flash" in m: return 3
-                if "pro" in m: return 4
-                return 5
+                if "flash-lite" in m: return 1  # Favor lite models as they often have more quota
+                if m == "gemini-1.5-flash": return 2
+                if m == "gemini-1.5-pro": return 3
+                if "flash" in m: return 4
+                if "pro" in m: return 5
+                return 6
 
             self._available_models = sorted(models, key=priority)
             logger.info(f"Discovered Gemini models: {self._available_models}")
