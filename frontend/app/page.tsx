@@ -10,11 +10,14 @@ import { Beaker } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/ModeToggle";
 import { motion, AnimatePresence } from "framer-motion";
+import AnalysisWarning from "@/components/AnalysisWarning";
+import { InputAnalysisResponse } from "@/types";
 
 export default function Home() {
   const [simulationState, setSimulationState] = useState<"idle" | "loading" | "result">("idle");
   const [currentMotivation, setCurrentMotivation] = useState<PurchaseMotivation | null>(null);
   const [resultData, setResultData] = useState<SimulationResponse | null>(null);
+  const [pendingAnalysis, setPendingAnalysis] = useState<{ data: SimulationRequest; analysis: InputAnalysisResponse } | null>(null);
 
   const handleSimulate = async (data: SimulationRequest) => {
     setCurrentMotivation(data.purchaseMotivation);
@@ -24,23 +27,23 @@ export default function Home() {
     try {
       const inputAnalysis = await analyzeProductInput(data);
       if (inputAnalysis.shouldWarn) {
-        const warningText = [
-          "AI girdilerde emin olunmasi gereken noktalar buldu:",
-          ...inputAnalysis.warnings.map((warning) => `- ${warning}`),
-          ...inputAnalysis.suggestions.map((suggestion) => `Oneri: ${suggestion}`),
-          inputAnalysis.suspectedCategory ? `Olasi kategori: ${inputAnalysis.suspectedCategory}` : "",
-          inputAnalysis.correctedProductName ? `Olasi urun adi: ${inputAnalysis.correctedProductName}` : "",
-          "",
-          "Yine de simulasyona devam edilsin mi?"
-        ].filter(Boolean).join("\n");
-
-        const shouldContinue = window.confirm(warningText);
-        if (!shouldContinue) {
-          setSimulationState("idle");
-          return;
-        }
+        setPendingAnalysis({ data, analysis: inputAnalysis });
+        setSimulationState("idle"); // Keep it idle so form is still visible behind if needed, or just pause
+        return;
       }
 
+      await executeSimulation(data, inputAnalysis);
+    } catch (error) {
+      console.error("Simülasyon hatası:", error);
+      alert("Simülasyon çalıştırılırken bir hata oluştu. Lütfen tekrar deneyin.");
+      setSimulationState("idle");
+    }
+  };
+
+  const executeSimulation = async (data: SimulationRequest, inputAnalysis: InputAnalysisResponse) => {
+    setSimulationState("loading");
+    setResultData(null);
+    try {
       const response = await simulateProduct({ ...data, inputAnalysis });
       setResultData(response);
       setSimulationState("result");
@@ -146,6 +149,20 @@ export default function Home() {
           </AnimatePresence>
         </div>
         
+        {/* Analysis Warning Modal */}
+        <AnimatePresence>
+          {pendingAnalysis && (
+            <AnalysisWarning 
+              analysis={pendingAnalysis.analysis}
+              onConfirm={() => {
+                const { data, analysis } = pendingAnalysis;
+                setPendingAnalysis(null);
+                executeSimulation(data, analysis);
+              }}
+              onCancel={() => setPendingAnalysis(null)}
+            />
+          )}
+        </AnimatePresence>
       </div>
     </main>
   );

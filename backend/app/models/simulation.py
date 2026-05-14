@@ -56,6 +56,7 @@ class SimulationResponse(BaseModel):
     weakness_signals: list[str] = Field(default_factory=list, alias="weaknessSignals")
     normalized_product: NormalizedProduct = Field(alias="normalizedProduct")
     ai_insights: AiInsights = Field(alias="aiInsights")
+    images: list[str] = Field(default_factory=list)
     input_analysis: Optional[InputAnalysisResponse] = Field(default=None, alias="inputAnalysis")
 
     model_config = ConfigDict(populate_by_name=True)

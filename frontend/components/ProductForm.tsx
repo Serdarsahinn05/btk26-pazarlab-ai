@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PurchaseMotivation, SimulationRequest } from "@/types";
 import { readProductLink } from "@/lib/api";
-import { Link2, Loader2, Shirt, Smartphone, Sparkles } from "lucide-react";
+import { Image as ImageIcon, Link2, Loader2, Plus, Shirt, Smartphone, Sparkles, Trash2, Upload } from "lucide-react";
 import { motion, type Variants } from "framer-motion";
 
 interface ProductFormProps {
@@ -325,6 +325,10 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
   const [activeFamily, setActiveFamily] = useState<FamilyKey>("kiyafet");
   const [linkStatus, setLinkStatus] = useState<string>("");
   const [isReadingLink, setIsReadingLink] = useState(false);
+  const [images, setImages] = useState<string[]>([]);
+  const [newImageUrl, setNewImageUrl] = useState("");
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const activeCategory = useMemo(() => categoryConfig[category] || categoryConfig.tisort, [category]);
 
   const handleCategoryChange = (value: string) => {
@@ -344,7 +348,7 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
       purchaseMotivation: motivation,
       productName: String(formData.get("productName") || ""),
       productUrl: getString(formData, "productUrl"),
-      price: Number(formData.get("price")),
+      price: Number(String(formData.get("price") || "0").replace(",", ".")),
       description: String(formData.get("description") || ""),
       targetAudience: {
         ageRange: getString(formData, "ageRange") || "genel",
@@ -398,16 +402,37 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
         shippingDays: Number(formData.get("shippingDays") || 3),
         returnAvailable: formData.get("returnAvailable") === "on",
         warranty: formData.get("warranty") === "on"
-      }
+      },
+      images
     };
 
     onSubmit(requestData);
   };
 
+  const adjustHeight = (el: HTMLElement) => {
+    if (el instanceof HTMLTextAreaElement) {
+      el.style.height = "auto";
+      el.style.height = `${el.scrollHeight}px`;
+    }
+  };
+
   const setFormValue = (name: string, value?: string | number | null) => {
-    if (!formRef.current || value === undefined || value === null || value === "") return;
-    const field = formRef.current.elements.namedItem(name) as HTMLInputElement | HTMLTextAreaElement | null;
-    if (field) field.value = String(value);
+    if (value === undefined || value === null || value === "") return;
+    
+    const trySet = (attempt = 0) => {
+      if (!formRef.current || attempt > 20) return; // 2 saniye boyunca dene
+      
+      const field = formRef.current.elements.namedItem(name) as HTMLInputElement | HTMLTextAreaElement | null;
+      if (field) {
+        field.value = String(value);
+        if (name === "description") adjustHeight(field);
+      } else {
+        // Eleman henüz render olmamis olabilir, biraz bekle tekrar dene
+        setTimeout(() => trySet(attempt + 1), 100);
+      }
+    };
+    
+    trySet();
   };
 
   const handleReadLink = async () => {
@@ -422,16 +447,81 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
     setLinkStatus("Link okunuyor...");
     try {
       const result = await readProductLink(url);
-      setFormValue("productName", result.title);
-      setFormValue("description", result.description);
-      setFormValue("price", result.price);
-      setFormValue("brand", result.brand);
-      setLinkStatus(result.warnings[0] || "Linkten okunabilen bilgiler forma eklendi.");
-    } catch {
-      setLinkStatus("Link okunamadi. Site engelliyor olabilir; bilgileri elle girebilirsiniz.");
+      
+      // Kategori varsa degistir (bu yeni alanlari render eder)
+      if (result.category) {
+        handleCategoryChange(result.category);
+      }
+
+      // DOM guncellenmesi ve alanlarin render olmasi icin biraz bekle
+      setTimeout(() => {
+        setFormValue("productName", result.title);
+        setFormValue("description", result.description);
+        setFormValue("brand", result.brand);
+        
+        // Fiyat null degilse virgullu formatta set et
+        if (result.price) {
+          setFormValue("price", result.price.toString().replace(".", ","));
+        }
+        
+        // Dinamik ozellikleri doldur
+        if (result.features) {
+          Object.entries(result.features).forEach(([key, value]) => {
+            if (value !== undefined && value !== null && value !== "") {
+              setFormValue(key as any, value);
+            }
+          });
+        }
+      }, 500); // Kategori degisimi sonrasi render icin 500ms ideal
+      
+      // Yeni link okundugunda eskileri temizle ve yenileri ekle
+      if (result.images && result.images.length > 0) {
+        setImages(result.images);
+      } else if (result.image) {
+        setImages([result.image]);
+      } else {
+        setImages([]);
+      }
+      setLinkStatus(result.warnings[0] || "Linkten tum bilgiler, kategori ve teknik detaylar okundu.");
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.detail || "Link okunamadı. Site erişimi engelliyor olabilir.";
+      setLinkStatus(errorMsg);
     } finally {
       setIsReadingLink(false);
     }
+  };
+
+  const handleFileUpload = (files: FileList | null) => {
+    if (!files) return;
+    
+    Array.from(files).forEach((file) => {
+      if (!file.type.startsWith("image/")) return;
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        if (result && !images.includes(result)) {
+          setImages((prev) => [...prev, result]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const onDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const onDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    handleFileUpload(e.dataTransfer.files);
   };
 
   return (
@@ -448,72 +538,130 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
         </CardDescription>
       </CardHeader>
 
-      <form ref={formRef} onSubmit={handleSubmit}>
-        <CardContent>
-          <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-8">
-            <motion.div variants={itemVariants} className="space-y-4">
-              <Label>Urun Kategorisi</Label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {categoryFamilies.map((family) => {
-                  const Icon = family.icon;
-                  const isFamilyActive = family.items.includes(category);
-                  const isFamilyOpen = activeFamily === family.key || isFamilyActive;
-                  return (
-                    <div
-                      key={family.key}
-                      onMouseEnter={() => setActiveFamily(family.key as FamilyKey)}
-                      onClick={() => setActiveFamily(family.key as FamilyKey)}
-                      className={`group rounded-lg border p-4 transition-all bg-muted/10 hover:border-primary/60 hover:bg-primary/5 ${
-                        isFamilyOpen ? "border-primary/70 bg-primary/5" : "border-border/60"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="grid h-10 w-10 place-items-center rounded-md bg-primary/10 text-primary">
-                          <Icon className="h-5 w-5" />
-                        </span>
-                        <div>
-                          <div className="font-semibold">{family.label}</div>
-                          <div className="text-xs text-muted-foreground">Alt urunleri gormek icin uzerine gelin</div>
-                        </div>
-                      </div>
-                      <div className={`mt-4 grid gap-2 overflow-hidden transition-all duration-300 md:max-h-0 md:opacity-0 md:group-hover:max-h-72 md:group-hover:opacity-100 md:group-focus-within:max-h-72 md:group-focus-within:opacity-100 ${
-                        isFamilyOpen ? "md:max-h-72 md:opacity-100" : ""
-                      }`}>
-                        {family.items.map((itemKey) => {
-                          const item = categoryConfig[itemKey];
-                          const isActive = category === itemKey;
-                          return (
-                            <button
-                              key={itemKey}
-                              type="button"
-                              onClick={() => handleCategoryChange(itemKey)}
-                              className={`h-10 rounded-md border px-3 text-left text-sm transition-colors ${
-                                isActive
-                                  ? "border-primary bg-primary text-primary-foreground"
-                                  : "border-border/70 bg-background/70 hover:border-primary/60"
-                              }`}
-                            >
-                              {item.shortLabel}
-                            </button>
-                          );
-                        })}
+      <form ref={formRef} onSubmit={handleSubmit}>        <CardContent>
+          <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-10">
+            
+            {/* 1. ADIM: HIZLI BASLANGIC (Link & Gorseller) */}
+            <motion.div variants={itemVariants} className="space-y-6 p-6 rounded-2xl bg-primary/5 border border-primary/20 relative overflow-hidden">
+              <div className="absolute -right-10 -top-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="flex items-center gap-2 text-lg font-bold text-primary border-b border-primary/20 pb-3 mb-4">
+                <Link2 className="w-5 h-5" />
+                Hizli Baslangic
+              </div>
+
+              <div className="space-y-2 group">
+                <Label htmlFor="productUrl" className="text-sm font-semibold text-foreground/80">Urun Linki (Opsiyonel)</Label>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Input 
+                    id="productUrl" 
+                    name="productUrl" 
+                    type="url" 
+                    placeholder="Trendyol, Amazon, n11 linki yapistirin..." 
+                    className="h-12 bg-background/50 border-primary/20 focus:ring-primary/50 focus:border-primary transition-all text-base" 
+                  />
+                  <Button 
+                    type="button" 
+                    onClick={handleReadLink} 
+                    disabled={isReadingLink} 
+                    className="h-12 sm:w-48 bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20"
+                  >
+                    {isReadingLink ? (
+                      <span className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Okunuyor...</span>
+                    ) : (
+                      <span className="flex items-center gap-2"><Sparkles className="h-4 w-4" /> Linkten Oku</span>
+                    )}
+                  </Button>
+                </div>
+                <p className="text-[11px] text-primary/70 font-medium px-1 uppercase tracking-wider">{linkStatus || "Linkten okunan bilgiler asagidaki alanlara otomatik dolar."}</p>
+              </div>
+
+              {/* Product Images Section */}
+              <div className="space-y-3 pt-2">
+                <Label className="text-sm font-semibold text-foreground/80 flex items-center gap-2">
+                  <ImageIcon className="w-4 h-4 text-primary" />
+                  Urun Gorselleri
+                </Label>
+                
+                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                  {/* Upload Area */}
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => fileInputRef.current?.click()}
+                    className={`aspect-square rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-all ${
+                      isDragging ? "border-primary bg-primary/20" : "border-primary/20 bg-background/40 hover:bg-primary/5 hover:border-primary/40"
+                    }`}
+                    onDragOver={onDragOver}
+                    onDragLeave={onDragLeave}
+                    onDrop={onDrop}
+                  >
+                    <Upload className="w-5 h-5 text-primary/60" />
+                    <span className="text-[9px] font-bold text-primary/60 uppercase text-center px-1">Yukle</span>
+                    <input 
+                      type="file" multiple accept="image/*" className="hidden" 
+                      ref={fileInputRef} onChange={(e) => handleFileUpload(e.target.files)} 
+                    />
+                  </motion.div>
+
+                  {images.map((url, idx) => (
+                    <div key={idx} className="group relative aspect-square rounded-xl overflow-hidden border border-border/40 bg-background shadow-sm">
+                      <img src={url} alt={`Urun ${idx}`} className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <button type="button" onClick={() => setImages((prev) => prev.filter((_, i) => i !== idx))}
+                          className="bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition-colors">
+                          <Trash2 className="h-3 w-3" />
+                        </button>
                       </div>
                     </div>
-                  );
-                })}
+                  ))}
+                  
+                  {/* URL Add Button (Small) */}
+                  <Button 
+                    type="button" variant="outline" size="icon"
+                    onClick={() => {
+                      const url = prompt("Gorsel URL'si girin:");
+                      if (url && !images.includes(url)) setImages(prev => [...prev, url]);
+                    }}
+                    className="aspect-square h-auto rounded-xl border-dashed border-primary/20 bg-background/40"
+                  >
+                    <Plus className="h-4 w-4 text-primary/60" />
+                  </Button>
+                </div>
               </div>
             </motion.div>
 
-            <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* 2. ADIM: KATEGORI VE MOTIVASYON */}
+            <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
               <div className="space-y-2 group">
-                <Label htmlFor="motivation" className="font-bold text-primary group-focus-within:text-primary-foreground transition-colors">
-                  Satin alma motivasyonu
-                </Label>
+                <Label htmlFor="category" className="text-sm font-bold text-primary uppercase tracking-wider">Urun Kategorisi</Label>
+                <Select value={category} onValueChange={handleCategoryChange}>
+                  <SelectTrigger id="category" className="h-12 border-border/60 bg-muted/5 focus:ring-primary transition-all text-base font-medium">
+                    <SelectValue placeholder="Kategori Secin" />
+                  </SelectTrigger>
+                  <SelectContent className="glass border-primary/20">
+                    {categoryFamilies.map((family) => (
+                      <div key={family.key}>
+                        <div className="px-3 py-2 text-[10px] font-black text-primary/50 uppercase tracking-[0.2em] bg-primary/5 flex items-center gap-2">
+                          <family.icon className="w-3 h-3" /> {family.label}
+                        </div>
+                        {family.items.map((itemKey) => (
+                          <SelectItem key={itemKey} value={itemKey} className="py-2.5 cursor-pointer">
+                            {categoryConfig[itemKey].shortLabel}
+                          </SelectItem>
+                        ))}
+                      </div>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2 group">
+                <Label htmlFor="motivation" className="text-sm font-bold text-primary uppercase tracking-wider">Satin Alma Motivasyonu</Label>
                 <Select name="motivation" value={motivation} onValueChange={(val) => setMotivation((val as PurchaseMotivation) || activeCategory.defaultMotivation)}>
-                  <SelectTrigger id="motivation" className="border-primary/50 bg-primary/5 focus:ring-primary transition-all">
+                  <SelectTrigger id="motivation" className="h-12 border-border/60 bg-muted/5 focus:ring-primary transition-all text-base font-medium">
                     <SelectValue placeholder="Motivasyon secin" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="glass border-primary/20">
                     <SelectItem value="stil_begeni">Stil / Begeni</SelectItem>
                     <SelectItem value="ihtiyac">Gunluk Ihtiyac</SelectItem>
                     <SelectItem value="problem_cozme">Problem Cozme</SelectItem>
@@ -523,56 +671,54 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
                   </SelectContent>
                 </Select>
               </div>
-
-              <div className="space-y-2 group">
-                <Label htmlFor="price" className="group-focus-within:text-primary transition-colors">Fiyat (TL) <span className="text-red-500">*</span></Label>
-                <Input id="price" name="price" type="number" min="1" placeholder="1200" required className="focus:ring-primary/50 focus:border-primary transition-all" />
-              </div>
             </motion.div>
 
-            <motion.div variants={itemVariants} className="space-y-4">
-              <h3 className="text-lg font-semibold border-b border-border/50 pb-2 text-foreground/80">Temel Bilgiler</h3>
+            {/* 3. ADIM: TEMEL BILGILER */}
+            <motion.div variants={itemVariants} className="space-y-6">
+              <div className="flex items-center gap-3 border-b border-border/40 pb-3 mb-6">
+                <div className="w-1.5 h-6 bg-primary rounded-full shadow-[0_0_10px_rgba(var(--primary),0.5)]" />
+                <h3 className="text-xl font-bold tracking-tight">Temel Bilgiler</h3>
+              </div>
 
-              <div className="space-y-2 group">
-                <Label htmlFor="productUrl" className="group-focus-within:text-primary transition-colors">Urun Linki</Label>
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <Input id="productUrl" name="productUrl" type="url" placeholder="https://..." className="focus:ring-primary/50 focus:border-primary transition-all" />
-                  <Button type="button" variant="outline" onClick={handleReadLink} disabled={isReadingLink} className="sm:w-40">
-                    {isReadingLink ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
-                    Linkten Oku
-                  </Button>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="md:col-span-3 space-y-2 group">
+                  <Label htmlFor="productName" className="font-semibold text-foreground/90">Urun Adi <span className="text-red-500">*</span></Label>
+                  <Input id="productName" name="productName" placeholder={activeCategory.exampleName} minLength={4} required className="h-12 focus:ring-primary/50 focus:border-primary transition-all" />
                 </div>
-                <p className="text-xs text-muted-foreground">{linkStatus || "Opsiyonel: sayfa izin verirse baslik, fiyat ve aciklama otomatik doldurulur."}</p>
+                <div className="space-y-2 group">
+                  <Label htmlFor="price" className="font-semibold text-foreground/90">Fiyat (TL) <span className="text-red-500">*</span></Label>
+                  <Input id="price" name="price" type="number" min="1" placeholder="1200" required className="h-12 focus:ring-primary/50 focus:border-primary transition-all" />
+                </div>
               </div>
 
               <div className="space-y-2 group">
-                <Label htmlFor="productName" className="group-focus-within:text-primary transition-colors">Urun Adi <span className="text-red-500">*</span></Label>
-                <Input id="productName" name="productName" placeholder={activeCategory.exampleName} minLength={4} required className="focus:ring-primary/50 focus:border-primary transition-all" />
-              </div>
-
-              <div className="space-y-2 group">
-                <Label htmlFor="description" className="group-focus-within:text-primary transition-colors">Urun Aciklamasi <span className="text-red-500">*</span></Label>
+                <Label htmlFor="description" className="font-semibold text-foreground/90">Urun Aciklamasi <span className="text-red-500">*</span></Label>
                 <textarea
                   id="description"
                   name="description"
                   minLength={40}
-                  className="flex min-h-[108px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50 transition-all"
+                  className="flex min-h-[140px] w-full rounded-xl border border-input bg-background/50 px-4 py-3 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50 transition-all resize-none shadow-inner"
                   placeholder={activeCategory.descriptionPlaceholder}
                   required
                 />
-                <p className="text-xs text-muted-foreground">En az 40 karakter girin; tek harf veya bos aciklama artik simule edilmez.</p>
+                <p className="text-[11px] text-muted-foreground italic px-1">En az 40 karakter girilmelidir. Daha detayli aciklama, daha dogru simulasyon demektir.</p>
               </div>
             </motion.div>
 
-            <motion.div variants={itemVariants} className="space-y-4">
-              <h3 className="text-lg font-semibold border-b border-border/50 pb-2 text-foreground/80">Hedef & Operasyon</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* 4. ADIM: HEDEF & OPERASYON */}
+            <motion.div variants={itemVariants} className="space-y-6 pt-4">
+              <div className="flex items-center gap-3 border-b border-border/40 pb-3 mb-6">
+                <div className="w-1.5 h-6 bg-primary rounded-full shadow-[0_0_10px_rgba(var(--primary),0.5)]" />
+                <h3 className="text-xl font-bold tracking-tight">Hedef & Operasyon</h3>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
                 {activeCategory.audience === "full" && (
                   <>
                     <div className="space-y-2 group">
-                      <Label htmlFor="ageRange" className="group-focus-within:text-primary transition-colors">Yas Araligi</Label>
+                      <Label htmlFor="ageRange" className="text-xs font-bold text-muted-foreground uppercase">Yas Araligi</Label>
                       <Select name="ageRange" defaultValue="18-30">
-                        <SelectTrigger id="ageRange" className="focus:ring-primary/50 transition-all"><SelectValue /></SelectTrigger>
+                        <SelectTrigger id="ageRange" className="h-11 focus:ring-primary/50 transition-all"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="13-17">13-17</SelectItem>
                           <SelectItem value="18-30">18-30</SelectItem>
@@ -582,9 +728,9 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
                       </Select>
                     </div>
                     <div className="space-y-2 group">
-                      <Label htmlFor="gender" className="group-focus-within:text-primary transition-colors">Cinsiyet</Label>
+                      <Label htmlFor="gender" className="text-xs font-bold text-muted-foreground uppercase">Cinsiyet</Label>
                       <Select name="gender" defaultValue="unisex">
-                        <SelectTrigger id="gender" className="focus:ring-primary/50 transition-all"><SelectValue /></SelectTrigger>
+                        <SelectTrigger id="gender" className="h-11 focus:ring-primary/50 transition-all"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="unisex">Unisex</SelectItem>
                           <SelectItem value="kadin">Kadin</SelectItem>
@@ -595,9 +741,9 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
                   </>
                 )}
                 <div className="space-y-2 group">
-                  <Label htmlFor="incomeLevel" className="group-focus-within:text-primary transition-colors">Fiyat Segmenti</Label>
+                  <Label htmlFor="incomeLevel" className="text-xs font-bold text-muted-foreground uppercase">Fiyat Segmenti</Label>
                   <Select name="incomeLevel" defaultValue="middle">
-                    <SelectTrigger id="incomeLevel" className="focus:ring-primary/50 transition-all"><SelectValue /></SelectTrigger>
+                    <SelectTrigger id="incomeLevel" className="h-11 focus:ring-primary/50 transition-all"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="low">Ekonomik</SelectItem>
                       <SelectItem value="middle">Orta</SelectItem>
@@ -606,32 +752,37 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
                   </Select>
                 </div>
                 <div className="space-y-2 group">
-                  <Label htmlFor="shippingDays" className="group-focus-within:text-primary transition-colors">Kargo (Gun)</Label>
-                  <Input id="shippingDays" name="shippingDays" type="number" defaultValue="3" min="0" className="focus:ring-primary/50 focus:border-primary transition-all" />
+                  <Label htmlFor="shippingDays" className="text-xs font-bold text-muted-foreground uppercase">Kargo (Gun)</Label>
+                  <Input id="shippingDays" name="shippingDays" type="number" defaultValue="3" min="0" className="h-11 focus:ring-primary/50 focus:border-primary transition-all" />
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-5 rounded-lg border border-border/50 bg-muted/20 p-4">
-                <label className="flex items-center gap-2 text-sm">
-                  <input name="returnAvailable" type="checkbox" defaultChecked className="h-4 w-4 accent-primary" />
-                  Iade var
+              <div className="flex gap-4 p-4 rounded-xl bg-muted/20 border border-border/40">
+                <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
+                  <input name="returnAvailable" type="checkbox" defaultChecked className="h-4 w-4 accent-primary rounded border-primary/20" />
+                  Iade imkani var
                 </label>
-                <label className="flex items-center gap-2 text-sm">
-                  <input name="warranty" type="checkbox" className="h-4 w-4 accent-primary" />
-                  Garanti / fatura var
+                <div className="w-px h-5 bg-border/60 mx-2" />
+                <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
+                  <input name="warranty" type="checkbox" className="h-4 w-4 accent-primary rounded border-primary/20" />
+                  Garanti / Fatura mevcut
                 </label>
               </div>
             </motion.div>
 
-            <motion.div variants={itemVariants} className="space-y-4">
-              <h3 className="text-lg font-semibold border-b border-border/50 pb-2 text-foreground/80">{activeCategory.label} Ozellikleri</h3>
+            {/* 5. ADIM: DINAMIK OZELLIKLER */}
+            <motion.div variants={itemVariants} className="space-y-6 pt-4">
+              <div className="flex items-center gap-3 border-b border-border/40 pb-3 mb-6">
+                <div className="w-1.5 h-6 bg-primary rounded-full shadow-[0_0_10px_rgba(var(--primary),0.5)]" />
+                <h3 className="text-xl font-bold tracking-tight">{activeCategory.shortLabel} Teknik Detaylari</h3>
+              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/20 p-4 rounded-xl border border-border/50 dark:border-white/5">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 bg-muted/10 p-6 rounded-2xl border border-border/50 shadow-inner">
                 {activeCategory.fields.map((field) => {
                   if (field.type === "checkbox") {
                     return (
-                      <label key={field.name} className="flex min-h-10 items-center gap-2 rounded-md border border-border/50 px-3 text-sm">
-                        <input name={field.name} type="checkbox" className="h-4 w-4 accent-primary" />
+                      <label key={field.name} className="flex min-h-12 items-center gap-3 rounded-xl border border-border/50 bg-background/40 px-4 text-sm font-medium cursor-pointer hover:border-primary/40 transition-colors shadow-sm">
+                        <input name={field.name} type="checkbox" className="h-4 w-4 accent-primary rounded" />
                         {field.label}
                       </label>
                     );
@@ -639,11 +790,11 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
 
                   if (field.type === "select") {
                     return (
-                      <div key={field.name} className="space-y-2 group">
-                        <Label htmlFor={field.name} className="group-focus-within:text-primary transition-colors">{field.label}</Label>
+                      <div key={field.name} className="space-y-1.5 group">
+                        <Label htmlFor={field.name} className="text-xs font-bold text-muted-foreground/80 uppercase">{field.label}</Label>
                         <Select name={field.name} defaultValue={field.options?.[0]?.value}>
-                          <SelectTrigger id={field.name} className="focus:ring-primary/50 transition-all"><SelectValue /></SelectTrigger>
-                          <SelectContent>
+                          <SelectTrigger id={field.name} className="h-10 bg-background/50 focus:ring-primary/30 transition-all text-sm"><SelectValue /></SelectTrigger>
+                          <SelectContent className="glass">
                             {field.options?.map((option) => (
                               <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
                             ))}
@@ -654,8 +805,8 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
                   }
 
                   return (
-                    <div key={field.name} className="space-y-2 group">
-                      <Label htmlFor={field.name} className="group-focus-within:text-primary transition-colors">
+                    <div key={field.name} className="space-y-1.5 group">
+                      <Label htmlFor={field.name} className="text-xs font-bold text-muted-foreground/80 uppercase">
                         {field.label} {field.required && <span className="text-red-500">*</span>}
                       </Label>
                       <Input
@@ -664,7 +815,7 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
                         type={field.type === "number" ? "number" : "text"}
                         placeholder={field.placeholder}
                         required={field.required}
-                        className="focus:ring-primary/50 focus:border-primary transition-all"
+                        className="h-10 bg-background/50 focus:ring-primary/30 transition-all text-sm"
                       />
                     </div>
                   );
@@ -673,27 +824,30 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
             </motion.div>
           </motion.div>
         </CardContent>
-        <CardFooter className="bg-muted/10 border-t border-border/50 dark:border-white/5 p-6 mt-4">
+
+        <CardFooter className="bg-primary/5 border-t border-border/50 p-8 mt-10">
           <motion.div className="w-full" whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
             <Button
               type="submit"
               size="lg"
-              className="w-full font-bold text-lg h-14 bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_0_20px_rgba(var(--primary),0.4)] transition-all"
+              className="w-full font-black text-xl h-16 bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_10px_30px_rgba(var(--primary),0.3)] transition-all rounded-2xl group overflow-hidden relative"
               disabled={isLoading}
             >
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
               {isLoading ? (
-                <span className="flex items-center gap-2">
-                  <Loader2 className="h-6 w-6 animate-spin" />
-                  Simulasyon Calisiyor...
+                <span className="flex items-center gap-3">
+                  <Loader2 className="h-7 w-7 animate-spin" />
+                  SIMULASYON HAZIRLANIYOR...
                 </span>
               ) : (
-                <span className="flex items-center gap-2">
-                  Simulasyonu Baslat <Sparkles className="w-5 h-5" />
+                <span className="flex items-center gap-3">
+                  SIMULASYONU BASLAT <Sparkles className="w-6 h-6 animate-pulse" />
                 </span>
               )}
             </Button>
           </motion.div>
         </CardFooter>
+
       </form>
     </Card>
   );

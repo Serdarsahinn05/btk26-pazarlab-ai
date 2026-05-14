@@ -9,7 +9,7 @@ from app.api.health import router as health_router
 from app.api.product_link import router as product_link_router
 from app.api.simulate import router as simulate_router
 
-load_dotenv()
+load_dotenv(override=True)
 
 
 def _get_allowed_origins() -> list[str]:
