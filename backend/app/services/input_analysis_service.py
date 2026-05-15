@@ -8,16 +8,21 @@ from app.utils.math_utils import clamp
 
 
 INPUT_ANALYSIS_PROMPT = """
-Sen PazarLab AI icin urun input kalite analisti olarak calisiyorsun.
-Gorevin saticinin girdigi kategori, urun adi, aciklama ve ozelliklerden urunun
-gercekci olup olmadigini ve 10 ortak parametreye gidecek sinyalleri cikarmak.
+Sen PazarLab AI icin agentic input denetim ekibisin. Tek cevapta 4 rolu birlikte calistir:
+1) Veri gardiyani: rastgele, tekrarli, anlamsiz, cok genel veya kategoriyle alakasiz inputu yakalar.
+2) Kategori hakemi: secilen kategori ile urun adi/aciklama/ozellik uyumunu puanlar.
+3) Guven analisti: marka/model netligi, garanti/fatura, teknik detay ve aciklama guvenini yorumlar.
+4) Sinyal normalizatoru: sonucu 0-1 arasinda, simule edilebilir skorlara donusturur.
 
 Kurallar:
 - Marka guvenini kullanicinin "marka bilinirligi" secmesine gore degil; marka/model netligi,
   garanti/fatura, teknik detay tutarliligi ve aciklamadaki guven sinyallerine gore tahmin et.
 - Internette arama yapma. Bilmedigin marka icin kesin hukum verme; sadece input kalitesine gore puanla.
-- Sacma, tekrar eden, kategoriyle alakasiz veya tek kelimelik bilgi varsa shouldWarn true yap.
+- Sacma, tekrar eden, kategoriyle alakasiz, sadece pazarlama lafi iceren veya tek kelimelik bilgi varsa shouldWarn true yap.
+- Urun adi/aciklama "aaaa", "asdf", "super urun cok guzel", tekrar eden kelimeler veya teknik detaydan yoksun genel ifadelerden olusuyorsa plausibility <= 0.35 ver.
+- Kategori uyumsuzsa categoryFit <= 0.40 ver ve suspectedCategory alanini doldur.
 - Kategori/urun uyumsuzsa suspectedCategory veya correctedProductName ile kisa oneride bulun.
+- Emin degilsen uyari vermeyi tercih et; satici onaylayarak devam edebilir.
 - Cevabi sadece JSON dondur.
 
 JSON semasi:
@@ -47,7 +52,7 @@ CATEGORY_TERMS = {
     "pantolon": {"pantolon", "denim", "keten", "bel", "paca", "fit", "beden", "esnek"},
     "mont": {"mont", "kaban", "ceket", "kumas", "dolgu", "su", "ruzgar", "kapuson", "kis"},
     "elbise": {"elbise", "kumas", "kesim", "astar", "boy", "askili", "kol", "beden", "abiye"},
-    "etek": {"etek", "kumas", "bel", "boy", "pile", "kalem", "mini", "midi", "beden"},
+    "etek": {"etek", "kumas", "bel", "pile", "mini", "midi", "beden"},
     "telefon": {"telefon", "gb", "kamera", "batarya", "ekran", "ram", "islemci", "hz", "5g"},
     "laptop": {"laptop", "notebook", "ram", "ssd", "islemci", "ekran", "gpu", "batarya", "kg"},
     "kulaklik": {"kulaklik", "bluetooth", "anc", "mikrofon", "pil", "saat", "gecikme", "kablolu"},
@@ -71,11 +76,12 @@ IMPORTANT_FIELDS = {
 
 
 def analyze_input(request: SimulationRequest) -> InputAnalysisResponse:
+    deterministic = _fallback_analysis(request)
     try:
         model_json = _call_gemini_generate_content(INPUT_ANALYSIS_PROMPT, _payload(request))
-        return _parse_ai_response(model_json)
+        return _merge_ai_with_deterministic_guard(_parse_ai_response(model_json), deterministic)
     except Exception:
-        return _fallback_analysis(request)
+        return deterministic
 
 
 def _payload(request: SimulationRequest) -> Dict[str, Any]:
@@ -120,12 +126,53 @@ def _parse_ai_response(model_json: Mapping[str, Any]) -> InputAnalysisResponse:
     )
 
 
+def _merge_ai_with_deterministic_guard(
+    ai_response: InputAnalysisResponse,
+    deterministic: InputAnalysisResponse,
+) -> InputAnalysisResponse:
+    warnings = _dedupe_text([*deterministic.warnings, *ai_response.warnings])[:4]
+    suggestions = _dedupe_text([*deterministic.suggestions, *ai_response.suggestions])[:4]
+
+    signals = InputQualitySignals(
+        plausibility=min(ai_response.signals.plausibility, deterministic.signals.plausibility),
+        categoryFit=min(ai_response.signals.category_fit, deterministic.signals.category_fit),
+        brandTrust=_guarded_average(ai_response.signals.brand_trust, deterministic.signals.brand_trust),
+        descriptionCompleteness=min(
+            ai_response.signals.description_completeness,
+            deterministic.signals.description_completeness,
+        ),
+        specCompleteness=min(ai_response.signals.spec_completeness, deterministic.signals.spec_completeness),
+        qualitySignal=_guarded_average(ai_response.signals.quality_signal, deterministic.signals.quality_signal),
+        visualAppealSignal=_guarded_average(
+            ai_response.signals.visual_appeal_signal,
+            deterministic.signals.visual_appeal_signal,
+        ),
+        targetFitSignal=_guarded_average(ai_response.signals.target_fit_signal, deterministic.signals.target_fit_signal),
+    )
+    should_warn = (
+        ai_response.should_warn
+        or deterministic.should_warn
+        or signals.plausibility < 0.45
+        or signals.category_fit < 0.45
+    )
+
+    return InputAnalysisResponse(
+        aiUsed=True,
+        shouldWarn=should_warn,
+        confidence=max(ai_response.confidence, deterministic.confidence),
+        warnings=warnings,
+        suggestions=suggestions,
+        suspectedCategory=ai_response.suspected_category or deterministic.suspected_category,
+        correctedProductName=ai_response.corrected_product_name or deterministic.corrected_product_name,
+        signals=signals,
+    )
+
+
 def _fallback_analysis(request: SimulationRequest) -> InputAnalysisResponse:
     features = request.features
     raw_features = features.model_dump(exclude_none=True)
     text = " ".join(
         [
-            request.category,
             request.product_name,
             request.product_url or "",
             request.description,
@@ -144,10 +191,20 @@ def _fallback_analysis(request: SimulationRequest) -> InputAnalysisResponse:
 
     warnings = []
     suggestions = []
-    if _looks_like_noise(request.product_name) or _looks_like_noise(request.description):
-        warnings.append("Girdiler rastgele veya anlamsiz gorunuyor.")
+    noise_reasons = [
+        *_noise_reasons(request.product_name, "Urun adi"),
+        *_noise_reasons(request.description, "Aciklama"),
+    ]
+    if noise_reasons:
+        warnings.append("Girdiler rastgele, tekrarli veya anlamsiz gorunuyor.")
         suggestions.append("Urun adini ve aciklamayi gercek urun bilgileriyle tekrar yaz.")
         plausibility = min(plausibility, 0.25)
+        description_quality = min(description_quality, 0.30)
+    elif _looks_like_generic_marketing(request.description):
+        warnings.append("Aciklama cok genel; karar vermek icin urun detayi icermiyor.")
+        suggestions.append("Somut ozellik, kullanim amaci, malzeme/teknik detay ve garanti bilgisini ekle.")
+        plausibility = min(plausibility, 0.42)
+        description_quality = min(description_quality, 0.40)
     if category_fit < 0.40:
         warnings.append("Urun bilgileri secilen kategoriyle tam uyusmuyor olabilir.")
         suggestions.append("Kategori ve alt urunu tekrar kontrol et.")
@@ -186,6 +243,22 @@ def _safe_score(value: Any, fallback: float) -> float:
         return round(clamp(float(value)), 2)
     except (TypeError, ValueError):
         return fallback
+
+
+def _guarded_average(ai_score: float, deterministic_score: float) -> float:
+    return round(clamp((ai_score * 0.45) + (deterministic_score * 0.55)), 2)
+
+
+def _dedupe_text(items: Iterable[str]) -> list[str]:
+    seen = set()
+    result = []
+    for item in items:
+        text = str(item).strip()
+        key = text.lower()
+        if text and key not in seen:
+            seen.add(key)
+            result.append(text)
+    return result
 
 
 def _clean_text_list(value: Any) -> list[str]:
@@ -228,8 +301,31 @@ def _category_fit(category: str, text: str, filled_ratio: float) -> float:
     terms = CATEGORY_TERMS.get(category, set())
     if not terms:
         return 0.65
-    hits = sum(1 for term in terms if term in text)
-    return clamp(0.25 + min(hits / 4, 0.45) + filled_ratio * 0.30)
+    hits = _category_hits(terms, text)
+    competing_hits = max(
+        (_category_hits(other_terms, text) for other_category, other_terms in CATEGORY_TERMS.items() if other_category != category),
+        default=0,
+    )
+    score = 0.25 + min(hits / 4, 0.45) + filled_ratio * 0.30
+    if competing_hits >= hits + 2:
+        score -= 0.30
+    elif competing_hits > hits:
+        score -= 0.18
+    return clamp(score)
+
+
+def _category_hits(terms: Iterable[str], text: str) -> int:
+    tokens = set(re.findall(r"[a-zA-ZğüşöçıİĞÜŞÖÇ0-9]+", text.lower()))
+    hits = 0
+    for term in terms:
+        normalized = term.lower()
+        if len(normalized) <= 3:
+            hits += 1 if normalized in tokens else 0
+        elif " " in normalized:
+            hits += 1 if normalized in text else 0
+        else:
+            hits += 1 if normalized in tokens or normalized in text else 0
+    return hits
 
 
 def _brand_trust_from_input(features: Any, commerce: Any, description: str) -> float:
@@ -263,13 +359,41 @@ def _visual_signal(category: str, features: Any, description: str) -> float:
 
 
 def _looks_like_noise(text: str) -> bool:
+    return bool(_noise_reasons(text, ""))
+
+
+def _noise_reasons(text: str, label: str) -> list[str]:
     cleaned = re.sub(r"\s+", "", text.lower())
+    words = [word for word in re.split(r"\s+", text.lower().strip()) if word]
+    reasons = []
     if len(cleaned) < 8:
-        return True
+        reasons.append(f"{label} cok kisa".strip())
     if len(set(cleaned)) <= 3:
-        return True
+        reasons.append(f"{label} tekrarli karakterlerden olusuyor".strip())
+    if re.fullmatch(r"(.)\1{5,}", cleaned or ""):
+        reasons.append(f"{label} tek karakter tekrarindan olusuyor".strip())
+    if re.fullmatch(r"(asdf|qwer|test|demo|abc|123|urun|product)+", cleaned or ""):
+        reasons.append(f"{label} test/rastgele ifade gibi gorunuyor".strip())
+    if len(words) >= 6 and len(set(words)) / len(words) < 0.38:
+        reasons.append(f"{label} fazla tekrar ediyor".strip())
     alpha_count = sum(1 for char in cleaned if char.isalpha())
-    return alpha_count < max(len(cleaned) * 0.45, 4)
+    if alpha_count < max(len(cleaned) * 0.45, 4):
+        reasons.append(f"{label} anlamli metin orani dusuk".strip())
+    return reasons
+
+
+def _looks_like_generic_marketing(description: str) -> bool:
+    words = [word for word in re.split(r"\s+", description.lower().strip()) if word]
+    if len(words) < 8:
+        return True
+    generic_words = {
+        "guzel", "kaliteli", "super", "harika", "mukemmel", "uygun", "kampanyali",
+        "herkes", "ideal", "urun", "cok", "iyi", "alinir", "tavsiye", "efsane",
+    }
+    detail_terms = set().union(*CATEGORY_TERMS.values())
+    generic_hits = sum(1 for word in words if word in generic_words)
+    detail_hits = sum(1 for term in detail_terms if term in description.lower())
+    return generic_hits >= 5 and detail_hits < 2
 
 
 def _guess_category(text: str, current_category: str) -> Optional[str]:

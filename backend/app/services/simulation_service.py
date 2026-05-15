@@ -68,6 +68,12 @@ def run_simulation(request: SimulationRequest) -> SimulationResponse:
     overall_score = int(round((total_probability / simulated_consumers) * 100))
     intent_conversion = _intent_conversion_score(request.purchase_motivation, market_breadth, normalized, input_analysis)
     problem_solution = _problem_solution_fit(request.purchase_motivation, normalized)
+    overall_score, intent_conversion, problem_solution = _apply_input_quality_caps(
+        overall_score,
+        intent_conversion,
+        problem_solution,
+        input_analysis,
+    )
     weakness_signals = _weakness_signals(request, normalized, input_analysis)
     weaknesses = [_weakness_message(signal) for signal in weakness_signals]
     all_personas = _ranked_personas(persona_stats, normalized, weakness_signals, persona_data)
@@ -304,6 +310,26 @@ def _problem_solution_fit(motivation: PurchaseMotivation, product: NormalizedPro
         + product.brand_trust * 10
     )
     return clamp_score(score)
+
+
+def _apply_input_quality_caps(
+    overall_score: int,
+    intent_conversion: int,
+    problem_solution: int,
+    input_analysis: Any,
+) -> tuple[int, int, int]:
+    plausibility = input_analysis.signals.plausibility
+    category_fit = input_analysis.signals.category_fit
+    description = input_analysis.signals.description_completeness
+    spec = input_analysis.signals.spec_completeness
+
+    if plausibility < 0.30:
+        return min(overall_score, 35), min(intent_conversion, 38), min(problem_solution, 42)
+    if input_analysis.should_warn and (plausibility < 0.45 or category_fit < 0.45):
+        return min(overall_score, 48), min(intent_conversion, 50), min(problem_solution, 55)
+    if description < 0.40 and spec < 0.35:
+        return min(overall_score, 55), min(intent_conversion, 55), problem_solution
+    return overall_score, intent_conversion, problem_solution
 
 
 def _weakness_signals(request: SimulationRequest, product: NormalizedProduct, input_analysis: Any) -> list[str]:
