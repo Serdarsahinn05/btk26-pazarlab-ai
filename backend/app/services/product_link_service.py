@@ -6,6 +6,7 @@ import logging
 import os
 import random
 import re
+import socket
 import time
 import urllib.error
 import urllib.parse
@@ -123,6 +124,17 @@ class AIQuotaError(ScrapingError):
 
 class AIRateLimitError(ScrapingError):
     pass
+
+
+def _is_private_address(address: Any) -> bool:
+    return (
+        address.is_private
+        or address.is_loopback
+        or address.is_link_local
+        or address.is_reserved
+        or address.is_multicast
+        or address.is_unspecified
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -924,39 +936,36 @@ class HTMLCleaner:
 # ---------------------------------------------------------------------------
 class GeminiAIExtractor:
     SYSTEM_PROMPT = """
-    You are an expert e-commerce data mining assistant. Extract product information from the given HTML content.
-    
-    CRITICAL RULES:
-    1. IMAGES: Extract ONLY the main product gallery/slider images. 
-       - Do NOT include logos, banners, payment icons, trust badges, user avatars, or decorative images.
-       - Prefer large, high-resolution images. Skip thumbnails ( URLs containing "thumb", "small", "mini", "50x50", "100x100").
-       - Include data-src / srcset URLs if they point to full-size product photos.
-    
-    2. TECHNICAL SPECIFICATIONS: Find all technical detail tables (Teknik Detaylar, Teknik Özellikler, Ürün Bilgisi, Specs).
-       - Extract EVERY row as a key-value pair in the "features" object.
-       - For phones: Marka, Model, İşlemci, RAM, Dahili Hafıza, Ekran Boyutu, Çözünürlük, Batarya, Ön Kamera, Arka Kamera, İşletim Sistemi.
-       - For clothing: Kumaş, Kalıp, Sezon, Yaka Tipi, Kol Boyu, Beden.
-       - Keep original Turkish keys as they appear in the table.
-    
-    3. PRICE: Extract current sale price and original price if discounted. Numeric only. Currency as 3-letter code (TRY/USD/EUR).
-    4. DESCRIPTION: Extract from body text, NOT meta tags. Include technical details.
-    5. VARIANTS: List color/size options if present.
-    
+    You are the Product Page Extraction Council for PazarLab AI. Work as 4 specialized agents, then return one JSON:
+    1) Identity agent: identify title, brand, model, category and availability from trustworthy product-page text.
+    2) Commerce agent: extract current price, original price and currency. Do not invent price if it is not visible.
+    3) Specification agent: extract all decision-making specs from tables, bullets and product detail sections.
+    4) Media agent: select only real product gallery images, not logos, banners, badges, avatars or decorative images.
+
+    Critical rules:
+    - Prefer JSON-LD, product detail tables, visible product title/price and gallery data over generic meta tags.
+    - If the page is blocked or data is uncertain, leave fields null instead of guessing.
+    - Keep feature keys close to the original marketplace labels, but values must be short and clean.
+    - For technology products, prioritize model, processor, RAM, storage, display, battery, connectivity, warranty and OS.
+    - For clothing, prioritize fabric, fit, size range, season, color, care and use case.
+    - Description must summarize concrete product facts from the page, not marketing filler.
+    - Images must be absolute URLs when possible; include 1-8 best product photos.
+
     Return ONLY valid JSON:
     {
-      "title": "string",
-      "description": "string",
-      "price": number,
+      "title": "string or null",
+      "description": "string or null",
+      "price": number or null,
       "original_price": number or null,
-      "currency": "TRY",
-      "brand": "string",
-      "category": "string",
-      "availability": "InStock",
+      "currency": "TRY/USD/EUR or null",
+      "brand": "string or null",
+      "category": "string or null",
+      "availability": "string or null",
       "sku": "string or null",
       "mpn": "string or null",
-      "images": ["url1", "url2"],
-      "variants": [{"color":"Red","size":"M"}],
-      "features": {"İşlemci":"Snapdragon 8 Gen 2", "RAM":"8 GB"}
+      "images": ["url1"],
+      "variants": [{"color":"Red","size":"M","price":123}],
+      "features": {"RAM":"8 GB", "Ekran":"10.9 inch"}
     }
     """
 
@@ -1377,12 +1386,21 @@ class ProductLinkReader:
 
         hostname = parsed.hostname
         if hostname:
+            blocked_hosts = {"localhost", "0.0.0.0"}
+            if hostname.lower() in blocked_hosts or hostname.lower().endswith(".local"):
+                raise URLValidationError("Private/localhost URLs are not allowed.")
             try:
                 ip = ipaddress.ip_address(hostname)
-                if ip.is_private or ip.is_loopback:
+                if _is_private_address(ip):
                     raise URLValidationError("Private/localhost URLs are not allowed.")
             except ValueError:
-                pass
+                try:
+                    for info in socket.getaddrinfo(hostname, None):
+                        resolved_ip = ipaddress.ip_address(info[4][0])
+                        if _is_private_address(resolved_ip):
+                            raise URLValidationError("Private/localhost URLs are not allowed.")
+                except socket.gaierror as exc:
+                    raise URLValidationError("Product link domain could not be resolved.") from exc
 
         return urllib.parse.urlunparse(parsed)
 
