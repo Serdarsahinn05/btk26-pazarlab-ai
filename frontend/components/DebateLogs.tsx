@@ -63,10 +63,10 @@ export const DebateLogs: React.FC<DebateLogsProps> = ({ logs }) => {
   if (!logs || logs.length === 0) return null;
 
   return (
-    <div className="space-y-4 max-h-[500px] overflow-y-auto p-4 custom-scrollbar rounded-xl bg-black/40 border border-white/10 backdrop-blur-md shadow-2xl">
-      <div className="flex items-center gap-2 mb-4 border-b border-white/10 pb-2">
-        <MessageSquare className="w-5 h-5 text-indigo-400" />
-        <h3 className="text-sm font-semibold text-white uppercase tracking-wider">Ajanlar Arası Tartışma (A2A)</h3>
+    <div className="space-y-4 max-h-[500px] overflow-y-auto p-4 custom-scrollbar rounded-xl bg-white/40 dark:bg-black/40 border border-border/50 dark:border-white/10 backdrop-blur-md shadow-xl dark:shadow-2xl">
+      <div className="flex items-center gap-2 mb-4 border-b border-border/50 dark:border-white/10 pb-2">
+        <MessageSquare className="w-5 h-5 text-indigo-500 dark:text-indigo-400" />
+        <h3 className="text-sm font-semibold text-foreground dark:text-white uppercase tracking-wider">Ajanlar Arası Tartışma (A2A)</h3>
       </div>
       
       <div className="space-y-3">
@@ -84,13 +84,13 @@ export const DebateLogs: React.FC<DebateLogsProps> = ({ logs }) => {
                 animate={{ opacity: 1, x: 0, y: 0 }}
                 transition={{ duration: 0.4 }}
                 className={`flex flex-col gap-1 p-3 rounded-2xl border ${
-                  personaColors[log.name] || "bg-white/5 text-white/80 border-white/10"
+                  personaColors[log.name] || "bg-muted/50 dark:bg-white/5 text-foreground/80 dark:text-white/80 border-border/50 dark:border-white/10"
                 }`}
               >
                 <div className="flex items-center gap-2 mb-1">
-                  <div className="w-8 h-8 rounded-full overflow-hidden border border-white/20 bg-white/10 flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-full overflow-hidden border border-border/50 dark:border-white/20 bg-white/10 flex items-center justify-center shrink-0">
                     {isSystem ? (
-                      <Zap className="w-4 h-4 text-yellow-400" />
+                      <Zap className="w-4 h-4 text-yellow-500" />
                     ) : (
                       <img 
                         src={`/pp_icons/${iconId}.jpeg`} 
@@ -101,13 +101,12 @@ export const DebateLogs: React.FC<DebateLogsProps> = ({ logs }) => {
                           target.src = "";
                           target.style.display = "none";
                         }}
-
                       />
                     )}
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-tight opacity-70">{log.name}</span>
+                  <span className="text-[10px] font-bold uppercase tracking-tight opacity-70 text-foreground dark:text-white">{log.name}</span>
                 </div>
-                <p className="text-sm leading-relaxed font-medium pl-10 -mt-2">
+                <p className="text-sm leading-relaxed font-medium pl-10 -mt-2 text-foreground/90 dark:text-white/90">
                   {String(log.text)}
                 </p>
               </motion.div>
@@ -118,4 +117,5 @@ export const DebateLogs: React.FC<DebateLogsProps> = ({ logs }) => {
     </div>
   );
 };
+
 
