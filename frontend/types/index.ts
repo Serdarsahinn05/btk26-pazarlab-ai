@@ -168,7 +168,11 @@ export interface SimulationResponse {
   weaknesses: string[];
   normalizedProduct: NormalizedProduct;
   aiInsights: AiInsights;
+  debateLogs?: { name: string; text: string }[];
+  benchmarkAnalysis?: string;
   images?: string[];
+
+
   inputAnalysis?: InputAnalysisResponse;
 }
 

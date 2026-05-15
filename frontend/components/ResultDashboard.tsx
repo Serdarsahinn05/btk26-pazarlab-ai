@@ -9,7 +9,11 @@ import AiFeedbackPanel from "./AiFeedbackPanel";
 import ProductTypeInsight from "./ProductTypeInsight";
 import ChannelRecommendation from "./ChannelRecommendation";
 import NormalizedScoresPanel from "./NormalizedScoresPanel";
+import { DebateLogs } from "./DebateLogs";
 import confetti from "canvas-confetti";
+import { Zap } from "lucide-react";
+
+
 import { motion, type Variants } from "framer-motion";
 
 interface ResultDashboardProps {
@@ -74,7 +78,7 @@ export default function ResultDashboard({ data }: ResultDashboardProps) {
           Simülasyon <span className="text-gradient">Sonuçları</span>
         </h2>
         <span className="text-sm text-primary-foreground font-medium bg-primary px-4 py-2 rounded-full shadow-[0_0_15px_rgba(var(--primary),0.5)]">
-          {data.simulatedConsumers} Tüketici Analiz Edildi
+          {String(data.simulatedConsumers)} Tüketici Analiz Edildi
         </span>
       </motion.div>
 
@@ -103,6 +107,19 @@ export default function ResultDashboard({ data }: ResultDashboardProps) {
         <motion.div variants={itemVariants} className="col-span-1 md:col-span-3">
           <NormalizedScoresPanel product={data.normalizedProduct} />
         </motion.div>
+
+        {/* Benchmark Analysis */}
+        {data.benchmarkAnalysis && (
+          <motion.div variants={itemVariants} className="col-span-1 md:col-span-3 p-6 glass rounded-2xl border border-blue-500/20 bg-blue-500/5">
+            <h3 className="text-lg font-bold text-blue-400 mb-3 flex items-center gap-2">
+              <Zap className="w-5 h-5" /> Pazar Rekabet Analizi (Benchmark)
+            </h3>
+            <div className="text-white/80 whitespace-pre-wrap leading-relaxed italic">
+              {String(data.benchmarkAnalysis)}
+            </div>
+          </motion.div>
+        )}
+
         
         {/* Karakteristik ve Kanallar (Yeni Küçük Kartlar) */}
         <motion.div variants={itemVariants}>
@@ -111,9 +128,17 @@ export default function ResultDashboard({ data }: ResultDashboardProps) {
         <motion.div variants={itemVariants}>
           <ChannelRecommendation channels={data.aiInsights.channelRecommendation} />
         </motion.div>
-        <motion.div variants={itemVariants} className="col-span-1">
+        <motion.div variants={itemVariants}>
           <WeaknessList weaknesses={data.weaknesses} />
         </motion.div>
+
+        {/* A2A Debate Logs */}
+        {data.debateLogs && data.debateLogs.length > 0 && (
+          <motion.div variants={itemVariants} className="col-span-1 md:col-span-3">
+            <DebateLogs logs={data.debateLogs} />
+          </motion.div>
+        )}
+
 
         {/* Personalar */}
         <motion.div variants={itemVariants} className="col-span-1 md:col-span-3">

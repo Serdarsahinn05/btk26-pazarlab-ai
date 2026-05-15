@@ -18,7 +18,7 @@ export default function ProductTypeInsight({ insight }: ProductTypeInsightProps)
       </CardHeader>
       <CardContent>
         <p className="text-sm text-foreground/80 font-medium">
-          {insight}
+          {String(insight)}
         </p>
       </CardContent>
     </Card>
