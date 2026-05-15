@@ -68,11 +68,19 @@ function getPersonaAction(persona: Persona, feedbackMap: Map<string, PersonaFeed
   return feedbackMap.get(persona.name)?.action || persona.advice;
 }
 
-export default function TopPersonaCards({ personas, allPersonas, insights }: TopPersonaCardsProps) {
+export default function TopPersonaCards({ personas = [], allPersonas = [], insights }: TopPersonaCardsProps) {
   const feedbackMap = getFeedbackMap(insights?.personaFeedback);
-  const rankedPersonas = allPersonas?.length ? allPersonas : personas;
-  const topNames = new Set(personas.map((persona) => persona.name));
-  const remainingPersonas = rankedPersonas.filter((persona) => !topNames.has(persona.name));
+  const rankedPersonas = (allPersonas?.length ? allPersonas : personas) || [];
+  
+  // Güvenli map işlemi
+  const topNames = new Set(
+    (personas || [])
+      .filter(p => p && p.name)
+      .map((persona) => persona.name)
+  );
+  
+  const remainingPersonas = rankedPersonas.filter((persona) => persona && persona.name && !topNames.has(persona.name));
+
 
   return (
     <Card className="col-span-1 md:col-span-3 border-primary/20 shadow-xl glass bg-card/70">
@@ -151,6 +159,7 @@ export default function TopPersonaCards({ personas, allPersonas, insights }: Top
 
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
             {remainingPersonas.map((persona, index) => {
+              if (!persona || !persona.name) return null; // Güvenlik kontrolü
               const Icon = personaIcons[(index + personas.length) % personaIcons.length];
               const probability = Math.round(persona.purchaseProbability * 100);
 

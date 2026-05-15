@@ -78,12 +78,33 @@ MOTIVATION_INSIGHTS: Dict[str, str] = {
 }
 
 
+def _extract_text_from_response(data: Dict[str, Any]) -> str:
+    """Robustly extracts text from Gemini API response parts, handling thinking blocks."""
+    try:
+        parts = data.get("candidates", [{}])[0].get("content", {}).get("parts", [])
+        texts = []
+        for part in parts:
+            if "text" in part:
+                texts.append(part["text"])
+            elif "thinking" in part:
+                texts.append(part["thinking"])
+            elif isinstance(part, dict):
+                # Handle unexpected nested formats
+                for key in ["text", "thinking", "content"]:
+                    if key in part:
+                        texts.append(str(part[key]))
+                        break
+        return "\n".join(texts)
+    except Exception as e:
+        logger.error(f"Error extracting text from Gemini response: {e}")
+        return ""
+
 def _call_gemini_generate_content(system_prompt: str, user_payload: Mapping[str, Any]) -> Dict[str, Any]:
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         raise RuntimeError("GEMINI_API_KEY missing")
 
-    model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    model = os.getenv("GEMINI_MODEL", "gemini-1.5-flash-latest")
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
     body = {
         "systemInstruction": {
@@ -110,8 +131,11 @@ def _call_gemini_generate_content(system_prompt: str, user_payload: Mapping[str,
     with urllib.request.urlopen(req, timeout=20) as resp:
         raw = resp.read().decode("utf-8")
     data = json.loads(raw)
-    content = data["candidates"][0]["content"]["parts"][0]["text"]
+    content = _extract_text_from_response(data)
+    if not content:
+        raise ValueError("Gemini API returned empty content")
     return json.loads(content)
+
 
 
 def generate_insights(

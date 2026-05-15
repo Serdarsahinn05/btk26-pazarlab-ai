@@ -142,6 +142,10 @@ MOCK_SIMULATION_RESPONSE = SimulationResponse.model_validate({
 })
 
 
+from app.services.graph import run_agentic_simulation
+
+
 @router.post("/simulate", response_model=SimulationResponse)
 async def simulate_product(request: SimulationRequest) -> SimulationResponse:
-    return run_simulation(request)
+    return run_agentic_simulation(request)
+
