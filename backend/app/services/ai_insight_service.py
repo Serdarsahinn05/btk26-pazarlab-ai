@@ -14,37 +14,43 @@ logger = logging.getLogger("ai_insights")
 
 
 SYSTEM_PROMPT = """
-Sen deneyimli bir e-ticaret danışmanısın. Aşağıdaki simülasyon sonucunu satıcıya net, kısa ve aksiyona dönüştürülebilir önerilerle sun.
+Sen PazarLab AI icin agentic e-ticaret analiz kurulusan. Tek cevap uretmeden once 5 uzmani sirayla calistir:
+1) Skor hakemi: verilen skorlarin ne anlama geldigini gercek donusum orani gibi abartmadan yorumlar.
+2) Persona stratejisti: topPersonas ve allPersonas listesinden hangi kitlelerin neden ikna oldugunu/olmadigini ayirir.
+3) Listeleme doktoru: baslik, aciklama, gorsel, guven, kargo/iade ve teknik detay eksiklerini bulur.
+4) Kanal planlayici: pazarlama kanali, mesaj dili ve 7 gunluk test planini secilen motivasyona gore kurar.
+5) Risk denetcisi: input uyari sinyallerini ve zayifliklari dikkate alir; emin olmadigi yerde saticiya dogrulama onerir.
 
-Ürün Bilgisi:
+Urun Bilgisi:
 - Kategori: {category}
-- Satın alma motivasyonu: {purchaseMotivation}
-- Pazar genişliği skoru: {marketBreadthScore}/100
-- Satın alma niyeti skoru: {intentConversionScore}/100
-- Problem çözüm uyumu: {problemSolutionFit}/100
+- Satin alma motivasyonu: {purchaseMotivation}
+- Pazar genisligi skoru: {marketBreadthScore}/100
+- Satin alma niyeti skoru: {intentConversionScore}/100
+- Ihtiyac/problem uyumu skoru: {problemSolutionFit}/100
 
 Kurallar:
-- Satıcı küçük/orta ölçekli bir işletme olabilir; teknik jargon kullanma.
-- Her öneri somut ve uygulanabilir olsun.
-- Ürünü şu şekilde sınıflandır: "trend/stil ürünü", "ihtiyaç ürünü", "problem çözüm/yedek parça ürünü", "hediye ürünü"
-- Buna göre kanal önerisi ver: sosyal medya mı, SEO/arama mı, pazar yeri içi optimizasyon mu?
-- Niş ürünlerde (pazar genişliği < 40): "Geniş kitle reklamı yerine arama niyeti yüksek kullanıcılara ulaşmak daha doğru" vurgusu yap.
-- Satın alma niyeti skorunu gerçek site dönüşüm oranı gibi yorumlama; bu skor fiyat, güven, açıklama ve teknik detaylardan türetilmiş bir eğilim skorudur.
-- Persona Yorumları: 'topPersonas' listesindeki her bir personanın 'aiRoleplayPrompt' içeriğine sadık kalarak, o kişinin ağzından (birinci şahıs - 'ben') 1-2 cümlelik dürüst ve karakterine uygun bir yorum yap.
-- Cevabı SADECE JSON formatında döndür. Başka metin ekleme.
+- Kucuk/orta olcekli saticinin uygulayabilecegi net aksiyonlar yaz.
+- Genel, tekrar eden, mock gibi cumleler kullanma: "aciklamayi guclendir", "sosyal medya kullan" tek basina yasak.
+- Her oneride en az bir somut nesne olsun: hangi alan, hangi mesaj, hangi kanal, hangi test, hangi kanit?
+- Satin alma niyeti skorunu gercek site donusum orani gibi yorumlama; bu skor fiyat, guven, aciklama ve teknik detaylardan turetilmis egilim skorudur.
+- Zayif input varsa sonucu fazla kesin anlatma; once hangi verinin dogrulanmasi gerektigini soyle.
+- Niche urunlerde (pazar genisligi < 40) genis kitle reklami yerine arama niyeti yuksek kullanicilari vurgula.
+- Persona yorumlari: allPersonas listesindeki her persona icin karakterine uygun, birinci sahis agzindan, birbirinden farkli 1-2 cumle yaz. Her yorumda o personanin karar sebebi gecsin.
+- personaFeedback.action alaninda saticinin o personayi ikna etmek icin yapacagi tek kritik dokunusu yaz.
+- Cevabi SADECE JSON formatinda dondur. Baska metin ekleme.
 
 {{
-  "summary": "2 cümlelik genel değerlendirme",
-  "productTypeInsight": "Bu ürün [X] odaklı bir [Y] ürünüdür. Geniş kitleye [hitap eder/hitap etmez]...",
-  "salesRecipe": ["3-5 maddelik aksiyon listesi"],
-  "marketingAdvice": "Hangi kanal, hangi dil?",
-  "descriptionAdvice": "Açıklamada ne eksik?",
-  "pricingAdvice": "Fiyat algısı ve öneri",
-  "seasonAdvice": "Mevsim değerlendirmesi",
+  "summary": "2 cumle: skorlarin anlami + en kritik risk/firsat",
+  "productTypeInsight": "Urun tipi, kitle genisligi ve satin alma motivasyonu yorumu",
+  "salesRecipe": ["4-5 maddelik sirali aksiyon listesi; her madde uygulanabilir ve olculebilir"],
+  "marketingAdvice": "Kanal + kreatif acisi + hedef persona + 7 gunluk test mantigi",
+  "descriptionAdvice": "Aciklamada hangi bilgi eksik ve hangi sirayla eklenmeli",
+  "pricingAdvice": "Fiyat algisi, kampanya/kupon/kargo testi ve ne zaman indirim yapilmamali",
+  "seasonAdvice": "Sezon, kampanya donemi veya teknoloji urunlerinde donemsel talep yorumu",
   "channelRecommendation": ["Instagram", "TikTok", "Google Search", "SEO"],
-  "improvedDescription": "Hazır, kullanıma hazır iyileştirilmiş ürün açıklaması",
+  "improvedDescription": "Saticinin direkt kullanabilecegi, urun ozelliklerine dayali, abartisiz aciklama",
   "personaFeedback": [
-    {{"name": "Persona adı", "feedback": "Persona karakterine uygun 1. şahıs yorumu (örn: 'Bu fiyata bu kaliteyi başka yerde bulamam, hemen alırım.')", "action": "Bu personayı ikna etmek için satıcının yapması gereken kritik dokunuş"}}
+    {{"name": "Persona adi", "feedback": "Ben diliyle karar yorumu", "action": "Bu personayi ikna edecek tek kritik dokunus"}}
   ]
 }}
 """.strip()
@@ -264,11 +270,63 @@ def _build_persona_feedback(all_personas: list[PersonaResult]) -> list[PersonaFe
     return [
         PersonaFeedback(
             name=persona.name,
-            feedback=persona.micro_feedback or persona.reason,
-            action=persona.advice,
+            feedback=_fallback_persona_voice(persona),
+            action=_fallback_persona_action(persona),
         )
         for persona in all_personas
     ]
+
+
+def _fallback_persona_voice(persona: PersonaResult) -> str:
+    probability = persona.purchase_probability
+    decision = persona.decision
+    profile = (persona.personality_type or persona.name).lower()
+    base_reason = persona.micro_feedback or persona.reason
+
+    if "fiyat" in persona.name.lower() or "hesap" in profile:
+        if decision == "buy":
+            return "Benim icin fiyat-fayda dengesi net gorunuyor; ekstra kargo surprizi yoksa sepete atarim."
+        return "Ben once toplam maliyete bakarim; kupon veya ucretsiz kargo gormeden beklerim."
+    if "trend" in persona.name.lower() or "heves" in profile:
+        if probability >= 0.55:
+            return "Gorsel ve trend hissi beni yakalar; kombin/video ornegi gorursem daha hizli karar veririm."
+        return "Urun ilgimi cekebilir ama sosyal kanit ve daha canli gorsel olmadan heyecanlanmam."
+    if "kalite" in persona.name.lower() or "mufettis" in profile:
+        if probability >= 0.55:
+            return "Malzeme ve garanti bilgisi yeterince netse daha pahali olsa bile dusunurum."
+        return "Kalite kaniti eksikse sadece guzel gorunmesi beni ikna etmez."
+    if "detay" in persona.name.lower() or "analist" in profile or "teknik" in profile:
+        if probability >= 0.55:
+            return "Olcu, teknik detay ve kullanim senaryosu acik oldugu icin karar vermem kolaylasir."
+        return "Ben tablo, olcu ve uyumluluk gormeden satin almam; eksik bilgi risk demek."
+    if "marka" in persona.name.lower() or "guven" in profile:
+        if probability >= 0.55:
+            return "Garanti, iade ve fatura bilgisi guven verirse markayi daha rahat denerim."
+        return "Marka veya satici guveni net degilse fiyati iyi olsa bile geri dururum."
+    if "premium" in persona.name.lower() or "statu" in profile:
+        if probability >= 0.55:
+            return "Sunum kaliteli ve urun kendini ozel hissettiriyorsa premium fiyati kabul edebilirim."
+        return "Premium algi icin paketleme, malzeme ve marka hikayesi daha guclu olmali."
+    if decision == "buy":
+        return f"Benim ihtiyacima uyuyor; {base_reason}"
+    if decision == "skip":
+        return f"Su haliyle beni tam ikna etmiyor; {base_reason}"
+    return f"Kararsiz kalirim; {base_reason}"
+
+
+def _fallback_persona_action(persona: PersonaResult) -> str:
+    name = persona.name.lower()
+    if "fiyat" in name or "sepet" in name:
+        return "Toplam fiyat, kargo ve kupon bilgisini ilk ekranda goster."
+    if "trend" in name or "dürtü" in name or "durtu" in name:
+        return "Ilk gorseli kisa video/kombin veya kullanim sahnesiyle test et."
+    if "kalite" in name or "premium" in name:
+        return "Malzeme, garanti ve kalite kanitini aciklamanin ilk paragrafina al."
+    if "detay" in name or "problem" in name or "teknik" in name:
+        return "Olcu, uyumluluk ve teknik ozellikleri tablo gibi okunur hale getir."
+    if "marka" in name or "sosyal" in name:
+        return "Yorum, iade, fatura ve satici guveni sinyallerini gorunur yap."
+    return persona.advice
 
 
 def _build_sales_recipe(
@@ -316,7 +374,7 @@ def _build_marketing_advice(
     scope = "genis kitle kreatifleri" if market_breadth_score >= 55 else "arama niyeti yuksek daha dar kitle"
     return (
         f"Kanal odagi: {channel_text}. Mesaj dili {angle} uzerine kurulsun. "
-        f"{scope} ile basla; donusum skoru {intent_conversion_score}/100 oldugu icin personalar ({top_persona_names}) bazinda iki farkli metin test et."
+        f"{scope} ile basla; satin alma niyeti skoru {intent_conversion_score}/100 oldugu icin personalar ({top_persona_names}) bazinda iki farkli metin test et."
     )
 
 
