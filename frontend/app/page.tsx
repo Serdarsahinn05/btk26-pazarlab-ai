@@ -43,8 +43,16 @@ export default function Home() {
   const executeSimulation = async (data: SimulationRequest, inputAnalysis: InputAnalysisResponse) => {
     setSimulationState("loading");
     setResultData(null);
+    
+    // Minimum 2.5 saniye log ekranını göster (UX için)
+    const minDelay = new Promise(resolve => setTimeout(resolve, 2500));
+    
     try {
-      const response = await simulateProduct({ ...data, inputAnalysis });
+      const [response] = await Promise.all([
+        simulateProduct({ ...data, inputAnalysis }),
+        minDelay
+      ]);
+      
       setResultData(response);
       setSimulationState("result");
     } catch (error) {
