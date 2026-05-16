@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -10,6 +9,7 @@ import { PurchaseMotivation, SimulationRequest } from "@/types";
 import { readProductLink } from "@/lib/api";
 import { Image as ImageIcon, Link2, Loader2, Plus, Shirt, Smartphone, Sparkles, Trash2, Upload } from "lucide-react";
 import { motion, type Variants } from "framer-motion";
+
 
 interface ProductFormProps {
   onSubmit: (data: SimulationRequest) => void;
@@ -303,10 +303,8 @@ const categoryFamilies = [
   }
 ];
 
-const containerVariants: Variants = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.08 } }
-};
+
+
 
 const itemVariants: Variants = {
   hidden: { opacity: 0, y: 10 },
@@ -523,21 +521,21 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
   };
 
   return (
-    <Card className="w-full shadow-2xl border-border/50 dark:border-white/10 glass bg-card/40 backdrop-blur-xl relative overflow-hidden">
+    <div className="bento-card border-primary/20 glow-blue overflow-hidden relative">
       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
 
-      <CardHeader>
-        <CardTitle className="text-2xl flex items-center gap-2">
+      <div className="mb-8">
+        <h2 className="text-2xl font-black tracking-tighter flex items-center gap-3">
           <Sparkles className="w-6 h-6 text-primary" />
-          Urun Analizi Baslat
-        </CardTitle>
-        <CardDescription className="text-muted-foreground">
-          Urun ailesini secin; form sadece o urunun satin alma kararini etkileyen alanlari sorar.
-        </CardDescription>
-      </CardHeader>
+          Ürün Analizi Başlat
+        </h2>
+        <p className="text-muted-foreground text-sm font-medium mt-1">
+          Ürün ailesini seçin; PazarLab pazar uyumunu saniyeler içinde analiz etsin.
+        </p>
+      </div>
 
-      <form ref={formRef} onSubmit={handleSubmit}>        <CardContent>
-          <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-10">
+      <form ref={formRef} onSubmit={handleSubmit}>
+        <div className="space-y-10">
             
             {/* 1. ADIM: HIZLI BASLANGIC (Link & Gorseller) */}
             <motion.div variants={itemVariants} className="space-y-6 p-6 rounded-2xl bg-primary/5 border border-primary/20 relative overflow-hidden">
@@ -775,7 +773,8 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
                 <h3 className="text-xl font-bold tracking-tight">{activeCategory.shortLabel} Teknik Detaylari</h3>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 bg-muted/10 p-6 rounded-2xl border border-border/50 shadow-inner">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-5 bg-muted/10 p-6 rounded-2xl border border-border/50 shadow-inner">
+
                 {activeCategory.fields.map((field) => {
                   if (field.type === "checkbox") {
                     return (
@@ -820,33 +819,33 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
                 })}
               </div>
             </motion.div>
-          </motion.div>
-        </CardContent>
+        </div>
 
-        <CardFooter className="bg-primary/5 border-t border-border/50 p-8 mt-10">
+        <div className="bg-primary/5 border-t border-border/50 p-8 mt-10">
           <motion.div className="w-full" whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
             <Button
               type="submit"
               size="lg"
-              className="w-full font-black text-xl h-16 bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_10px_30px_rgba(var(--primary),0.3)] transition-all rounded-2xl group overflow-hidden relative"
+              className="w-full font-black text-xl h-16 bg-primary hover:bg-primary/90 text-primary-foreground glow-blue transition-all rounded-2xl group overflow-hidden relative"
               disabled={isLoading}
             >
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
               {isLoading ? (
                 <span className="flex items-center gap-3">
                   <Loader2 className="h-7 w-7 animate-spin" />
-                  SIMULASYON HAZIRLANIYOR...
+                  SİMÜLASYON HAZIRLANIYOR...
                 </span>
               ) : (
                 <span className="flex items-center gap-3">
-                  SIMULASYONU BASLAT <Sparkles className="w-6 h-6 animate-pulse" />
+                  SİMÜLASYONU BAŞLAT <Sparkles className="w-6 h-6 animate-pulse" />
                 </span>
               )}
             </Button>
           </motion.div>
-        </CardFooter>
+        </div>
 
       </form>
-    </Card>
+    </div>
+
   );
 }

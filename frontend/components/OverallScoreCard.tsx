@@ -1,7 +1,7 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+
 import { SimulationResponse } from "@/types";
 import { Target, Users, Zap, Wrench } from "lucide-react";
 import { motion } from "framer-motion";
@@ -59,88 +59,84 @@ export default function OverallScoreCard({ data }: OverallScoreCardProps) {
   };
 
   return (
-    <Card className="col-span-1 md:col-span-3 border-border/50 dark:border-white/10 shadow-2xl glass bg-card/60 backdrop-blur-xl relative overflow-hidden group">
+    <div className="bento-card border-primary/20 glow-blue group relative overflow-hidden">
       <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-[100px] pointer-events-none group-hover:bg-primary/20 transition-colors duration-700" />
       
-      <CardHeader className="pb-2">
-        <CardTitle className="text-xl flex items-center gap-2">
-          <Zap className="w-6 h-6 text-primary" />
-          Pazar Potansiyeli Analizi
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="flex flex-col md:flex-row items-center gap-8 py-4 relative z-10">
-          
-          {/* Büyük Ana Skor */}
+      <div className="pb-6">
+        <h3 className="text-xl font-black tracking-tight flex items-center gap-2">
+          <Zap className="w-6 h-6 text-primary glow-blue" />
+          PAZAR POTANSİYELİ ANALİZİ
+        </h3>
+      </div>
+      
+      <div className="flex flex-col md:flex-row items-center gap-12 py-4 relative z-10">
+        {/* Büyük Ana Skor */}
+        <motion.div 
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 200, damping: 20 }}
+          className="flex-shrink-0 flex flex-col items-center justify-center p-6 bg-black/40 rounded-full border border-white/10 w-52 h-52 relative"
+        >
           <motion.div 
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: "spring", stiffness: 200, damping: 20 }}
-            className="flex-shrink-0 flex flex-col items-center justify-center p-6 bg-black/5 dark:bg-black/40 rounded-full border border-border/50 dark:border-white/10 w-48 h-48 relative"
-          >
-            {/* Pulsing Glow behind the circle */}
-            <motion.div 
-              animate={{ opacity: [0.5, 0.8, 0.5], scale: [1, 1.05, 1] }}
-              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute inset-0 rounded-full -z-10 blur-xl"
-              style={{ backgroundColor: getGlowColor(data.overallScore) }}
-            />
-            
-            <span className="text-sm font-medium text-muted-foreground mb-1 text-center">Genel Puan</span>
-            <div className={`text-7xl font-black tracking-tighter ${getScoreColor(data.overallScore)}`} style={{ textShadow: `0 0 20px ${getGlowColor(data.overallScore)}` }}>
-              {animatedScore}
+            animate={{ opacity: [0.3, 0.6, 0.3], scale: [1, 1.1, 1] }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute inset-0 rounded-full -z-10 blur-2xl"
+            style={{ backgroundColor: getGlowColor(data.overallScore) }}
+          />
+          
+          <span className="text-[10px] font-bold text-muted-foreground mb-1 tracking-widest uppercase">Genel Puan</span>
+          <div className={`text-8xl font-black tracking-tighter ${getScoreColor(data.overallScore)}`} style={{ textShadow: `0 0 30px ${getGlowColor(data.overallScore)}` }}>
+            {animatedScore}
+          </div>
+          <span className="text-xs font-bold text-muted-foreground/60 mt-1 uppercase tracking-widest">/ 100 Skor</span>
+        </motion.div>
+
+        {/* Yan Skorlar */}
+        <div className="flex-grow grid grid-cols-1 sm:grid-cols-3 gap-6 w-full">
+          <motion.div whileHover={{ y: -5 }} className="space-y-4 p-5 bg-white/5 rounded-2xl border border-white/5 shadow-xl backdrop-blur-md transition-all">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+                <Target className="w-4 h-4 text-blue-500" />
+                Pazar Genişliği
+              </span>
+              <span className={`text-lg font-black ${getScoreColor(data.marketBreadthScore)}`}>
+                {data.marketBreadthScore}
+              </span>
             </div>
-            <span className="text-sm font-bold text-muted-foreground mt-1">/ 100</span>
+            <Progress value={data.marketBreadthScore} className="h-1.5 bg-white/5" indicatorColor={getProgressColorClass(data.marketBreadthScore)} />
+            <p className="text-[10px] text-muted-foreground leading-tight">Erişilebilir toplam talep skoru.</p>
           </motion.div>
 
-          {/* Yan Skorlar */}
-          <div className="flex-grow grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
-            
-            <motion.div whileHover={{ y: -5 }} className="space-y-3 p-4 bg-black/5 dark:bg-black/40 rounded-xl border border-border/50 dark:border-white/5 shadow-lg backdrop-blur-md transition-all">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold flex items-center gap-2">
-                  <Target className="w-4 h-4 text-blue-500" />
-                  Pazar Genişliği
-                </span>
-                <span className={`font-bold ${getScoreColor(data.marketBreadthScore)}`}>
-                  {data.marketBreadthScore}/100
-                </span>
-              </div>
-              <Progress value={data.marketBreadthScore} className="h-2 bg-muted dark:bg-white/5" indicatorColor={getProgressColorClass(data.marketBreadthScore)} />
-              <p className="text-xs text-muted-foreground">Kategori ve hedef kitleye gore erisilebilir talep skoru.</p>
-            </motion.div>
+          <motion.div whileHover={{ y: -5 }} className="space-y-4 p-5 bg-white/5 rounded-2xl border border-white/5 shadow-xl backdrop-blur-md transition-all">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+                <Users className="w-4 h-4 text-purple-500" />
+                Satın Alma Niyeti
+              </span>
+              <span className={`text-lg font-black ${getScoreColor(data.intentConversionScore)}`}>
+                {data.intentConversionScore}
+              </span>
+            </div>
+            <Progress value={data.intentConversionScore} className="h-1.5 bg-white/5" indicatorColor={getProgressColorClass(data.intentConversionScore)} />
+            <p className="text-[10px] text-muted-foreground leading-tight">Üretilen psikolojik satın alma niyeti.</p>
+          </motion.div>
 
-            <motion.div whileHover={{ y: -5 }} className="space-y-3 p-4 bg-black/5 dark:bg-black/40 rounded-xl border border-border/50 dark:border-white/5 shadow-lg backdrop-blur-md transition-all">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold flex items-center gap-2">
-                  <Users className="w-4 h-4 text-purple-500" />
-                  Satin Alma Niyeti
-                </span>
-                <span className={`font-bold ${getScoreColor(data.intentConversionScore)}`}>
-                  {data.intentConversionScore}/100
-                </span>
-              </div>
-              <Progress value={data.intentConversionScore} className="h-2 bg-muted dark:bg-white/5" indicatorColor={getProgressColorClass(data.intentConversionScore)} />
-              <p className="text-xs text-muted-foreground">Gercek donusum orani degil; fiyat, guven ve detaylardan uretilen niyet skoru.</p>
-            </motion.div>
-
-            <motion.div whileHover={{ y: -5 }} className="space-y-3 p-4 bg-black/5 dark:bg-black/40 rounded-xl border border-border/50 dark:border-white/5 shadow-lg backdrop-blur-md transition-all">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold flex items-center gap-2">
-                  <Wrench className="w-4 h-4 text-amber-500" />
-                  Ihtiyac Uyumu
-                </span>
-                <span className={`font-bold ${getScoreColor(data.problemSolutionFit)}`}>
-                  {data.problemSolutionFit}/100
-                </span>
-              </div>
-              <Progress value={data.problemSolutionFit} className="h-2 bg-muted dark:bg-white/5" indicatorColor={getProgressColorClass(data.problemSolutionFit)} />
-              <p className="text-xs text-muted-foreground">Urunun hedef kullanim ihtiyacini karsilama skoru.</p>
-            </motion.div>
-
-          </div>
+          <motion.div whileHover={{ y: -5 }} className="space-y-4 p-5 bg-white/5 rounded-2xl border border-white/5 shadow-xl backdrop-blur-md transition-all">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+                <Wrench className="w-4 h-4 text-amber-500" />
+                İhtiyaç Uyumu
+              </span>
+              <span className={`text-lg font-black ${getScoreColor(data.problemSolutionFit)}`}>
+                {data.problemSolutionFit}
+              </span>
+            </div>
+            <Progress value={data.problemSolutionFit} className="h-1.5 bg-white/5" indicatorColor={getProgressColorClass(data.problemSolutionFit)} />
+            <p className="text-[10px] text-muted-foreground leading-tight">Problem-çözüm eşleşme kalitesi.</p>
+          </motion.div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
+
   );
 }
