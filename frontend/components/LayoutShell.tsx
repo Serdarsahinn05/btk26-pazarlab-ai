@@ -1,15 +1,29 @@
 "use client";
 
 import { useState, Suspense } from "react";
+import { usePathname } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import StatusBar from "@/components/StatusBar";
 import { cn } from "@/lib/utils";
 import { Menu, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "./ui/button";
 
+const STANDALONE_PATHS = ["/"];
+
 export default function LayoutShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const isStandalonePage = STANDALONE_PATHS.includes(pathname ?? "");
+
+  if (isStandalonePage) {
+    return (
+      <div className="min-h-screen overflow-y-auto bg-black">
+        {children}
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background">
