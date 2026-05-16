@@ -18,10 +18,10 @@ export default function Sidebar({ isCollapsed = false }: SidebarProps) {
 
 
   const menuItems = [
-    { icon: Beaker, label: "Pazar Analizi", href: "/?view=analysis", active: currentView === "analysis" && pathname === "/" },
-    { icon: Zap, label: "Rekabet Analizi", href: "/?view=benchmark", active: currentView === "benchmark" && pathname === "/" },
-    { icon: MessageSquare, label: "Ajan Tartışması", href: "/?view=debate", active: currentView === "debate" && pathname === "/" },
-    { icon: Users, label: "Persona Lab", href: "/?view=personas", active: currentView === "personas" && pathname === "/" },
+    { icon: Beaker, label: "Pazar Analizi", href: "/dashboard?view=analysis", active: currentView === "analysis" && pathname === "/dashboard" },
+    { icon: Zap, label: "Rekabet Analizi", href: "/dashboard?view=benchmark", active: currentView === "benchmark" && pathname === "/dashboard" },
+    { icon: MessageSquare, label: "Ajan Tartışması", href: "/dashboard?view=debate", active: currentView === "debate" && pathname === "/dashboard" },
+    { icon: Users, label: "Persona Lab", href: "/dashboard?view=personas", active: currentView === "personas" && pathname === "/dashboard" },
   ];
 
 
