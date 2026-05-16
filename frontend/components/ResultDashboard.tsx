@@ -5,20 +5,22 @@ import { SimulationResponse } from "@/types";
 import OverallScoreCard from "./OverallScoreCard";
 import TopPersonaCards from "./TopPersonaCards";
 import WeaknessList from "./WeaknessList";
-import AiFeedbackPanel from "./AiFeedbackPanel";
 import ProductTypeInsight from "./ProductTypeInsight";
 import ChannelRecommendation from "./ChannelRecommendation";
 import NormalizedScoresPanel from "./NormalizedScoresPanel";
 import { DebateLogs } from "./DebateLogs";
 import confetti from "canvas-confetti";
-import { Zap, LayoutDashboard, MessageSquare } from "lucide-react";
-
+import { Zap, LayoutDashboard, MessageSquare, Trophy, TrendingUp, Users, Target, ArrowRight, Sparkles, Brain, AlertTriangle, Lightbulb, ShoppingBag, Search, BarChart3 } from "lucide-react";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 
 interface ResultDashboardProps {
   data: SimulationResponse | null;
+  view: "analysis" | "debate" | "benchmark";
 }
+
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -33,13 +35,13 @@ const itemVariants: Variants = {
   show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
 };
 
-export default function ResultDashboard({ data }: ResultDashboardProps) {
-  const [activeTab, setActiveTab] = useState<"analysis" | "debate">("analysis");
+export default function ResultDashboard({ data, view }: ResultDashboardProps) {
 
   useEffect(() => {
-    if (data) {
+    if (data && view === "analysis") {
       const duration = 3 * 1000;
       const end = Date.now() + duration;
+
 
       const frame = () => {
         confetti({
@@ -89,62 +91,35 @@ export default function ResultDashboard({ data }: ResultDashboardProps) {
         </div>
       </motion.div>
 
-      {/* Tab Switcher */}
-      <motion.div variants={itemVariants} className="flex p-1 bg-muted/30 dark:bg-black/40 backdrop-blur-xl border border-border/50 dark:border-white/10 rounded-2xl w-full max-w-md mx-auto shadow-sm">
-        <button
-          onClick={() => setActiveTab("analysis")}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${
-            activeTab === "analysis" 
-              ? "bg-primary text-white shadow-lg shadow-primary/20" 
-              : "text-muted-foreground dark:text-white/50 hover:text-foreground dark:hover:text-white hover:bg-white/5"
-          }`}
-        >
-          <LayoutDashboard className="w-4 h-4" />
-          Pazar Analizi
-        </button>
-        <button
-          onClick={() => setActiveTab("debate")}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${
-            activeTab === "debate" 
-              ? "bg-primary text-white shadow-lg shadow-primary/20" 
-              : "text-muted-foreground dark:text-white/50 hover:text-foreground dark:hover:text-white hover:bg-white/5"
-          }`}
-        >
-          <MessageSquare className="w-4 h-4" />
-          Ajan Tartışması
-          {data.debateLogs && (
-            <span className="flex h-2 w-2 rounded-full bg-red-500 animate-pulse" />
-          )}
-        </button>
-      </motion.div>
+      {/* Image Gallery - Moved outside AnimatePresence to stay visible */}
+      {data.images && data.images.length > 0 && (
+        <motion.div variants={itemVariants} className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 p-4 glass rounded-2xl border border-border/30">
+          {data.images.map((url, idx) => (
+            <motion.div 
+              key={idx}
+              whileHover={{ scale: 1.05 }}
+              className="aspect-square rounded-xl overflow-hidden border border-border/50 shadow-md bg-background group relative"
+            >
+              <img src={url} alt={`Urun ${idx}`} className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </motion.div>
+          ))}
+        </motion.div>
+      )}
 
-      {/* Tab Content */}
+      {/* Content Section */}
       <AnimatePresence mode="wait">
         <motion.div
-          key={activeTab}
+          key={view}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.2 }}
           className="min-h-[400px]"
         >
-          {activeTab === "analysis" ? (
+          {view === "analysis" ? (
             <div className="space-y-6">
-              {/* Image Gallery */}
-              {data.images && data.images.length > 0 && (
-                <motion.div variants={itemVariants} className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 p-4 glass rounded-2xl border border-border/30">
-                  {data.images.map((url, idx) => (
-                    <motion.div 
-                      key={idx}
-                      whileHover={{ scale: 1.05 }}
-                      className="aspect-square rounded-xl overflow-hidden border border-border/50 shadow-md bg-background group relative"
-                    >
-                      <img src={url} alt={`Urun ${idx}`} className="w-full h-full object-cover" />
-                      <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </motion.div>
-                  ))}
-                </motion.div>
-              )}
+
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="col-span-1 md:col-span-3">
@@ -155,16 +130,7 @@ export default function ResultDashboard({ data }: ResultDashboardProps) {
                   <NormalizedScoresPanel product={data.normalizedProduct} />
                 </div>
 
-                {data.benchmarkAnalysis && (
-                  <div className="col-span-1 md:col-span-3 p-6 glass rounded-2xl border border-blue-500/20 bg-blue-500/5">
-                    <h3 className="text-lg font-bold text-blue-500 dark:text-blue-400 mb-3 flex items-center gap-2">
-                      <Zap className="w-5 h-5" /> Pazar Rekabet Analizi (Benchmark)
-                    </h3>
-                    <div className="text-foreground/80 dark:text-white/80 whitespace-pre-wrap leading-relaxed italic">
-                      {String(data.benchmarkAnalysis)}
-                    </div>
-                  </div>
-                )}
+
 
                 <ProductTypeInsight insight={data.aiInsights.productTypeInsight} />
                 <ChannelRecommendation channels={data.aiInsights.channelRecommendation} />
@@ -173,14 +139,44 @@ export default function ResultDashboard({ data }: ResultDashboardProps) {
                 <div className="col-span-1 md:col-span-3">
                   <TopPersonaCards personas={data.topPersonas} allPersonas={data.allPersonas} insights={data.aiInsights} />
                 </div>
-
-                <div className="col-span-1 md:col-span-3">
-                  <AiFeedbackPanel insights={data.aiInsights} />
-                </div>
               </div>
+            </div>
+
+          ) : view === "benchmark" ? (
+            <div className="space-y-6">
+              {data.benchmarkAnalysis ? (
+                <div className="bento-card border-blue-500/20 bg-blue-500/5 p-8">
+                  <div className="flex items-center gap-3 mb-8 pb-4 border-b border-blue-500/10">
+                    <div className="p-3 bg-blue-500/10 rounded-2xl border border-blue-500/20 shadow-lg shadow-blue-500/10">
+                      <Zap className="w-6 h-6 text-blue-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-black tracking-tighter text-blue-500">PAZAR REKABET ANALİZİ</h3>
+                      <p className="text-[10px] uppercase font-bold tracking-widest text-blue-400/70">AI Benchmark Engine v1.0</p>
+                    </div>
+                  </div>
+                  
+                  <div className="prose prose-invert prose-blue max-w-none 
+                    prose-p:text-sm prose-p:leading-relaxed prose-p:text-foreground/90
+                    prose-strong:text-blue-400 prose-strong:font-black
+                    prose-ul:text-sm prose-li:my-1
+                    prose-hr:border-blue-500/20
+                  ">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {data.benchmarkAnalysis}
+                    </ReactMarkdown>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center p-20 glass rounded-3xl border border-dashed border-white/10 text-muted-foreground">
+                   <Search className="w-12 h-12 mb-4 opacity-20" />
+                   <p>Bu ürün için henüz pazar rekabet verisi toplanmadı.</p>
+                </div>
+              )}
             </div>
           ) : (
             <div className="space-y-6">
+
               {data.debateLogs && data.debateLogs.length > 0 ? (
                 <div className="col-span-1 md:col-span-3">
                    <div className="mb-4 p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-sm italic">

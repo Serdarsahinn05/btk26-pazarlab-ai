@@ -1,0 +1,625 @@
+{
+  "simulationConfig": {
+    "totalBots": 500,
+    "seedSalt": "pazarlab-ai-v1"
+  },
+  "meta": {
+    "version": "1.1",
+    "targetTotalBots": 500,
+    "personaTypes": 10,
+    "parameters": [
+      "priceSensitivity",
+      "qualitySensitivity",
+      "trendSensitivity",
+      "brandTrustNeed",
+      "detailNeed",
+      "shippingSensitivity",
+      "returnPolicyNeed",
+      "impulsiveness",
+      "socialProofNeed",
+      "riskAversion"
+    ],
+    "generation": {
+      "botsPerPersona": 50,
+      "seed": 260512,
+      "clampMin": 0.0,
+      "clampMax": 1.0
+    }
+  },
+  "motivationEmphasis": {
+    "problem_cozme": {
+      "closestPersonaLabel": "Problem Çözüm Odaklı Kullanıcı",
+      "recommendedBias": {
+        "detailNeed": 0.85,
+        "shippingSensitivity": 0.8,
+        "priceSensitivity": 0.6
+      }
+    },
+    "yedek_parca_tamir": {
+      "closestPersonaLabel": "Detaycı Uyum Kontrolcüsü",
+      "recommendedBias": {
+        "detailNeed": 0.9,
+        "brandTrustNeed": 0.3,
+        "shippingSensitivity": 0.85
+      }
+    },
+    "stil_begeni": {
+      "closestPersonaLabel": "Trend Takipçisi",
+      "recommendedBias": {
+        "trendSensitivity": 0.9,
+        "qualitySensitivity": 0.55,
+        "socialProofNeed": 0.75
+      }
+    },
+    "hediye": {
+      "closestPersonaLabel": "Dürtüsel Alıcı",
+      "recommendedBias": {
+        "impulsiveness": 0.85,
+        "brandTrustNeed": 0.7,
+        "socialProofNeed": 0.6
+      }
+    }
+  },
+  "personaTypes": [
+    {
+      "name": "Fiyat Hassas Alici",
+      "count": 42,
+      "preferredMotivations": ["ihtiyac", "yedek_parca_tamir"],
+      "reason": "Fiyat uygunlugu ve kampanya sinyallerine hizli tepki verir.",
+      "advice": "Net fiyat avantajini, ucretsiz kargoyu ve indirim mesajini one cikar.",
+      "ranges": {
+        "priceSensitivity": [0.80, 0.98],
+        "qualityExpectation": [0.45, 0.70],
+        "trendSensitivity": [0.20, 0.45],
+        "brandTrustNeed": [0.35, 0.60],
+        "detailNeed": [0.45, 0.70],
+        "impulsiveness": [0.20, 0.45],
+        "seasonSensitivity": [0.35, 0.65],
+        "shippingSensitivity": [0.65, 0.90],
+        "targetFitSensitivity": [0.40, 0.70],
+        "noveltySeeking": [0.15, 0.40]
+      },
+      "personalityType": "Hesaplı Rasyonel",
+      "personalityTraits": {
+        "shoppingHabit": "Kupon ve kampanya kovalamadan asla sepeti onaylamaz.",
+        "techLevel": "Orta-Düşük (Sadece işini gören uygulamalara hakimdir)",
+        "values": "Tasarruf, dayanıklılık ve fiyat/performans dengesi.",
+        "communicationStyle": "Doğrudan, net ve maliyet odaklı sorular soran.",
+        "biggestFear": "Aynı ürünü ertesi gün daha ucuza bir başkasında görmek.",
+        "hobbies": ["Market broşürü incelemek", "Para biriktirme tüyoları"]
+      },
+      "aiRoleplayPrompt": "Parasının değerini çok iyi bilen, lüksten kaçınan ve her zaman en ucuz ama iş gören seçeneği arayan birisin. Gereksiz özelliklere para vermekten nefret edersin."
+    },
+    {
+      "name": "Trend Takipcisi",
+      "count": 42,
+      "preferredMotivations": ["stil_begeni", "trend"],
+      "reason": "Stil, gorsel cekicilik ve sosyal medya etkisi bu persona icin gucludur.",
+      "advice": "Kisa video, kombin gorselleri ve trend kelimeleriyle kampanya kur.",
+      "ranges": {
+        "priceSensitivity": [0.35, 0.60],
+        "qualityExpectation": [0.45, 0.70],
+        "trendSensitivity": [0.82, 0.98],
+        "brandTrustNeed": [0.35, 0.60],
+        "detailNeed": [0.25, 0.50],
+        "impulsiveness": [0.65, 0.90],
+        "seasonSensitivity": [0.55, 0.80],
+        "shippingSensitivity": [0.35, 0.60],
+        "targetFitSensitivity": [0.60, 0.85],
+        "noveltySeeking": [0.70, 0.95]
+      },
+      "personalityType": "Hevesli Trend Avcısı",
+      "personalityTraits": {
+        "shoppingHabit": "Influencer önerilerini ve viral olan ürünleri anında sepete atar.",
+        "techLevel": "Yüksek (Tüm sosyal medya trendlerine ve yeni app'lere hakimdir)",
+        "values": "Popülerlik, estetik ve sosyal görünürlük.",
+        "communicationStyle": "Enerjik, emojili ve heyecanlı bir dil kullanır.",
+        "biggestFear": "Arkadaş ortamında bir trendin gerisinde kalmış olmak.",
+        "hobbies": ["Tiktok/Reels çekmek", "Kombin videoları izlemek"]
+      },
+      "aiRoleplayPrompt": "Sosyal medyayı çok aktif kullanan, her zaman en yeni ve en popüler olanı isteyen, 'modası geçmiş' görünmekten korkan enerjik birisin."
+    },
+    {
+      "name": "Kalite Odakli Alici",
+      "count": 42,
+      "preferredMotivations": ["profesyonel_kullanim", "ihtiyac"],
+      "reason": "Malzeme, dayaniklilik ve garanti sinyalleriyle ikna olur.",
+      "advice": "Kalite belgelerini, garanti bilgisini ve uzun omurlu kullanim vaadini ekle.",
+      "ranges": {
+        "priceSensitivity": [0.35, 0.60],
+        "qualityExpectation": [0.82, 0.98],
+        "trendSensitivity": [0.20, 0.45],
+        "brandTrustNeed": [0.60, 0.85],
+        "detailNeed": [0.65, 0.90],
+        "impulsiveness": [0.15, 0.35],
+        "seasonSensitivity": [0.40, 0.65],
+        "shippingSensitivity": [0.40, 0.65],
+        "targetFitSensitivity": [0.55, 0.80],
+        "noveltySeeking": [0.25, 0.50]
+      },
+      "personalityType": "Kalite Müfettişi",
+      "personalityTraits": {
+        "shoppingHabit": "Marka isminden çok malzeme kalitesine ve dikiş/işçilik detayına bakar.",
+        "techLevel": "Orta (Fonksiyonelliği görselliğin önünde tutar)",
+        "values": "Uzun ömürlülük, dürüst ticaret ve gerçek kalite.",
+        "communicationStyle": "Ciddi, sorgulayıcı ve teknik detay isteyen.",
+        "biggestFear": "Aldığı ürünün 3 ay sonra bozulması veya deforme olması.",
+        "hobbies": ["Restorasyon videoları", "Üretim belgeselleri"]
+      },
+      "aiRoleplayPrompt": "Bir ürünün dış görünüşünden ziyade malzemesine, dikişine veya teknik ömrüne bakan, 'ucuz mal alacak kadar zengin değilim' felsefesine sahip birisin."
+    },
+    {
+      "name": "Detayci Arastirmaci",
+      "count": 42,
+      "preferredMotivations": ["problem_cozme", "profesyonel_kullanim"],
+      "reason": "Ayrintili aciklama, olcu ve kullanim senaryosu gormeden karar vermez.",
+      "advice": "Tablo, olcu, uyumluluk ve sik sorulan sorular bolumu ekle.",
+      "ranges": {
+        "priceSensitivity": [0.45, 0.70],
+        "qualityExpectation": [0.65, 0.90],
+        "trendSensitivity": [0.10, 0.35],
+        "brandTrustNeed": [0.45, 0.70],
+        "detailNeed": [0.85, 0.99],
+        "impulsiveness": [0.05, 0.25],
+        "seasonSensitivity": [0.20, 0.45],
+        "shippingSensitivity": [0.55, 0.80],
+        "targetFitSensitivity": [0.65, 0.90],
+        "noveltySeeking": [0.15, 0.40]
+      },
+      "personalityType": "Sorgulayıcı Analist",
+      "personalityTraits": {
+        "shoppingHabit": "Tüm rakipleri listelemeden ve negatif yorumları okumadan almaz.",
+        "techLevel": "Yüksek (Excel tabloları ve karşılaştırma araçlarını sever)",
+        "values": "Veri, kanıt ve rasyonel mantık.",
+        "communicationStyle": "Analitik, maddeli ve şüpheci bir dil.",
+        "biggestFear": "Eksik bilgi yüzünden yanlış karar vermek.",
+        "hobbies": ["Ürün inceleme yazıları okumak", "Strateji oyunları"]
+      },
+      "aiRoleplayPrompt": "Satın almadan önce tüm tabloları inceleyen, kullanıcı yorumlarını okuyan, ölçüleri kontrol eden ve hata payı bırakmak istemeyen titiz birisin."
+    },
+    {
+      "name": "Durtusel Alici",
+      "count": 42,
+      "preferredMotivations": ["hediye", "trend", "stil_begeni"],
+      "reason": "Gorsel etki, hizli karar ve acil tekliflerle satin almaya yaklasir.",
+      "advice": "Sinirli stok, hediye paketi ve hizli teslimat mesajlarini kullan.",
+      "ranges": {
+        "priceSensitivity": [0.30, 0.55],
+        "qualityExpectation": [0.35, 0.60],
+        "trendSensitivity": [0.60, 0.85],
+        "brandTrustNeed": [0.35, 0.65],
+        "detailNeed": [0.15, 0.40],
+        "impulsiveness": [0.82, 0.98],
+        "seasonSensitivity": [0.40, 0.70],
+        "shippingSensitivity": [0.55, 0.85],
+        "targetFitSensitivity": [0.40, 0.70],
+        "noveltySeeking": [0.60, 0.90]
+      },
+      "personalityType": "Anlık Duygu Alıcısı",
+      "personalityTraits": {
+        "shoppingHabit": "Görselden etkilenirse saniyeler içinde ödemeyi yapar.",
+        "techLevel": "Orta (Mobil alışverişte çok hızlıdır)",
+        "values": "Hız, anlık mutluluk ve heyecan.",
+        "communicationStyle": "Kısa, duygusal ve sonuç odaklı.",
+        "biggestFear": "Beğendiği ürünün stokta bitmesi.",
+        "hobbies": ["Gece geç saatte online alışveriş", "Unboxing videoları"]
+      },
+      "aiRoleplayPrompt": "Bir şeyi beğendiği an almak isteyen, sabırsız, görsellere çabuk tav olan ve 'şimdi almazsam kaçırırım' korkusu yaşayan birisin."
+    },
+    {
+      "name": "Marka Sadigi",
+      "count": 42,
+      "preferredMotivations": ["hediye", "profesyonel_kullanim"],
+      "reason": "Marka guveni, garanti ve sosyal kanit eksikse mesafeli kalir.",
+      "advice": "Yorum, garanti, marka hikayesi ve iade politikasini gorunur yap.",
+      "ranges": {
+        "priceSensitivity": [0.25, 0.50],
+        "qualityExpectation": [0.65, 0.90],
+        "trendSensitivity": [0.30, 0.55],
+        "brandTrustNeed": [0.82, 0.98],
+        "detailNeed": [0.45, 0.70],
+        "impulsiveness": [0.20, 0.45],
+        "seasonSensitivity": [0.25, 0.50],
+        "shippingSensitivity": [0.35, 0.60],
+        "targetFitSensitivity": [0.45, 0.70],
+        "noveltySeeking": [0.20, 0.45]
+      },
+      "personalityType": "Güven Odaklı Gelenekçi",
+      "personalityTraits": {
+        "shoppingHabit": "Sadece bildiği 2-3 markadan veya mağazadan alışveriş yapar.",
+        "techLevel": "Düşük (Yeni ödeme yöntemlerine karşı mesafelidir)",
+        "values": "Sadakat, güven ve satış sonrası destek.",
+        "communicationStyle": "Resmi, güven arayan ve garanti odaklı.",
+        "biggestFear": "İnternetten dolandırılmak veya muhatap bulamamak.",
+        "hobbies": ["Eski eşyaları tamir etmek", "Marka hikayeleri"]
+      },
+      "aiRoleplayPrompt": "Bilinmedik markalardan korkan, garanti ve iade süreçlerine çok önem veren, markanın ismine ve geçmişine güvenmek isteyen birisin."
+    },
+    {
+      "name": "Sosyal Onay Arayan",
+      "count": 42,
+      "preferredMotivations": ["stil_begeni", "hediye", "trend"],
+      "reason": "Yorum, puan, populerlik ve paylasilabilir gorsellerden etkilenir.",
+      "advice": "Kullanici yorumu, once-sonra gorseli ve sosyal kanit dilini ekle.",
+      "ranges": {
+        "priceSensitivity": [0.35, 0.60],
+        "qualityExpectation": [0.45, 0.70],
+        "trendSensitivity": [0.65, 0.90],
+        "brandTrustNeed": [0.60, 0.85],
+        "detailNeed": [0.35, 0.60],
+        "impulsiveness": [0.55, 0.80],
+        "seasonSensitivity": [0.35, 0.60],
+        "shippingSensitivity": [0.35, 0.60],
+        "targetFitSensitivity": [0.55, 0.80],
+        "noveltySeeking": [0.55, 0.85]
+      },
+      "personalityType": "Toplum Gözlemcisi",
+      "personalityTraits": {
+        "shoppingHabit": "Ürünü almadan önce mutlaka 'En Çok Satanlar' listesine bakar.",
+        "techLevel": "Orta (Sosyal platformlardaki yorumları takip eder)",
+        "values": "Sosyal kanıt, sürü psikolojisi ve risksiz seçim.",
+        "communicationStyle": "Onay bekleyen, 'Herkes memnun mu?' diye soran.",
+        "biggestFear": "Kimsenin beğenmediği bir şeyi alıp pişman olmak.",
+        "hobbies": ["Forum siteleri", "Kullanıcı deneyimi videoları"]
+      },
+      "aiRoleplayPrompt": "Başkalarının ne dediğine, ürünün kaç puan aldığına ve ne kadar çok satıldığına bakan, sürü psikolojisiyle hareket etmeyi güvenli bulan birisin."
+    },
+    {
+      "name": "Pratik Cozum Arayan",
+      "count": 42,
+      "preferredMotivations": ["ihtiyac", "problem_cozme"],
+      "reason": "Urunun gunluk hayatta net fayda saglamasina bakar.",
+      "advice": "Pratik kullanim, kolay kurulum ve hizli sonuc mesajlarini vurgula.",
+      "ranges": {
+        "priceSensitivity": [0.50, 0.75],
+        "qualityExpectation": [0.55, 0.80],
+        "trendSensitivity": [0.15, 0.40],
+        "brandTrustNeed": [0.35, 0.60],
+        "detailNeed": [0.55, 0.80],
+        "impulsiveness": [0.30, 0.55],
+        "seasonSensitivity": [0.30, 0.55],
+        "shippingSensitivity": [0.65, 0.90],
+        "targetFitSensitivity": [0.65, 0.90],
+        "noveltySeeking": [0.20, 0.45]
+      },
+      "personalityType": "Fayda Odaklı Pragmatist",
+      "personalityTraits": {
+        "shoppingHabit": "Sadece gerçekten bir şeye ihtiyacı olduğunda alışverişe çıkar.",
+        "techLevel": "Orta (İşlevsel araçlara bayılır)",
+        "values": "Verimlilik, hız ve pratik çözüm.",
+        "communicationStyle": "Net, kısa ve 'ne işe yarar?' diyen bir üslup.",
+        "biggestFear": "Vakit kaybettiren, kurulumu zor ürünlerle uğraşmak.",
+        "hobbies": ["Düzenleme/organizasyon videoları", "DIY projeleri"]
+      },
+      "aiRoleplayPrompt": "Ürünün nasıl göründüğüyle ilgilenmeyen, sadece işini çözüp çözmediğine bakan, günlük hayatını kolaylaştırmak isteyen pratik birisin."
+    },
+    {
+      "name": "Premium Alici",
+      "count": 41,
+      "preferredMotivations": ["profesyonel_kullanim", "hediye", "stil_begeni"],
+      "reason": "Kalite, guven ve premium sunum varsa yuksek fiyati tolere eder.",
+      "advice": "Premium malzeme, garanti, paketleme ve marka degerini one cikar.",
+      "ranges": {
+        "priceSensitivity": [0.15, 0.35],
+        "qualityExpectation": [0.85, 0.99],
+        "trendSensitivity": [0.45, 0.70],
+        "brandTrustNeed": [0.70, 0.95],
+        "detailNeed": [0.55, 0.80],
+        "impulsiveness": [0.30, 0.55],
+        "seasonSensitivity": [0.35, 0.60],
+        "shippingSensitivity": [0.35, 0.60],
+        "targetFitSensitivity": [0.55, 0.80],
+        "noveltySeeking": [0.45, 0.70]
+      },
+      "personalityType": "Statü Meraklısı",
+      "personalityTraits": {
+        "shoppingHabit": "Yüksek fiyatı bir bariyer değil, seçkinlik göstergesi olarak görür.",
+        "techLevel": "Yüksek (En son Apple/Tesla ürünlerine sahiptir)",
+        "values": "Prestij, estetik ve kusursuz sunum.",
+        "communicationStyle": "Sofistike, beklentisi yüksek ve seçici.",
+        "biggestFear": "Sıradan bir ürünle görülmek veya kalitesiz paketleme.",
+        "hobbies": ["Lüks saatler", "VIP etkinlikler", "İç mimari"]
+      },
+      "aiRoleplayPrompt": "Ürünün kalitesinin yanında ona hissettireceği özel duygusuna, prestijine ve paketlemesine önem veren, yüksek bütçeli birisin."
+    },
+    {
+      "name": "Kararsiz Sepet Bekletici",
+      "count": 41,
+      "preferredMotivations": ["ihtiyac", "hediye"],
+      "reason": "Guven, fiyat ve iade bilgisi netlesmeden kararini erteler.",
+      "advice": "Iade kolayligi, garanti ve kisa sureli kampanya ile karar bariyerini azalt.",
+      "ranges": {
+        "priceSensitivity": [0.60, 0.85],
+        "qualityExpectation": [0.55, 0.80],
+        "trendSensitivity": [0.30, 0.55],
+        "brandTrustNeed": [0.60, 0.85],
+        "detailNeed": [0.60, 0.85],
+        "impulsiveness": [0.10, 0.30],
+        "seasonSensitivity": [0.35, 0.60],
+        "shippingSensitivity": [0.55, 0.80],
+        "targetFitSensitivity": [0.50, 0.75],
+        "noveltySeeking": [0.25, 0.50]
+      },
+      "personalityType": "Risk Karşıtı Beklemeci",
+      "personalityTraits": {
+        "shoppingHabit": "Sepetinde aylarca bekleyen ürünleri olan biridir.",
+        "techLevel": "Orta (Güvenlik sertifikalarına çok dikkat eder)",
+        "values": "Güvence, iade kolaylığı ve risksiz alışveriş.",
+        "communicationStyle": "Kararsız, çekimser ve çok soru soran.",
+        "biggestFear": "Yanlış bir şey alıp iade süreciyle uğraşmak.",
+        "hobbies": ["İstek listesi oluşturmak", "Karşılaştırmalı analizler"]
+      },
+      "aiRoleplayPrompt": "Sepete atıp günlerce bekleyen, en küçük bir şüphede (kargo ücreti, olumsuz yorum) almaktan vazgeçen, birilerinin onu ikna etmesini bekleyen birisin."
+    },
+    {
+      "name": "Problem Cozum Odakli Kullanici",
+      "count": 41,
+      "preferredMotivations": ["problem_cozme", "yedek_parca_tamir"],
+      "reason": "Belirli bir sorunu hizli ve net bicimde cozmek ister.",
+      "advice": "Problem, uyumluluk, olcu, montaj ve sonuc faydasini cok net yaz.",
+      "ranges": {
+        "priceSensitivity": [0.45, 0.70],
+        "qualityExpectation": [0.60, 0.85],
+        "trendSensitivity": [0.05, 0.25],
+        "brandTrustNeed": [0.25, 0.50],
+        "detailNeed": [0.80, 0.98],
+        "impulsiveness": [0.20, 0.45],
+        "seasonSensitivity": [0.10, 0.30],
+        "shippingSensitivity": [0.75, 0.95],
+        "targetFitSensitivity": [0.75, 0.95],
+        "noveltySeeking": [0.10, 0.30]
+      },
+      "personalityType": "Hedef Odaklı Çözümcü",
+      "personalityTraits": {
+        "shoppingHabit": "Ürün ismini Google'da aratır, bulur ve 2 dakika içinde alır.",
+        "techLevel": "Yüksek (Hızlı search yapma ustasıdır)",
+        "values": "Sonuç, uyumluluk ve hızlı teslimat.",
+        "communicationStyle": "Maddeli, teknik ve sabırsız.",
+        "biggestFear": "Ürünün geldiğinde elindeki probleme çözüm olmaması.",
+        "hobbies": ["Problem çözme videoları", "Hızlı okuma teknikleri"]
+      },
+      "aiRoleplayPrompt": "Elindeki spesifik bir sorunu çözmek için gelen, duygusal bağ kurmayan, 'çalışıyor mu?' ve 'uyuyor mu?' sorularına evet cevabı aldığı an alanı terk eden birisin."
+    },
+    {
+      "name": "Detayci Uyum Kontrolcusu",
+      "count": 41,
+      "preferredMotivations": ["yedek_parca_tamir", "problem_cozme"],
+      "reason": "Model uyumu, olcu ve teknik detay acik degilse satin almaz.",
+      "advice": "Uyumlu modelleri, olculeri ve montaj adimlarini urun basligina kadar tasiyin.",
+      "ranges": {
+        "priceSensitivity": [0.35, 0.60],
+        "qualityExpectation": [0.60, 0.85],
+        "trendSensitivity": [0.02, 0.18],
+        "brandTrustNeed": [0.20, 0.45],
+        "detailNeed": [0.88, 0.99],
+        "impulsiveness": [0.05, 0.25],
+        "seasonSensitivity": [0.05, 0.20],
+        "shippingSensitivity": [0.75, 0.95],
+        "targetFitSensitivity": [0.85, 0.99],
+        "noveltySeeking": [0.05, 0.25]
+      },
+      "personalityType": "Teknik Mükemmeliyetçi",
+      "personalityTraits": {
+        "shoppingHabit": "Ürünün kullanma kılavuzunu pdf olarak önceden indirip okur.",
+        "techLevel": "Uzman (Donanımsal her detaya hakimdir)",
+        "values": "Hassasiyet, mühendislik ve kusursuz uyum.",
+        "communicationStyle": "Detaycı, teknik ve hata kabul etmeyen.",
+        "biggestFear": "0.1 mm'lik bir sapma veya kalite hatası.",
+        "hobbies": ["Lego Technic", "Donanım montajı", "3D Yazıcılar"]
+      },
+      "aiRoleplayPrompt": "Kılavuz okumayı seven, her parçanın milimetrik uyumuna bakan, 'bu buraya olmazsa geri yollarım' diyen hata kabul etmez birisin."
+    }
+  ],
+  "personaTemplates": [
+    {
+      "persona": "Fiyat Hassas Alıcı",
+      "incomeWeights": {
+        "low": 0.65,
+        "mid": 0.3,
+        "high": 0.05
+      },
+      "ageRange": [18, 55],
+      "ranges": {
+        "priceSensitivity": [0.78, 0.98],
+        "qualitySensitivity": [0.3, 0.55],
+        "trendSensitivity": [0.1, 0.45],
+        "brandTrustNeed": [0.15, 0.45],
+        "detailNeed": [0.3, 0.7],
+        "shippingSensitivity": [0.45, 0.85],
+        "returnPolicyNeed": [0.4, 0.8],
+        "impulsiveness": [0.05, 0.35],
+        "socialProofNeed": [0.15, 0.55],
+        "riskAversion": [0.55, 0.95]
+      }
+    },
+    {
+      "persona": "Trend Takipçisi",
+      "incomeWeights": {
+        "low": 0.25,
+        "mid": 0.55,
+        "high": 0.2
+      },
+      "ageRange": [16, 40],
+      "ranges": {
+        "priceSensitivity": [0.3, 0.7],
+        "qualitySensitivity": [0.35, 0.7],
+        "trendSensitivity": [0.78, 0.98],
+        "brandTrustNeed": [0.25, 0.65],
+        "detailNeed": [0.1, 0.45],
+        "shippingSensitivity": [0.2, 0.65],
+        "returnPolicyNeed": [0.2, 0.55],
+        "impulsiveness": [0.45, 0.9],
+        "socialProofNeed": [0.55, 0.98],
+        "riskAversion": [0.1, 0.55]
+      }
+    },
+    {
+      "persona": "Kalite Odaklı Alıcı",
+      "incomeWeights": {
+        "low": 0.05,
+        "mid": 0.35,
+        "high": 0.6
+      },
+      "ageRange": [22, 60],
+      "ranges": {
+        "priceSensitivity": [0.1, 0.55],
+        "qualitySensitivity": [0.75, 0.98],
+        "trendSensitivity": [0.1, 0.6],
+        "brandTrustNeed": [0.45, 0.9],
+        "detailNeed": [0.45, 0.9],
+        "shippingSensitivity": [0.1, 0.55],
+        "returnPolicyNeed": [0.35, 0.75],
+        "impulsiveness": [0.05, 0.35],
+        "socialProofNeed": [0.1, 0.55],
+        "riskAversion": [0.45, 0.9]
+      }
+    },
+    {
+      "persona": "Detaycı Araştırmacı",
+      "incomeWeights": {
+        "low": 0.15,
+        "mid": 0.65,
+        "high": 0.2
+      },
+      "ageRange": [20, 60],
+      "ranges": {
+        "priceSensitivity": [0.35, 0.75],
+        "qualitySensitivity": [0.45, 0.85],
+        "trendSensitivity": [0.05, 0.45],
+        "brandTrustNeed": [0.25, 0.75],
+        "detailNeed": [0.78, 0.99],
+        "shippingSensitivity": [0.35, 0.85],
+        "returnPolicyNeed": [0.55, 0.95],
+        "impulsiveness": [0.0, 0.2],
+        "socialProofNeed": [0.15, 0.6],
+        "riskAversion": [0.65, 0.98]
+      }
+    },
+    {
+      "persona": "Dürtüsel Alıcı",
+      "incomeWeights": {
+        "low": 0.2,
+        "mid": 0.55,
+        "high": 0.25
+      },
+      "ageRange": [16, 45],
+      "ranges": {
+        "priceSensitivity": [0.15, 0.7],
+        "qualitySensitivity": [0.15, 0.7],
+        "trendSensitivity": [0.25, 0.85],
+        "brandTrustNeed": [0.35, 0.85],
+        "detailNeed": [0.05, 0.4],
+        "shippingSensitivity": [0.1, 0.6],
+        "returnPolicyNeed": [0.1, 0.55],
+        "impulsiveness": [0.78, 0.99],
+        "socialProofNeed": [0.25, 0.8],
+        "riskAversion": [0.05, 0.45]
+      }
+    },
+    {
+      "persona": "Marka Sadığı",
+      "incomeWeights": {
+        "low": 0.05,
+        "mid": 0.35,
+        "high": 0.6
+      },
+      "ageRange": [22, 65],
+      "ranges": {
+        "priceSensitivity": [0.05, 0.45],
+        "qualitySensitivity": [0.55, 0.95],
+        "trendSensitivity": [0.05, 0.6],
+        "brandTrustNeed": [0.78, 0.99],
+        "detailNeed": [0.3, 0.75],
+        "shippingSensitivity": [0.05, 0.45],
+        "returnPolicyNeed": [0.25, 0.7],
+        "impulsiveness": [0.05, 0.35],
+        "socialProofNeed": [0.05, 0.45],
+        "riskAversion": [0.35, 0.85]
+      }
+    },
+    {
+      "persona": "Sosyal Onay Arayan Kullanıcı",
+      "incomeWeights": {
+        "low": 0.3,
+        "mid": 0.55,
+        "high": 0.15
+      },
+      "ageRange": [16, 45],
+      "ranges": {
+        "priceSensitivity": [0.25, 0.8],
+        "qualitySensitivity": [0.25, 0.7],
+        "trendSensitivity": [0.35, 0.95],
+        "brandTrustNeed": [0.2, 0.7],
+        "detailNeed": [0.05, 0.55],
+        "shippingSensitivity": [0.1, 0.7],
+        "returnPolicyNeed": [0.15, 0.65],
+        "impulsiveness": [0.35, 0.9],
+        "socialProofNeed": [0.78, 0.99],
+        "riskAversion": [0.1, 0.65]
+      }
+    },
+    {
+      "persona": "Pratik Çözüm Arayan Kullanıcı",
+      "incomeWeights": {
+        "low": 0.2,
+        "mid": 0.65,
+        "high": 0.15
+      },
+      "ageRange": [18, 60],
+      "ranges": {
+        "priceSensitivity": [0.25, 0.8],
+        "qualitySensitivity": [0.35, 0.8],
+        "trendSensitivity": [0.05, 0.55],
+        "brandTrustNeed": [0.15, 0.65],
+        "detailNeed": [0.2, 0.7],
+        "shippingSensitivity": [0.6, 0.98],
+        "returnPolicyNeed": [0.45, 0.9],
+        "impulsiveness": [0.05, 0.45],
+        "socialProofNeed": [0.1, 0.6],
+        "riskAversion": [0.25, 0.8]
+      }
+    },
+    {
+      "persona": "Premium Alıcı",
+      "incomeWeights": {
+        "low": 0.02,
+        "mid": 0.18,
+        "high": 0.8
+      },
+      "ageRange": [20, 60],
+      "ranges": {
+        "priceSensitivity": [0.0, 0.35],
+        "qualitySensitivity": [0.78, 0.99],
+        "trendSensitivity": [0.25, 0.85],
+        "brandTrustNeed": [0.55, 0.98],
+        "detailNeed": [0.35, 0.85],
+        "shippingSensitivity": [0.05, 0.45],
+        "returnPolicyNeed": [0.25, 0.75],
+        "impulsiveness": [0.05, 0.55],
+        "socialProofNeed": [0.05, 0.45],
+        "riskAversion": [0.15, 0.65]
+      }
+    },
+    {
+      "persona": "Kararsız Sepet Bekletici",
+      "incomeWeights": {
+        "low": 0.2,
+        "mid": 0.65,
+        "high": 0.15
+      },
+      "ageRange": [18, 60],
+      "ranges": {
+        "priceSensitivity": [0.35, 0.9],
+        "qualitySensitivity": [0.35, 0.85],
+        "trendSensitivity": [0.05, 0.65],
+        "brandTrustNeed": [0.25, 0.85],
+        "detailNeed": [0.55, 0.95],
+        "shippingSensitivity": [0.3, 0.85],
+        "returnPolicyNeed": [0.6, 0.99],
+        "impulsiveness": [0.0, 0.25],
+        "socialProofNeed": [0.35, 0.85],
+        "riskAversion": [0.65, 0.99]
+      }
+    }
+  ]
+}
