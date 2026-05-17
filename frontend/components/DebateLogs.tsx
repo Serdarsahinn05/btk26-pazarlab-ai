@@ -1,18 +1,14 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageSquare, Zap } from "lucide-react";
-
-interface DebateLog {
-  name: string;
-  text: string;
-}
+import { DebateLog, Persona } from "@/types";
 
 interface DebateLogsProps {
   logs: DebateLog[];
+  personas?: Persona[];
 }
-
 
 const personaColors: Record<string, string> = {
   "Trend Takipcisi": "bg-pink-500/10 text-pink-500 border-pink-500/20",
@@ -23,63 +19,126 @@ const personaColors: Record<string, string> = {
   "Sistem": "bg-gray-500/10 text-gray-400 border-gray-500/20",
 };
 
+const genericSpeakerPattern = /^(assistant|asistan|agent|ajan|persona|bot|buyer|seller|alici|alıcı|satici|satıcı|user|system)\s*\d*$/i;
 
-export const DebateLogs: React.FC<DebateLogsProps> = ({ logs }) => {
+function iconForName(name: string) {
+  if (name === "Sistem") return 0;
+
+  let hash = 0;
+  for (let index = 0; index < name.length; index += 1) {
+    hash = (hash * 31 + name.charCodeAt(index)) | 0;
+  }
+
+  return (Math.abs(hash) % 10) + 1;
+}
+
+function stripPersonaPrefix(text: string, personaNames: string[]) {
+  const cleanText = String(text || "").trim();
+
+  for (const personaName of personaNames) {
+    const escapedName = personaName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const matcher = new RegExp(`^\\s*${escapedName}\\s*[:\\-–]\\s*`, "i");
+    if (matcher.test(cleanText)) {
+      return {
+        name: personaName,
+        text: cleanText.replace(matcher, "").trim(),
+      };
+    }
+  }
+
+  return { name: "", text: cleanText };
+}
+
+function mapGenericSpeaker(name: string, personaNames: string[], index: number) {
+  const numberMatch = name.match(/\d+/);
+  if (numberMatch) {
+    const personaIndex = Number(numberMatch[0]) - 1;
+    if (personaIndex >= 0 && personaIndex < personaNames.length) {
+      return personaNames[personaIndex];
+    }
+  }
+
+  return personaNames[index % personaNames.length] || "Sistem";
+}
+
+function normalizeLogs(logs: DebateLog[], personas: Persona[] = []) {
+  const personaNames = personas.map((persona) => persona.name).filter(Boolean);
+  const validNames = new Set(personaNames);
+
+  return logs
+    .map((log, index) => {
+      const prefixed = stripPersonaPrefix(log.text, personaNames);
+      const rawName = prefixed.name || String(log.name || "").trim();
+      let name = rawName;
+
+      if (personaNames.length > 0 && !validNames.has(name)) {
+        name = genericSpeakerPattern.test(name) || !name
+          ? mapGenericSpeaker(name, personaNames, index)
+          : mapGenericSpeaker(name, personaNames, index);
+      }
+
+      return {
+        name: name || "Sistem",
+        text: prefixed.text || String(log.text || "").trim(),
+      };
+    })
+    .filter((log) => log.text);
+}
+
+export const DebateLogs: React.FC<DebateLogsProps> = ({ logs, personas = [] }) => {
+  const normalizedLogs = useMemo(() => normalizeLogs(logs, personas), [logs, personas]);
   const [visibleLogs, setVisibleLogs] = useState<DebateLog[]>([]);
-  
-  // Persona isimlerini 1-10 arası resimlerle eşleştir (Tutanlı olması için useMemo kullanıyoruz)
-  const personaIconsMap = React.useMemo(() => {
+
+  const personaIconsMap = useMemo(() => {
     const map: Record<string, number> = {};
-    logs.forEach((log) => {
-      if (log.name && !map[log.name]) {
-        // İsim bazlı basit bir sayı üret veya tamamen rastgele seç
-        // Sistem personası her zaman 1 numarayı veya özel bir ikonu alabilir
-        if (log.name === "Sistem") {
-          map[log.name] = 0; // Özel durum
-        } else {
-          map[log.name] = Math.floor(Math.random() * 10) + 1;
-        }
+    normalizedLogs.forEach((log) => {
+      if (log.name && map[log.name] === undefined) {
+        map[log.name] = iconForName(log.name);
       }
     });
     return map;
-  }, [logs]);
+  }, [normalizedLogs]);
 
   useEffect(() => {
-    if (!logs || logs.length === 0) return;
+    setVisibleLogs([]);
+    if (!normalizedLogs || normalizedLogs.length === 0) return;
 
     let index = 0;
-    const interval = setInterval(() => {
-      if (index < logs.length) {
-        setVisibleLogs((prev) => [...prev, logs[index]]);
-        index++;
+    const interval = window.setInterval(() => {
+      if (index < normalizedLogs.length) {
+        const nextLog = normalizedLogs[index];
+        if (nextLog) {
+          setVisibleLogs((prev) => [...prev, nextLog]);
+        }
+        index += 1;
       } else {
-        clearInterval(interval);
+        window.clearInterval(interval);
       }
     }, 1500);
 
-    return () => clearInterval(interval);
-  }, [logs]);
+    return () => window.clearInterval(interval);
+  }, [normalizedLogs]);
 
-  if (!logs || logs.length === 0) return null;
+  if (!normalizedLogs || normalizedLogs.length === 0) return null;
 
   return (
     <div className="space-y-4 max-h-[500px] overflow-y-auto p-4 custom-scrollbar rounded-xl bg-white/40 dark:bg-black/40 border border-border/50 dark:border-white/10 backdrop-blur-md shadow-xl dark:shadow-2xl">
       <div className="flex items-center gap-2 mb-4 border-b border-border/50 dark:border-white/10 pb-2">
         <MessageSquare className="w-5 h-5 text-indigo-500 dark:text-indigo-400" />
-        <h3 className="text-sm font-semibold text-foreground dark:text-white uppercase tracking-wider">Ajanlar Arası Tartışma (A2A)</h3>
+        <h3 className="text-sm font-semibold text-foreground dark:text-white uppercase tracking-wider">Persona Tartismasi (A2A)</h3>
       </div>
-      
+
       <div className="space-y-3">
         <AnimatePresence>
-          {visibleLogs.map((log, i) => {
+          {visibleLogs.map((log, index) => {
             if (!log || !log.name) return null;
-            
+
             const iconId = personaIconsMap[log.name];
             const isSystem = log.name === "Sistem";
 
             return (
               <motion.div
-                key={i}
+                key={`${log.name}-${index}`}
                 initial={{ opacity: 0, x: -10, y: 10 }}
                 animate={{ opacity: 1, x: 0, y: 0 }}
                 transition={{ duration: 0.4 }}
@@ -92,12 +151,12 @@ export const DebateLogs: React.FC<DebateLogsProps> = ({ logs }) => {
                     {isSystem ? (
                       <Zap className="w-4 h-4 text-yellow-500" />
                     ) : (
-                      <img 
-                        src={`/pp_icons/${iconId}.jpeg`} 
+                      <img
+                        src={`/pp_icons/${iconId}.jpeg`}
                         alt={log.name}
                         className="w-full h-full object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
+                        onError={(event) => {
+                          const target = event.target as HTMLImageElement;
                           target.src = "";
                           target.style.display = "none";
                         }}
@@ -117,5 +176,3 @@ export const DebateLogs: React.FC<DebateLogsProps> = ({ logs }) => {
     </div>
   );
 };
-
-
