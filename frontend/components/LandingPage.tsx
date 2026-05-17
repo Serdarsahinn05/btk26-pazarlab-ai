@@ -40,7 +40,7 @@ export default function LandingPage() {
       <main className="flex-1 w-full">
         <section className="flex flex-col items-center text-center px-6 pt-16 pb-24 md:pt-24 md:pb-32 max-w-4xl mx-auto">
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white leading-[1.1]">
-            Ürününüzü satın almadan
+            Ürününüzü pazarlamadan
             <br />
             önce{" "}
             <span className="bg-gradient-to-r from-violet-400 via-purple-500 to-indigo-400 bg-clip-text text-transparent">
@@ -49,9 +49,9 @@ export default function LandingPage() {
           </h1>
 
           <p className="mt-6 md:mt-8 text-base md:text-lg text-zinc-400 max-w-2xl leading-relaxed">
-            PazarLab AI, e-ticaret ürünleriniz için sentetik tüketici simülasyonu
-            yapar. Satış potansiyelinizi, hedef kitlenizi ve pazarlama stratejinizi
-            dakikalar içinde keşfedin.
+            PazarLab AI; ürünlerinizi farklı tüketici kişiliklerine göre analiz eden, 
+            yapay zeka destekli bir simülasyon platformudur. Satış potansiyelinizi, 
+            hedef kitlenizi ve pazarlama stratejinizi dakikalar içinde keşfedin.
           </p>
 
           <Link
