@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { SimulationResponse } from "@/types";
 import OverallScoreCard from "./OverallScoreCard";
 import TopPersonaCards from "./TopPersonaCards";
@@ -9,8 +9,9 @@ import ProductTypeInsight from "./ProductTypeInsight";
 import ChannelRecommendation from "./ChannelRecommendation";
 import NormalizedScoresPanel from "./NormalizedScoresPanel";
 import { DebateLogs } from "./DebateLogs";
+import DecisionDistributionChart from "./DecisionDistributionChart";
 import confetti from "canvas-confetti";
-import { Zap, LayoutDashboard, MessageSquare, Trophy, TrendingUp, Users, Target, ArrowRight, Sparkles, Brain, AlertTriangle, Lightbulb, ShoppingBag, Search, BarChart3 } from "lucide-react";
+import { Zap, MessageSquare, Search } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -65,7 +66,7 @@ export default function ResultDashboard({ data, view }: ResultDashboardProps) {
       };
       frame();
     }
-  }, [data]);
+  }, [data, view]);
 
   if (!data) return null;
 
@@ -127,6 +128,10 @@ export default function ResultDashboard({ data, view }: ResultDashboardProps) {
                 </div>
 
                 <div className="col-span-1 md:col-span-3">
+                  <DecisionDistributionChart distribution={data.decisionDistribution} total={data.simulatedConsumers} />
+                </div>
+
+                <div className="col-span-1 md:col-span-3">
                   <NormalizedScoresPanel product={data.normalizedProduct} />
                 </div>
 
@@ -182,7 +187,7 @@ export default function ResultDashboard({ data, view }: ResultDashboardProps) {
                    <div className="mb-4 p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-sm italic">
                     Ajanlar ürününüzün pazar başarısını, fiyatını ve potansiyelini kendi aralarında tartışıyor.
                   </div>
-                  <DebateLogs logs={data.debateLogs} />
+                  <DebateLogs logs={data.debateLogs} personas={data.allPersonas?.length ? data.allPersonas : data.topPersonas} />
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center p-20 glass rounded-3xl border border-dashed border-white/10 text-muted-foreground">

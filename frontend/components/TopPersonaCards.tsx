@@ -91,7 +91,7 @@ export default function TopPersonaCards({ personas = [], allPersonas = [], insig
           <User className="w-6 h-6 text-primary glow-blue" />
           PERSONA YATIRIM HARİTASI
         </h3>
-        <p className="text-xs text-muted-foreground mt-1 uppercase tracking-widest font-bold">500+ Yapay Zeka Ajanı Analizi</p>
+        <p className="text-xs text-muted-foreground mt-1 uppercase tracking-widest font-bold">500 Sentetik Tüketici Analizi</p>
       </div>
 
       <div className="space-y-12">

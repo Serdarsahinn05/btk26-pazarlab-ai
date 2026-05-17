@@ -11,15 +11,77 @@ import { PurchaseMotivation, SimulationRequest, SimulationResponse, InputAnalysi
 
 
 import { analyzeProductInput, simulateProduct } from "@/lib/api";
-import { Sparkles, BrainCircuit, Activity, Info } from "lucide-react";
+import { Sparkles, BrainCircuit, Activity, Info, Maximize2, Minimize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import AnalysisWarning from "@/components/AnalysisWarning";
 import { cn } from "@/lib/utils";
 
+type SmartRecommendation = {
+  label: string;
+  text?: string;
+  items?: string[];
+  tone?: "primary" | "warning" | "success";
+};
+
+function buildSmartRecommendations(resultData: SimulationResponse | null): SmartRecommendation[] {
+  if (!resultData?.aiInsights) return [];
+
+  const distribution = resultData.decisionDistribution;
+  const topPersona = resultData.topPersonas?.[0];
+  const topPersonaAction = resultData.aiInsights.personaFeedback?.find((item) => item.name === topPersona?.name)?.action || topPersona?.advice;
+  const buyRate = resultData.simulatedConsumers
+    ? Math.round((resultData.estimatedBuyers / resultData.simulatedConsumers) * 100)
+    : resultData.overallScore;
+
+  const decisionText = distribution
+    ? `${distribution.buy} bot aldı, ${distribution.watch} bot kararsız kaldı, ${distribution.skip} bot almadı. Bu sonuç yaklaşık %${buyRate} satın alma eğilimi gösteriyor; bunu gerçek site dönüşüm oranı gibi değil, talep sinyali gibi okumak gerekir.`
+    : resultData.aiInsights.summary;
+
+  const criticalRisk = resultData.weaknesses?.[0] || resultData.aiInsights.descriptionAdvice;
+
+  const recommendations: SmartRecommendation[] = [
+    {
+      label: "Kısa Karar",
+      text: decisionText,
+      tone: buyRate >= 60 ? "success" : buyRate >= 40 ? "warning" : "primary",
+    },
+    {
+      label: "İlk 3 Aksiyon",
+      items: resultData.aiInsights.salesRecipe.slice(0, 3),
+      tone: "primary",
+    },
+    {
+      label: "Kritik Risk",
+      text: criticalRisk,
+      tone: "warning",
+    },
+    {
+      label: "Hedef Persona",
+      text: topPersona
+        ? `${topPersona.name}: ${topPersonaAction || topPersona.reason}`
+        : resultData.aiInsights.marketingAdvice,
+      tone: "success",
+    },
+    {
+      label: "Test Önerisi",
+      items: [resultData.aiInsights.pricingAdvice, resultData.aiInsights.marketingAdvice].filter(Boolean),
+      tone: "primary",
+    },
+  ];
+
+  return recommendations.filter((item) => item.text || item.items?.length);
+}
+
+function getRecommendationClasses(tone?: SmartRecommendation["tone"]) {
+  if (tone === "success") return "border-emerald-500/20 bg-emerald-500/5";
+  if (tone === "warning") return "border-amber-500/20 bg-amber-500/5";
+  return "border-primary/20 bg-primary/5";
+}
+
 function DashboardContent() {
   const personaCount = personasData.personaTypes.length;
-  const agentCount = personasData.personaTypes.reduce((acc, p: any) => acc + p.count, 0);
+  const agentCount = personasData.personaTypes.reduce((acc, p: { count?: number }) => acc + (p.count || 0), 0);
   const categoryCount = 10;
 
   const searchParams = useSearchParams();
@@ -32,11 +94,13 @@ function DashboardContent() {
   const [currentMotivation, setCurrentMotivation] = useState<PurchaseMotivation | null>(null);
   const [resultData, setResultData] = useState<SimulationResponse | null>(null);
   const [pendingAnalysis, setPendingAnalysis] = useState<{ data: SimulationRequest; analysis: InputAnalysisResponse } | null>(null);
+  const [smartPanelExpanded, setSmartPanelExpanded] = useState(false);
 
   const handleSimulate = async (data: SimulationRequest) => {
     setCurrentMotivation(data.purchaseMotivation);
     setSimulationState("loading");
     setResultData(null);
+    setSmartPanelExpanded(false);
     
     try {
       const inputAnalysis = await analyzeProductInput(data);
@@ -76,16 +140,11 @@ function DashboardContent() {
     setSimulationState("idle");
     setResultData(null);
     setCurrentMotivation(null);
+    setSmartPanelExpanded(false);
   };
 
-  const recommendations = resultData?.aiInsights ? [
-    { label: "Özet", text: resultData.aiInsights.summary },
-    { label: "Aksiyon Planı", text: resultData.aiInsights.salesRecipe.join(" ") },
-    { label: "Pazarlama", text: resultData.aiInsights.marketingAdvice },
-    { label: "Fiyatlama", text: resultData.aiInsights.pricingAdvice },
-    { label: "Sezon Analizi", text: resultData.aiInsights.seasonAdvice },
-    { label: "Önerilen Açıklama", text: resultData.aiInsights.improvedDescription }
-  ] : [];
+  const recommendations = buildSmartRecommendations(resultData);
+  const isSmartPanelExpanded = simulationState === "result" && smartPanelExpanded;
 
 
 
@@ -120,7 +179,10 @@ function DashboardContent() {
 
       <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-6 lg:gap-8">
         {/* Main Content Pane */}
-        <div className="flex-1 lg:flex-[1.2] xl:flex-[1.5] min-w-0 flex flex-col gap-6">
+        <div className={cn(
+          "flex-1 min-w-0 flex flex-col gap-6 transition-all duration-300",
+          isSmartPanelExpanded ? "lg:flex-[0.85] xl:flex-[0.9]" : "lg:flex-[1.2] xl:flex-[1.5]"
+        )}>
 
           <AnimatePresence mode="wait">
             {currentView === "personas" ? (
@@ -170,8 +232,11 @@ function DashboardContent() {
         </div>
 
         {/* Side Info Pane */}
-        <div className="w-full lg:w-64 xl:w-80 flex flex-col gap-6 shrink-0">
-          <div className="bento-card border-accent/20 flex-shrink-0">
+        <div className={cn(
+          "w-full flex flex-col gap-6 shrink-0 min-h-0 transition-all duration-300",
+          isSmartPanelExpanded ? "lg:w-[520px] xl:w-[640px] 2xl:w-[720px]" : "lg:w-72 xl:w-96"
+        )}>
+          <div className={cn("bento-card border-accent/20 flex-shrink-0", simulationState === "result" && "p-4", isSmartPanelExpanded && "hidden")}>
 
 
 
@@ -181,7 +246,7 @@ function DashboardContent() {
             </div>
             
             <div className="space-y-4">
-              <div className="p-4 bg-secondary/50 rounded-xl border border-border flex items-center gap-4">
+              <div className={cn("bg-secondary/50 rounded-xl border border-border flex items-center gap-4", simulationState === "result" ? "p-3" : "p-4")}>
                 <div className={cn("w-3 h-3 rounded-full animate-pulse", simulationState === "loading" ? "bg-accent" : "bg-primary")} />
                 <div>
                   <p className="text-xs font-bold uppercase tracking-wider">
@@ -191,30 +256,63 @@ function DashboardContent() {
                 </div>
               </div>
 
+              {simulationState !== "result" && (
               <div className="p-4 bg-secondary/30 rounded-xl border border-border border-dashed">
                 <div className="flex items-center gap-2 mb-2 text-primary">
                   <Info className="w-4 h-4" />
                   <span className="text-xs font-bold">Neden Simülasyon?</span>
                 </div>
                 <p className="text-[11px] text-muted-foreground leading-relaxed">
-                  Gerçek pazar lansmanı öncesi, 500 farklı tüketici personasının tepkisini ölçmek riskinizi %65 oranında azaltır.
+                  Gerçek pazar lansmanı öncesi, 500 sentetik tüketicinin {personaCount} persona tipi altında verdiği tepkileri ölçmek riskinizi azaltır.
                 </p>
               </div>
+              )}
             </div>
           </div>
 
-          <div className="bento-card flex-1 overflow-hidden flex flex-col">
+          <div className={cn(
+            "bento-card flex-1 overflow-hidden flex flex-col transition-all duration-300",
+            isSmartPanelExpanded ? "min-h-[70vh]" : "min-h-[420px] lg:min-h-0"
+          )}>
              <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold tracking-tight">Akıllı Tavsiyeler</h3>
-                <Sparkles className="w-4 h-4 text-primary" />
+                {recommendations.length > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => setSmartPanelExpanded((expanded) => !expanded)}
+                    className="inline-flex h-9 items-center gap-2 rounded-xl border border-primary/20 bg-primary/10 px-3 text-[10px] font-black uppercase tracking-widest text-primary transition hover:bg-primary/20"
+                    aria-label={isSmartPanelExpanded ? "Akıllı tavsiyeleri küçült" : "Akıllı tavsiyeleri genişlet"}
+                  >
+                    {isSmartPanelExpanded ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+                    <span>{isSmartPanelExpanded ? "Küçült" : "Genişlet"}</span>
+                  </button>
+                ) : (
+                  <Sparkles className="w-4 h-4 text-primary" />
+                )}
              </div>
+             {recommendations.length > 0 && (
+              <p className="mb-4 text-[11px] text-muted-foreground leading-relaxed">
+                Simülasyon sonucundan çıkarılan en yakın uygulanabilir adımlar.
+              </p>
+             )}
              
-             <div className="flex-1 flex flex-col gap-4 overflow-y-auto pr-2 custom-scrollbar">
+             <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-y-auto pr-3 custom-scrollbar">
                 {recommendations.length > 0 ? (
                   recommendations.map((rec, i) => (
-                    <div key={i} className="p-3 bg-secondary/30 rounded-xl border border-border group hover:border-primary/30 transition-all">
+                    <div key={i} className={cn("p-3 rounded-xl border group hover:border-primary/30 transition-all", getRecommendationClasses(rec.tone))}>
                       <span className="text-[9px] font-black uppercase text-primary tracking-widest">{rec.label}</span>
-                      <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">{rec.text}</p>
+                      {rec.items ? (
+                        <ol className="mt-2 space-y-1.5">
+                          {rec.items.map((item, itemIndex) => (
+                            <li key={`${rec.label}-${itemIndex}`} className="flex gap-2 text-xs text-muted-foreground leading-relaxed">
+                              <span className="font-black text-primary/80">{itemIndex + 1}</span>
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ol>
+                      ) : (
+                        <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">{rec.text}</p>
+                      )}
                     </div>
                   ))
                 ) : (

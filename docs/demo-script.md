@@ -1,58 +1,66 @@
-## Demo Script (Hackathon)
+# Demo Script
 
-### Açılış
-- Problem: “Ürün listeliyorum ama pazar geniş mi, kim alır, nereden pazarlamalıyım bilmiyorum.”
-- Çözüm: 500 persona ile simülasyon + özet metrik + AI içgörü (prompt/fallback).
+## Acilis
 
----
+Problem cumlesi:
 
-## Demo 1 – Trend Ürünü
-- **Ürün**: Oversize Su Geçirmez Kışlık Mont, 1800TL
-- **Kategori**: Giyim/Mont
-- **Motivasyon**: `stil_begeni`
-- **Özellikler**: Su geçirmez, rüzgar geçirmez, oversize, siyah, kışlık
-- **Hedef Kitle**: 18-30, unisex, orta gelir
+> "Bir urunu listelemeden once kimin alacagini, fiyat algisinin nasil oldugunu ve ilk neyi duzeltmem gerektigini bilmiyorum."
 
-**Beklenen çıktı (örnek):**
-- overallScore ~68
-- marketBreadthScore ~74 (geniş)
-- intentConversionScore ~63
-- top personas: Trend Takipçisi, Pratik Çözüm Arayan, Kalite Odaklı
-- kanal: Instagram / TikTok
+Cozum cumlesi:
 
----
+> "PazarLab AI urunu 500 sentetik tuketiciyle test eder, sonucu persona ve aksiyon planina cevirir."
 
-## Demo 2 – Niş Ürün (Kritik)
-- **Ürün**: Bebek Arabası Yedek Ayağı, 120TL
-- **Kategori**: Yedek Parça
-- **Motivasyon**: `yedek_parca_tamir`
-- **Özellikler**: Uyumlu model: X-Bebek Pro, ölçü: 12cm, malzeme: alüminyum, montaj: tak-çıkar
+## Demo 1: Basic Tisort
 
-**Beklenen çıktı (örnek):**
-- overallScore ~42
-- marketBreadthScore ~18 (niş)
-- intentConversionScore ~81 (yüksek)
-- problemSolutionFit ~88
-- top personas: Problem Çözüm Odaklı, Fiyat/Kargo Hassas, Detaycı Uyum Kontrolcüsü
-- kanal: Google Search / SEO / Pazar yeri araması
-- vurgu: geniş kitle reklamı yerine arama niyeti
+Amaç: Geniş kitle urununde bile herkesin almadigini gostermek.
 
----
+Ornek veri:
 
-## Demo 3 – İhtiyaç Ürünü
-- **Ürün**: Kapı Kolu Seti, 350TL
-- **Kategori**: Ev & Yaşam
-- **Motivasyon**: `ihtiyac`
-- **Özellikler**: Ölçü: 8cm delik aralığı, malzeme: paslanmaz çelik, kapı tipi: iç kapı
+- Kategori: Giyim / Tisort
+- Urun: Basic beyaz tisort
+- Fiyat: 299 TL
+- Aciklama: Pamuklu, gunluk kullanim, rahat kalip, kolay kombin, kolay iade
+- Hedef kitle: 18-35, unisex, orta gelir
 
-**Beklenen çıktı (örnek):**
-- overallScore ~51
-- marketBreadthScore ~36
-- intentConversionScore ~76
-- kanal: SEO / Google Search
+Beklenen vurgu:
 
----
+- Karar dagilimi sifir `Almadi` olmamali.
+- Akilli tavsiyeler ilk aksiyonlari net vermeli.
+- Persona kartlari hedef kitleyi aciklamali.
 
-### Kapanış
-- Mimari: “Her bot ayrı AI değil; matematiksel profil + tek sefer AI yorum.”
-- Fallback: Demo sırasında AI API olmasa bile öneri üretmeye devam eder.
+## Demo 2: Tablet veya Telefon
+
+Amac: Teknoloji urunlerinde teknik ozellik, garanti, marka ve fiyat algisinin belirleyici oldugunu gostermek.
+
+Ornek veri:
+
+- Kategori: Teknoloji / Tablet
+- Urun: Galaxy Tab A9 benzeri tablet
+- Fiyat: 6500 TL
+- Ozellikler: ekran, depolama, batarya, garanti, hizli kargo
+
+Beklenen vurgu:
+
+- Satin alma niyeti gercek site donusum orani degildir.
+- Teknik ozellikler pazarlama ve aciklama onerilerine yansimalidir.
+
+## Demo 3: Sacma veya Eksik Input
+
+Amac: Sistemin sadece cevap uretmedigini, girdiyi de sorguladigini gostermek.
+
+Ornek:
+
+- Urun adi anlamsiz
+- Aciklama cok kisa
+- Kategoriyle ilgisiz ozellikler
+
+Beklenen vurgu:
+
+- Sistem kullaniciyi uyarmali.
+- Kullanici onay verirse devam edebilmeli.
+
+## Kapanis
+
+Kapanis cumlesi:
+
+> "PazarLab AI, urun fikrini pazara cikmadan once daha ucuz, daha hizli ve daha acik sekilde test etmeyi saglar."

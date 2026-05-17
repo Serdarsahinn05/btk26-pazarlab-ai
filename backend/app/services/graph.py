@@ -1,6 +1,7 @@
 import os
 import json
 import logging
+import re
 import time
 import urllib.request
 from typing import Any, Dict, List, TypedDict, Optional, Set
@@ -257,6 +258,104 @@ def simulation_node(state: GraphState) -> Dict[str, Any]:
     return {"simulation_response": response}
 
 
+GENERIC_DEBATE_NAMES = {
+    "assistant",
+    "assistant 1",
+    "assistant 2",
+    "assistant 3",
+    "asistan",
+    "asistan 1",
+    "asistan 2",
+    "asistan 3",
+    "buyer",
+    "seller",
+    "alici",
+    "alıcı",
+    "satici",
+    "satıcı",
+    "user",
+    "system",
+    "bot",
+    "ajan",
+    "ajan 1",
+    "ajan 2",
+    "ajan 3",
+}
+
+
+def _is_generic_debate_name(name: str) -> bool:
+    clean_name = re.sub(r"\s+", " ", name.strip().lower())
+    return clean_name in GENERIC_DEBATE_NAMES or bool(
+        re.fullmatch(r"(assistant|asistan|agent|ajan|persona|bot)\s*\d+", clean_name)
+    )
+
+
+def _persona_for_generic_name(name: str, personas: List[Any], index: int) -> str:
+    if not personas:
+        return "Sistem"
+
+    match = re.search(r"(\d+)", name or "")
+    if match:
+        persona_index = int(match.group(1)) - 1
+        if 0 <= persona_index < len(personas):
+            return personas[persona_index].name
+
+    return personas[index % len(personas)].name
+
+
+def _extract_prefixed_persona(text: str, valid_names: Set[str]) -> tuple[Optional[str], str]:
+    clean_text = str(text or "").strip()
+    for persona_name in valid_names:
+        pattern = rf"^\s*{re.escape(persona_name)}\s*[:\-–]\s*"
+        if re.match(pattern, clean_text, flags=re.IGNORECASE):
+            return persona_name, re.sub(pattern, "", clean_text, count=1, flags=re.IGNORECASE).strip()
+    return None, clean_text
+
+
+def _fallback_debate_logs(personas: List[Any]) -> List[Dict[str, str]]:
+    if not personas:
+        return [{"name": "Sistem", "text": "Persona tartismasi icin yeterli veri olusmadi."}]
+
+    logs: List[Dict[str, str]] = []
+    for persona in personas[:3]:
+        decision = getattr(persona, "decision_label", "") or "KARARSIZ"
+        reason = getattr(persona, "micro_feedback", "") or getattr(persona, "reason", "")
+        probability = int(round(float(getattr(persona, "purchase_probability", 0) or 0) * 100))
+        logs.append({
+            "name": persona.name,
+            "text": f"Benim kararim {decision.lower()}; egilim skorum %{probability}. {reason}",
+        })
+    return logs
+
+
+def _sanitize_debate_logs(raw_logs: Any, personas: List[Any]) -> List[Dict[str, str]]:
+    if not isinstance(raw_logs, list):
+        return []
+
+    valid_names = {persona.name for persona in personas}
+    sanitized: List[Dict[str, str]] = []
+
+    for index, log in enumerate(raw_logs[:8]):
+        if not isinstance(log, dict):
+            continue
+
+        raw_name = str(log.get("name", "") or "").strip()
+        raw_text = str(log.get("text", "") or "").strip()
+        prefixed_name, text = _extract_prefixed_persona(raw_text, valid_names)
+        name = prefixed_name or raw_name
+
+        if name not in valid_names:
+            if _is_generic_debate_name(name) or not name:
+                name = _persona_for_generic_name(name, personas, index)
+            else:
+                name = _persona_for_generic_name(name, personas, index)
+
+        if text:
+            sanitized.append({"name": name[:50], "text": text[:500]})
+
+    return sanitized
+
+
 def debate_node(state: GraphState) -> Dict[str, Any]:
     logger.info("Generating A2A debate...")
     
@@ -312,6 +411,73 @@ def debate_node(state: GraphState) -> Dict[str, Any]:
         return {"debate_logs": [{"name": "Sistem", "text": "Tartışma oluşturulamadı."}]}
 
 
+def debate_node_v2(state: GraphState) -> Dict[str, Any]:
+    logger.info("Generating persona-only A2A debate...")
+
+    if not state.get("simulation_response"):
+        return {"debate_logs": [{"name": "Sistem", "text": "Simulasyon verisi yok."}]}
+
+    response = state["simulation_response"]
+    all_personas = response.all_personas
+    if not all_personas:
+        return {"debate_logs": []}
+
+    personas = [all_personas[0], all_personas[len(all_personas) // 2], all_personas[-1]] if len(all_personas) >= 3 else all_personas
+    allowed_names = ", ".join([p.name for p in personas])
+    persona_context = "\n".join([
+        (
+            f"- {p.name} (%{int(p.purchase_probability * 100)}, karar: {p.decision_label}): "
+            f"{p.reason} | karakter: {p.personality_type or p.ai_roleplay_prompt or 'persona'} | "
+            f"kritik not: {p.micro_feedback}"
+        )
+        for p in personas
+    ])
+
+    prompt = f"""
+    Urun: {state['product_name']} | Fiyat: {state['request'].price}
+    Kategori: {state['category']}
+    Genel skor: {response.overall_score}/100
+    Pazar: {state['benchmark_analysis']}
+
+    Personalar:
+    {persona_context}
+
+    Gorev: Bu 3 persona kendi aralarinda urunu tartissin. Satici, musteri temsilcisi,
+    moderator, buyer/seller veya assistant rolu yazma.
+
+    Kurallar:
+    - 6-8 mesaj uret.
+    - name alani SADECE su isimlerden biri olabilir: {allowed_names}
+    - Her persona kendi karar ihtimaline gore konussun; hepsi ayni fikirde olmasin.
+    - Mesajlar kisa, dogal ve somut olsun: fiyat, guven, ozellik, aciklama veya kanal riskine deginsin.
+    - "Ben bir asistan olarak", "assistant 1", "alici", "satici" gibi ifadeler yasak.
+    - Son mesaj mutlaka bir personanin saticiya net bir iyilestirme onerisiyle bitsin.
+    - Cevabi SADECE JSON array olarak dondur.
+
+    Format: [{{"name":"{personas[0].name}","text":"..."}}]
+    """
+
+    try:
+        content = invoke_llm_with_retry(prompt, temperature=0.7)
+        content = content.replace("```json", "").replace("```", "").strip()
+        debate_logs = json.loads(content)
+        validated = _sanitize_debate_logs(debate_logs, personas)
+        return {"debate_logs": validated or _fallback_debate_logs(personas)}
+    except json.JSONDecodeError:
+        try:
+            start, end = content.find("["), content.rfind("]") + 1
+            if start != -1 and end > start:
+                logs = json.loads(content[start:end])
+                validated = _sanitize_debate_logs(logs, personas)
+                return {"debate_logs": validated or _fallback_debate_logs(personas)}
+        except Exception:
+            pass
+        return {"debate_logs": _fallback_debate_logs(personas)}
+    except Exception as e:
+        logger.error(f"Persona debate error: {e}")
+        return {"debate_logs": _fallback_debate_logs(personas)}
+
+
 # ---------------------------------------------------------------------------
 # Graph Construction
 # ---------------------------------------------------------------------------
@@ -324,7 +490,7 @@ def create_simulation_graph():
         ("research", research_node),
         ("benchmark", benchmark_node),
         ("simulate", simulation_node),
-        ("debate", debate_node),
+        ("debate", debate_node_v2),
     ]:
         workflow.add_node(name, func)
     
@@ -373,6 +539,8 @@ def run_agentic_simulation(request: SimulationRequest) -> SimulationResponse:
                 validated_logs.append({"name": "Sistem", "text": str(log) if log else "Geçersiz veri."})
         
         response.debate_logs = validated_logs or [{"name": "Sistem", "text": "Tartışma kurgulanamadı."}]
+        debate_personas = [response.all_personas[0], response.all_personas[len(response.all_personas) // 2], response.all_personas[-1]] if len(response.all_personas) >= 3 else response.all_personas
+        response.debate_logs = _sanitize_debate_logs(raw_logs, debate_personas) or _fallback_debate_logs(debate_personas)
         response.benchmark_analysis = final_state.get("benchmark_analysis", "")
              
         return response

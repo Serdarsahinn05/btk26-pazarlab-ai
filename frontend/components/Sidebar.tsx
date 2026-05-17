@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, Beaker, Zap, Users, History, Settings, LogOut, Search, MessageSquare } from "lucide-react";
+import { Beaker, Zap, Users, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";

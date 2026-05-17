@@ -121,6 +121,10 @@ export interface Persona {
   decision?: "buy" | "watch" | "skip" | string;
   decisionLabel?: string;
   microFeedback?: string;
+  aiComment?: string | null;
+  personalityType?: string | null;
+  aiRoleplayPrompt?: string | null;
+  personalityTraits?: Record<string, unknown>;
 }
 
 export interface NormalizedProduct {
@@ -156,6 +160,17 @@ export interface PersonaFeedback {
   action?: string;
 }
 
+export interface DebateLog {
+  name: string;
+  text: string;
+}
+
+export interface DecisionDistribution {
+  buy: number;
+  watch: number;
+  skip: number;
+}
+
 export interface SimulationResponse {
   overallScore: number;
   marketBreadthScore: number;
@@ -163,12 +178,13 @@ export interface SimulationResponse {
   problemSolutionFit: number;
   simulatedConsumers: number;
   estimatedBuyers: number;
+  decisionDistribution?: DecisionDistribution;
   topPersonas: Persona[];
   allPersonas?: Persona[];
   weaknesses: string[];
   normalizedProduct: NormalizedProduct;
   aiInsights: AiInsights;
-  debateLogs?: { name: string; text: string }[];
+  debateLogs?: DebateLog[];
   benchmarkAnalysis?: string;
   images?: string[];
 

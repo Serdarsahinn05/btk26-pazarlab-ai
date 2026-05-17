@@ -1,19 +1,60 @@
-## Mimari Özeti (Hibrit Yaklaşım)
+# Mimari Notlari
 
-Bu MVP’de amaç, her bir tüketici için ayrı ayrı “LLM konuşması” yapmak değil; **matematiksel profil** ile 500 bot davranışını simüle edip, sadece **simülasyon özetini** AI’ın yorumlamasını sağlamaktır.
+PazarLab AI tek parca bir uygulama gibi gorunse de uc net katmandan olusur: kullanici arayuzu, analiz backend'i ve AI/veri destek servisleri.
 
-### Ana Bileşenler
-- **Persona verisi** (`backend/app/data/personas.json`): 10 persona tipi, hedef 500 bot (10×50). Botlar template’lerden deterministik üretilir.
-- **Kategori kuralları** (`backend/app/data/category_rules.json`): 5 kategori (mont, telefon, şapka, ev_yasam, yedek_parca) + motivasyona göre ağırlıklar.
-- **Simülasyon servisi** (Kişi 2 alanı): Ürün girdisini normalize eder, bot davranışlarını koşar ve özet metrikleri üretir.
-- **AI içgörü servisi** (`backend/app/services/ai_insight_service.py`): Üretilen özet metriği prompt’a çevirir; API anahtarı yoksa/çökerse fallback üretir.
+## Sistem Haritasi
 
-### “Kategori + Satın alma motivasyonu” iki eksenli analiz
-Simülasyon ve içgörü üretimi iki eksende şekillenir:
-- **Kategori**: Hangi ortak parametrelerin önemli olduğu (ör. yedek parçada “uyumluluk/ölçü”).
-- **Satın alma motivasyonu**: Aynı kategoride bile ağırlıkların değişmesi (ör. mont + stil_begeni’de görsel/trend/season daha baskın).
+```text
++----------------------+       +----------------------+
+|      Frontend        | HTTP  |       Backend        |
+|      Next.js         +------>+       FastAPI        |
+|      :3000           |       |       :8000          |
++----------+-----------+       +----------+-----------+
+           |                              |
+           |                              |
+           v                              v
+  Kullanici deneyimi             Simulasyon ve AI orkestrasyonu
+```
 
-Bu yüzden `category_rules.json` her kategori için **motivasyon bazlı ağırlıklar** içerir.
+Backend icindeki ana akis:
 
-### Niş ürün davranışı (pazar genişliği < 40)
-Niş ürünlerde geniş kitle reklamı yerine, **arama niyeti yüksek kullanıcıya** (SEO, Google Search, pazar yeri araması) odaklanmak daha rasyoneldir. Bu vurgu hem prompt’ta hem fallback’te bulunur.
+```text
+Input Analysis
+      |
+      v
+Product Link / Market Research
+      |
+      v
+Simulation Core
+      |
+      v
+AI Insight + Persona Debate
+      |
+      v
+Simulation Response
+```
+
+## Katmanlar
+
+| Katman | Sorumluluk |
+|---|---|
+| Frontend | Urun formu, link okuma UI, dashboard, persona tartismasi, akilli tavsiyeler |
+| API | Request/response modelleri ve endpointler |
+| Input Analysis | Sacma, eksik veya kategoriyle uyumsuz girdileri yakalama |
+| Simulation Core | 500 bot davranisi, persona skorlamasi, karar dagilimi |
+| AI Insight | Saticiya ozet, aksiyon plani, pazarlama ve aciklama onerileri |
+| Product Link Reader | Urun linkinden baslik, fiyat, gorsel ve ozellik cikarma |
+
+## Neden Hibrit?
+
+Her botu ayri ayri LLM ile konusturmak pahali, yavas ve dengesiz olurdu. Bu nedenle:
+
+- Karar skorlamasi deterministik simulasyon ile yapilir.
+- AI, hesap motoru yerine yorum ve strateji katmaninda kullanilir.
+- AI hata verirse fallback cevaplar temel deneyimi ayakta tutar.
+
+## Demo Icin Onemli Nokta
+
+Juriye anlatilacak en sade mimari cumle:
+
+> "Urun verisini aliyoruz, 500 sentetik tuketici davranisini simule ediyoruz, sonra AI bu sonucu saticinin anlayacagi aksiyonlara ceviriyor."

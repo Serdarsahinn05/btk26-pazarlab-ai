@@ -48,6 +48,14 @@ class PersonaFeedback(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
 
+class DecisionDistribution(BaseModel):
+    buy: int = Field(default=0, ge=0)
+    watch: int = Field(default=0, ge=0)
+    skip: int = Field(default=0, ge=0)
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
 class AiInsights(BaseModel):
     summary: str
     product_type_insight: str = Field(alias="productTypeInsight")
@@ -70,6 +78,7 @@ class SimulationResponse(BaseModel):
     problem_solution_fit: int = Field(alias="problemSolutionFit", ge=0, le=100)
     simulated_consumers: int = Field(alias="simulatedConsumers", ge=0)
     estimated_buyers: int = Field(alias="estimatedBuyers", ge=0)
+    decision_distribution: DecisionDistribution = Field(default_factory=DecisionDistribution, alias="decisionDistribution")
     top_personas: list[PersonaResult] = Field(alias="topPersonas")
     all_personas: list[PersonaResult] = Field(default_factory=list, alias="allPersonas")
     weaknesses: list[str]

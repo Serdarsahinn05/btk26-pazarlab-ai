@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Users, Info, Target, Zap, Heart } from "lucide-react";
+import { Users, Target, Zap, Heart } from "lucide-react";
 import personasData from "../data/personas.json";
 
 export default function PersonaLab() {
