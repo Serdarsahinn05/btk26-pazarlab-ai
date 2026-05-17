@@ -13,16 +13,8 @@ load_dotenv(override=True)
 
 
 def _get_allowed_origins() -> list[str]:
-    raw_origins = os.getenv("CORS_ALLOWED_ORIGINS")
-    if raw_origins:
-        return [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
 
-    return [
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:3001",
-        "http://127.0.0.1:3001",
-    ]
+    return ["*"]
 
 
 def create_app() -> FastAPI:
