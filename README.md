@@ -164,4 +164,4 @@ SERPER_API_KEY=your_serper_api_key_here
 
 ## Kisa Ozet
 
-PazarLab AI, saticiya sadece "bu urun satar" demez. 500 botun karari, personalarin gerekcesi, kritik riskler ve ilk uygulanacak aksiyonlarla birlikte daha kullanilabilir bir pazar cevabi verir.
+PazarLab AI, saticiya sadece "bu urun satar" demez. 500 botun kararı, personalarin gerekcesi, kritik riskler ve ilk uygulanacak aksiyonlarla birlikte daha kullanilabilir bir pazar cevabi verir.
