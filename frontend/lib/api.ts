@@ -9,6 +9,11 @@ export const mockSimulationResponse: SimulationResponse = {
   problemSolutionFit: 45,
   simulatedConsumers: 500,
   estimatedBuyers: 341,
+  decisionDistribution: {
+    buy: 341,
+    watch: 96,
+    skip: 63,
+  },
   topPersonas: [
     {
       name: "Trend Takipçisi",

@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
-
+// Trigger rebuild
 const config = {
+
   darkMode: ["class"],
   content: [
     './pages/**/*.{ts,tsx}',
