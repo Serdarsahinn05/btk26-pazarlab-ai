@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from app.models.product import PurchaseMotivation, SimulationRequest
-from app.models.simulation import NormalizedProduct, PersonaResult, SimulationResponse
+from app.models.simulation import DecisionDistribution, NormalizedProduct, PersonaResult, SimulationResponse
 from app.services.ai_insight_service import generate_insights
 from app.services.input_analysis_service import analyze_input
 from app.services.normalization_service import (
@@ -46,6 +46,7 @@ def run_simulation(request: SimulationRequest) -> SimulationResponse:
     )
     total_probability = 0.0
     estimated_buyers = 0
+    decision_counts = {"buy": 0, "watch": 0, "skip": 0}
 
     for persona_type in persona_data["personaTypes"]:
         persona_name = persona_type["name"]
@@ -57,9 +58,13 @@ def run_simulation(request: SimulationRequest) -> SimulationResponse:
             if request.purchase_motivation.value in persona_type.get("preferredMotivations", []):
                 probability = clamp(probability + 0.06)
             probability = clamp(probability * market_relevance_factor)
-            if rng.random() < probability:
+            purchase_roll = rng.random()
+            if purchase_roll < probability:
                 estimated_buyers += 1
                 persona_stats[persona_name]["buyers"] += 1
+                decision_counts["buy"] += 1
+            else:
+                decision_counts[_non_buyer_decision(probability, purchase_roll)] += 1
             persona_stats[persona_name]["count"] += 1
             persona_stats[persona_name]["prob_sum"] += probability
             total_probability += probability
@@ -105,6 +110,7 @@ def run_simulation(request: SimulationRequest) -> SimulationResponse:
         problemSolutionFit=problem_solution,
         simulatedConsumers=simulated_consumers,
         estimatedBuyers=estimated_buyers,
+        decisionDistribution=DecisionDistribution(**decision_counts),
         topPersonas=top_personas,
         allPersonas=all_personas,
         weaknesses=weaknesses,
@@ -166,6 +172,15 @@ def _purchase_probability(
     score += weighted_persona_fit * 0.38
     score -= price_penalty
     return clamp(score)
+
+
+def _non_buyer_decision(probability: float, purchase_roll: float) -> str:
+    if probability >= 1:
+        return "watch"
+
+    rejection_gap = (purchase_roll - probability) / max(1.0 - probability, 0.01)
+    watch_threshold = clamp(0.25 + probability * 0.55, 0.28, 0.72)
+    return "watch" if rejection_gap <= watch_threshold else "skip"
 
 
 def _market_relevance_factor(market_breadth_score: int) -> float:

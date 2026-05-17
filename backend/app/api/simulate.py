@@ -14,6 +14,11 @@ MOCK_SIMULATION_RESPONSE = SimulationResponse.model_validate({
     "problemSolutionFit": 45,
     "simulatedConsumers": 500,
     "estimatedBuyers": 341,
+    "decisionDistribution": {
+        "buy": 341,
+        "watch": 96,
+        "skip": 63,
+    },
     "topPersonas": [
         {
             "name": "Trend Takipcisi",
