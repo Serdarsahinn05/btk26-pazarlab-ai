@@ -1,11 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
-import { Suspense } from "react";
 
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
-import Sidebar from "@/components/Sidebar";
-import StatusBar from "@/components/StatusBar";
 
 
 
