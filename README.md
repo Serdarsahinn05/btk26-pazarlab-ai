@@ -1,6 +1,6 @@
 # PazarLab AI
 
-PazarLab AI, e-ticaret saticilarinin urunlerini pazara cikmadan once 500 sentetik tuketiciyle test etmesini saglayan AI destekli pazar simulasyonu platformudur. Urun bilgisi veya urun linki girilir; sistem karar dagilimi, hedef persona, pazarlama onerisi ve uygulanabilir aksiyon plani uretir.
+PazarLab AI, girişimciler, e-ticaret satıcıları ve ürün ekipleri için geliştirilmiş agentic AI destekli dinamik bir pazar simülasyon platformudur. Kullanıcılar ürün açıklaması, fiyat, kategori, hedef kitle, satış koşulları ve ürün linki gibi bilgileri girerek ürünlerinin pazara çıkmadan önce tüketici gözünden nasıl algılanacağını test edebilir. Piyasadaki klasik analiz araçlarından farklı olarak PazarLab AI yalnızca genel bir skor üretmez; farklı tüketici personaları ve 500 sentetik tüketici davranışı üzerinden “kim satın alır, kim kararsız kalır, kim neden vazgeçer?” sorularına cevap verir. Böylece ürün sahiplerine fiyatlandırma, pazarlama, sezon uygunluğu, açıklama kalitesi ve satış stratejisi konusunda uygulanabilir bir aksiyon planı sunar.
 
 ---
 
