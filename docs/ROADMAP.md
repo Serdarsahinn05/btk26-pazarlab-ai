@@ -216,7 +216,16 @@ Kabul kriteri: DESIGN.md'deki tüm kalıplar uygulanmış; bileşenlerde ham ren
 ## Şu an neredeyiz
 
 - **Son tamamlanan:** Faz 12c (arkadaşlık ağı, ağızdan ağıza yayılma, segmentler, kasaba temsilcileri, en etkili iyileştirme). Backend verileri hazır; arayüz henüz göstermiyor. Tüm dallar `main`'e merge edildi ve `origin`'e push'landı.
-- **Sıradaki:** Faz 12d (arayüz: ± aralık, benimseme eğrisi, segment grafiği, kasaba temsilcileri, iyileştirme kartı, eski motor notu) → 13 …
+- **Sıradaki:** Faz 12d (arayüz), dal `feat/engine-v2-ui` açıldı ama **henüz kod yazılmadı** (oturum 2026-10-17'de burada durdu). Backend verileri hazır: `buyersRange`, `adoptionCurve`, `segments`, `representatives`, `improvements`, `engineVersion` (tipler `frontend/types/index.ts`'te). Plan:
+  1. KPI "Tahmini alıcı": `291 (279–308)` aralığı (`buyersRange`).
+  2. "En etkili 3 değişiklik" kartı: `improvements` (alıcı farkı + ciro farkı birlikte; ciro düşüyorsa açıkça yaz).
+  3. "Ağızdan ağıza" kartı: `adoptionCurve` için 4 çubuk (tek seri, başlık yeterli, hover ipucu); WhatIf'teki `RevenueBars` kalıbı.
+  4. Segment grafiği: yaş/cinsiyet/gelir/şehir tipi için yatay çubuklar, tek ton (`--accent`), değerler metin renginde, hover'da sakin sayısı; tablo görünümü.
+  5. "Kasabadan 5 sakin" kartları: ad, yaş, şehir, meslek, persona chip'i, karar chip'i, gerekçe, katlanabilir hikâye; "kurgusal sakinler" notu.
+  6. `engineVersion` yoksa (v1 kaydı): "Bu sonuç eski motorla hesaplandı; yeniden simüle edersen sonuç değişebilir" notu.
+  7. Rehberler: DESIGN.md §4/§9.3 kalıpları; grafiklerde dataviz kuralları (tek eksen, ince işaret, hover, tablo görünümü). Bittiğinde Puppeteer ile 1280/375 ve açık/koyu kontrol.
+  8. **DESIGN.md düzeltmesi gerekli:** §7 hâlâ "Tailwind v3" diyor ve "v4 sözdizimini" yasaklıyor; Faz 7'de v4'e geçildi, kural güncellenecek.
+  Ardından → 13 …
 - **Ertelenen (kullanıcı kararı, 2026-10-17):** Faz 11'in Claude.ai denemesi sonra birlikte yapılacak. Gerekenler: `cloudflared` kurulumu (`winget install Cloudflare.cloudflared`), tünel adresinin `MCP_ALLOWED_HOSTS`'a yazılması, Claude'da connector eklenmesi; açık soru `?key=` sorgu dizesinin korunup korunmadığı. Adımlar: docs/mcp-connector.md. (sıra aşağıdaki tabloda). Her faz kendi dalında, bitince bu bölüm güncellenir.
 - **Bekleyen kararlar:** kategori genişletme (hangi aileler) Faz 13'e gelince konuşulacak; Faz 9 için API anahtarı yok.
 - **Ortam notları:** `backend/venv` bozuk (eski bir kullanıcı yolunu gösteriyor). Testler geçici bir venv ile koşuyor. Gemini sık sık 429 veriyor; arayüz testlerinde AI kapalı ya da sahte SSE kullanılıyor. `gh`, nginx ve Docker daemon yok.
