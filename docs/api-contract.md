@@ -18,6 +18,8 @@
 | POST | `/api/persona-chat` | `{ simulationId, persona, messages: [{ role: user\|persona, text ≤600 }] (1–12, son mesaj user) }` | SSE: `event: delta` `{ text }` … `event: done` (`{}`; AI yoksa veya günlük AI hakkı dolduysa persona simülasyon verisinden cevap verir ve `done` = `{ ruleBased: true, reason: quota\|unavailable }`) · hata: `event: error` `{ detail }` (AI cevabı yarıda kesilirse); kayıt yoksa 404, bilinmeyen persona 422 |
 | GET | `/api/simulations/{id}` | – | `{ id, createdAt, productName, category, response: SimulationResponse, request: SimulationRequest | null }` (request görselsiz); bilinmeyen/süresi dolmuş → 404 |
 
+**MCP:** `POST /mcp` (Streamable HTTP, JSON-RPC). Araçlar ve ayarlar: [mcp-connector.md](mcp-connector.md).
+
 **Hatalar** (her yanıtta `X-Request-ID` başlığı vardır):
 
 | Kod | Gövde | Ne zaman |
