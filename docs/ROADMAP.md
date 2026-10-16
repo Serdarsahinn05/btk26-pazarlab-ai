@@ -16,7 +16,8 @@
 | 5a | `feat/history-share` | Geçmiş, paylaşım, export | 1 gün | ✅ |
 | 5b | `feat/price-sweep-ab` | Fiyat eğrisi, A/B karşılaştırma | 1 gün | ✅ |
 | 5c | `feat/persona-chat-sse` | Persona sohbeti, canlı ilerleme | 1,5 gün | ✅ |
-| 5d | `ci/pipeline` | CI, bağımlılık taraması | 0,5 gün | ⬜ |
+| 5d | `ci/pipeline` | CI, bağımlılık taraması | 0,5 gün | ✅ |
+| 6 | `chore/next16-upgrade` | Next 14 → 16 (S14) | 0,5–1 gün | ⬜ |
 
 Sıralamanın gerekçesi: Önce güvenlik geliyor, çünkü açık CORS ve SSRF ile kota ve iç ağ riski demo sırasında bile var. Sonra B1 geliyor; AI katmanı çalışmıyorsa tasarımın gösterecek içeriği olmaz. Tasarım bunların üzerine kurulur.
 
@@ -118,7 +119,19 @@ Kabul kriteri: DESIGN.md'deki tüm kalıplar uygulanmış; bileşenlerde ham ren
   - `POST /api/persona-chat` (SSE): ürün ve persona bağlamı **sunucudaki kayıttan** (`simulationId`) alınıyor, istemciden değil. Persona karakteri `personas.json`'dan, simülasyon sonucu kayıttan. En fazla 12 tur, mesaj başına 600 karakter, 1024 token, IP başına 15/dk. AI yoksa `error` olayı. `llm_client.stream_chat()` Gemini `streamGenerateContent?alt=sse` kullanıyor; parça sınırlarındaki boşluklar korunuyor, "thought" parçaları atlanıyor.
   - Frontend: Tartışma sekmesinde "Personaya sor" paneli (persona seçici, hazır sorular, akışlı cevap, durdur düğmesi). Yalnızca tarayıcıda saklanan sonuçlarda açıklama gösteriliyor.
   - Doğrulama: `tests/test_stream.py` (11 test, toplam 67). Gerçek Gemini ile Puppeteer: ilerleme sonuçtan önce birden çok adımda ilerledi, sonuç akıştan geldi ve kaydedildi, persona cevabı parça parça geldi (375 karakter, karakter içinde).
-- [ ] **5d** GitHub Actions: ruff, pytest, lint, build, `pip-audit`, `npm audit`; Dependabot.
+- [x] **5d** CI ve bağımlılık taraması:
+  - `.github/workflows/ci.yml`: `main`'e push ve her PR'da iki iş. Backend (Python 3.11, Dockerfile ile aynı): `ruff check`, `pytest`, `pip-audit`. Frontend (Node 20): `npm ci`, `lint`, `tsc --noEmit`, `build`, `npm audit --omit=dev`.
+  - `npm audit` adımı şimdilik bloklamıyor (`continue-on-error`). Next 14'ün açıklarının 14.x'te düzeltmesi yok (S14); Faz 6'dan sonra bloklayıcı yapılacak.
+  - `.github/dependabot.yml`: pip ve npm haftalık (npm minor/patch tek PR'da gruplu), GitHub Actions aylık.
+  - `pip-audit` bulguları için güncellendi: `fastapi` 0.115 → 0.143, `starlette` 1.8 (açıkça pinli), `uvicorn` 0.54, `pydantic` 2.14, `python-dotenv` 1.2. Dev'e `ruff` ve `pip-audit` eklendi.
+  - Frontend: `shadcn` CLI'ı runtime bağımlılığından çıkarıldı; `@types/canvas-confetti` ve `tailwindcss-animate` devDependencies'e taşındı.
+  - Ruff temizliği: `backend/ruff.toml` (`main.py`'de E402 kasıtlı: `.env` importlardan önce yükleniyor), kullanılmayan importlar, 16 tek satırlık `if x: ...` bölündü.
+  - Doğrulama (yerelde): ruff temiz, pytest 67/67, `pip-audit` açık yok, lint/tsc/build temiz. `npm audit`: 1 kritik (next), 1 yüksek (next'in postcss'i). Workflow GitHub'da henüz koşmadı.
+
+## Faz 6: Next 16 yükseltmesi
+- [ ] `next` 14.2 → 16.x, `eslint-config-next` eşleşen sürüm; React 19 gerekiyorsa `react`/`react-dom` ve tipleri.
+- [ ] `next lint` kaldırıldıysa ESLint CLI'a geçiş; `next.config.mjs` (`standalone`, başlıklar) kontrolü.
+- [ ] `npm audit` temizse CI'daki `continue-on-error` kaldırılır.
 
 ## Riskler
 - **Gemini model adları sık değişiyor.** B1'de model env'den okunacak; varsayılan seçilirken o günkü güncel model listesi kontrol edilecek.

@@ -1,0 +1,5 @@
+target-version = "py311"
+
+[lint.per-file-ignores]
+# .env must be loaded before app modules read os.environ at import time.
+"app/main.py" = ["E402"]

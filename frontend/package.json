@@ -11,7 +11,6 @@
   "dependencies": {
     "@base-ui/react": "^1.4.1",
     "@radix-ui/react-select": "^2.2.6",
-    "@types/canvas-confetti": "^1.9.0",
     "axios": "^1.16.0",
     "canvas-confetti": "^1.9.4",
     "class-variance-authority": "^0.7.1",
@@ -24,12 +23,11 @@
     "react-dom": "^18",
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1",
-    "shadcn": "^4.7.0",
-    "tailwind-merge": "^3.6.0",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.16",
+    "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
@@ -38,6 +36,7 @@
     "eslint-config-next": "14.2.35",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
+    "tailwindcss-animate": "^1.0.7",
     "typescript": "^5"
   }
 }
