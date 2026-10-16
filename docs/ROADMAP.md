@@ -21,6 +21,10 @@
 | 7 | `chore/tailwind4` | Tailwind 3 → 4 (S15) | 0,5 gün | ✅ |
 | 8a | `feat/persona-chat-history` | F19: sohbet geçmişi | 0,25 gün | ✅ |
 | 8b | `docs/deployment` | F20: dağıtım dokümanı | 0,25 gün | ✅ |
+| 8c | `feat/observability` | B.8: JSON log, sağlık bilgisi | 0,25 gün | ⬜ |
+| 8d | `feat/categories-more` | B.9: ayakkabı, çanta, kozmetik | 0,5 gün | ⬜ |
+| 8e | `chore/language-cleanup` | B.10: dil tutarlılığı | 0,25 gün | ⬜ |
+| 9 | `feat/llm-providers` | B.12: Gemini + Claude + GPT, yedekli zincir | 1 gün | ⬜ |
 
 Sıralamanın gerekçesi: Önce güvenlik geliyor, çünkü açık CORS ve SSRF ile kota ve iç ağ riski demo sırasında bile var. Sonra B1 geliyor; AI katmanı çalışmıyorsa tasarımın gösterecek içeriği olmaz. Tasarım bunların üzerine kurulur.
 
