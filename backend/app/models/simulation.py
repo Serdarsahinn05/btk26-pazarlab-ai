@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -70,6 +70,8 @@ class AiInsights(BaseModel):
     persona_feedback: list[PersonaFeedback] = Field(default_factory=list, alias="personaFeedback")
     # False when the rule-based fallback produced these texts (no key, quota, model error).
     ai_generated: bool = Field(default=False, alias="aiGenerated")
+    # Why the fallback was used: "quota" (this client's daily AI calls are used up) or "unavailable".
+    ai_fallback_reason: Optional[Literal["quota", "unavailable"]] = Field(default=None, alias="aiFallbackReason")
 
     model_config = ConfigDict(populate_by_name=True)
 

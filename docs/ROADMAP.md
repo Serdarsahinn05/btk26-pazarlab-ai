@@ -26,7 +26,7 @@
 | 8d | `feat/categories-more` | B.9: ayakkabı, çanta, kozmetik | 0,5 gün | ✅ |
 | 8e | `chore/language-cleanup` | B.10: dil tutarlılığı | 0,25 gün | ✅ |
 | 9 | `feat/llm-providers` | B.12: Gemini + Claude + GPT, yedekli zincir | 1 gün | ⏸ API anahtarı yok, bekliyor |
-| 10a | `feat/ai-budget` | AI önbelleği, IP başına günlük AI kotası | 0,5 gün | ⬜ |
+| 10a | `feat/ai-budget` | AI önbelleği, IP başına günlük AI kotası | 0,5 gün | ✅ |
 | 10b | `feat/offline-persona-chat` | AI'sız (kural tabanlı) persona sohbeti | 0,5 gün | ⬜ |
 | 11 | `feat/mcp-connector` | PazarLab MCP sunucusu (Claude connector) | 1–1,5 gün | ⬜ |
 | 11b | `spike/claude-artifact` | Claude-powered artifact araştırması | 0,5 gün | ⬜ |
@@ -211,8 +211,8 @@ Kabul kriteri: DESIGN.md'deki tüm kalıplar uygulanmış; bileşenlerde ham ren
 
 ## Şu an neredeyiz
 
-- **Son tamamlanan:** Faz 8e (dil tutarlılığı). Tüm dallar `main`'e merge edildi ve `origin`'e push'landı.
-- **Sıradaki:** Faz 10a → 10b → 11 → 11b → 12 … (sıra aşağıdaki tabloda). Her faz kendi dalında, bitince bu bölüm güncellenir.
+- **Son tamamlanan:** Faz 10a (AI bütçesi). Tüm dallar `main`'e merge edildi ve `origin`'e push'landı.
+- **Sıradaki:** Faz 10b (AI'sız persona sohbeti) → 11 → 11b → 12 … (sıra aşağıdaki tabloda). Her faz kendi dalında, bitince bu bölüm güncellenir.
 - **Bekleyen kararlar:** kategori genişletme (hangi aileler) Faz 13'e gelince konuşulacak; Faz 9 için API anahtarı yok.
 - **Ortam notları:** `backend/venv` bozuk (eski bir kullanıcı yolunu gösteriyor). Testler geçici bir venv ile koşuyor. Gemini sık sık 429 veriyor; arayüz testlerinde AI kapalı ya da sahte SSE kullanılıyor. `gh`, nginx ve Docker daemon yok.
 
@@ -226,11 +226,14 @@ Kabul kriteri: DESIGN.md'deki tüm kalıplar uygulanmış; bileşenlerde ham ren
 - **Gerçek kullanıcı verisi:** kişi bazında ham veri (isim, iletişim, adres) asla alınmaz. Yalnızca anonim veya toplu segmentler kabul edilir; açık rıza ve silme hakkı olmalı (KVKK). Hesap sistemi ön koşul (Faz 19).
 - **Çoklu LLM (Faz 9):** API anahtarı alınana kadar bekliyor; abonelik bu fazın yerine geçmez.
 
-### Faz 10a: AI bütçesi
-- [ ] Aynı ürün girdisi (görseller hariç istek özeti) için AI çıktıları (yorumlar, tartışma, girdi analizi) bellekte / SQLite'ta TTL ile önbelleğe alınır; önbellekten gelen sonuç işaretlenir.
-- [ ] IP başına **günlük** AI kotası (dakikalık rate limit'ten ayrı); kota dolunca simülasyon yine çalışır, AI kısmı kural tabanlıya düşer ve kullanıcıya açık bir mesaj gösterilir ("Bugünkü AI hakkın doldu, kural tabanlı sonuç gösteriliyor").
-- [ ] `/api/health` önbellek isabet oranını ve kota durumunu gösterir.
-- Kabul: aynı istek ikinci kez gelince LLM çağrılmaz (test); kota aşımında yanıt 200, `aiInsights.aiGenerated=false` ve neden alanı dolu.
+### Faz 10a: AI bütçesi ✅
+- [x] `llm_client` içinde süreli önbellek (LRU + TTL, `AI_CACHE_TTL_SECONDS` = 6 sa, `AI_CACHE_MAX_ENTRIES` = 500). Anahtar: istem + veri + sıcaklık + token sınırı (SHA-256). Tek seferlik çağrıların hepsini kapsıyor: AI yorumları, tartışma, girdi analizi, araştırma özeti, link okuyucunun AI tamamlaması. JSON cevaplar ayrıştırıldıktan **sonra** saklanıyor (yarım cevap önbellekte kalmıyor, sonraki istekte yeniden deneniyor); çağırana kopya veriliyor.
+- [x] IP başına **günlük** gerçek AI çağrısı kotası (`AI_DAILY_CALLS_PER_IP` = 60, Türkiye saatine göre gün, 0 = kapalı). Önbellek isabeti kota harcamıyor. Persona sohbeti önbelleğe alınmıyor ama kotadan düşüyor. İstemci IP'si middleware'de bir `ContextVar`'a yazılıyor (`observability.client_ip_var`); istek dışındaki çağrılar (betikler) sınırlanmıyor.
+- [x] Kota aşımı `AIQuotaExceeded` (bir `LLMUnavailable` alt sınıfı) olarak yükseliyor, yani mevcut bütün kural tabanlı geri dönüşler kod değişikliği olmadan devreye giriyor. `aiInsights.aiFallbackReason` = `quota` | `unavailable`; arayüzde bildirim, "kural tabanlı" etiketinin açıklaması ve Markdown rapor notu nedene göre ("Bugünkü AI hakkın doldu; … Simülasyon sonuçları etkilenmedi.").
+- [x] `/api/health` → `ai.cache { entries, hits, misses }`, `ai.dailyCallsPerIp`.
+- Plandan sapma: önbellekten gelen sonucu ayrıca işaretlemek gereksiz görüldü (kullanıcı için fark yok; isabet oranı health'te).
+- Doğrulama: `tests/test_ai_budget.py` (8 test, toplam 114): aynı çağrıda tek ağ isteği ve kopya dönmesi, bozuk JSON'un saklanmaması, önbelleğin kapatılabilmesi, IP başına kota + önbellek isabetinin bedava olması + sohbetin de kotaya takılması, istek dışı ve kota kapalı durumlar, API'de `aiFallbackReason=quota` (bu test istemci IP'sinin threadpool'daki servislere taşındığını da kanıtlıyor), `unavailable`, health alanları. lint/tsc temiz; AI kapalı Puppeteer 10/10.
+- Risk: paylaşılan NAT arkasındaki kullanıcılar aynı kotayı paylaşır (deployment.md'ye yazıldı). Önbellek ve kota process belleğinde; yeniden başlatınca sıfırlanır.
 
 ### Faz 10b: AI'sız persona sohbeti
 - [ ] AI yoksa (`LLMUnavailable` / kota) persona, kendi verisinden (karar, gerekçe, öneri, kişilik özellikleri, ürünün zayıflıkları) kural tabanlı cevap üretir; sorunun konusuna göre (fiyat, kargo, açıklama, garanti, neden almadın) farklı şablon seçer.

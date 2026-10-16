@@ -1,4 +1,5 @@
 import { SimulationResponse } from "@/types";
+import { aiFallbackNote } from "@/lib/api";
 import { DECISION_LABEL, decisionOf, personaLabel } from "@/lib/personas";
 
 /** Plain Markdown report of a simulation, for pasting into docs or sending to a team. */
@@ -11,7 +12,7 @@ export function simulationToMarkdown(result: SimulationResponse, productName: st
     `# PazarLab AI raporu: ${productName}`,
     "",
     `Tarih: ${new Date().toLocaleString("tr-TR")}${shareUrl ? ` · Sonuç linki: ${shareUrl}` : ""}`,
-    result.aiInsights.aiGenerated === false ? "\n> Not: AI kullanılamadı; tavsiyeler kural tabanlı üretildi." : "",
+    aiFallbackNote(result.aiInsights) ? `\n> Not: ${aiFallbackNote(result.aiInsights)}` : "",
     "",
     "## Karar",
     "",

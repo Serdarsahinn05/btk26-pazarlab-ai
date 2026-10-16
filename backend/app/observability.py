@@ -9,6 +9,8 @@ import time
 # Set by the request middleware (app/security.py). Starlette copies the context into the
 # threadpool, so logs from sync handlers and LLM calls carry the id of their request.
 request_id_var: contextvars.ContextVar[str] = contextvars.ContextVar("request_id", default="-")
+# Client IP of the current request (after uvicorn's proxy-header handling); "" outside a request.
+client_ip_var: contextvars.ContextVar[str] = contextvars.ContextVar("client_ip", default="")
 
 access_logger = logging.getLogger("access")
 

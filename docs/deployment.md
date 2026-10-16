@@ -114,6 +114,7 @@ Güvenilmeyen bir adresten gelen `X-Forwarded-For` yok sayılır. Bu sayede iste
 
 ## 4. Kısıtlar
 
+- **AI bütçesi.** AI önbelleği (`AI_CACHE_TTL_SECONDS`) ve IP başına günlük AI çağrısı (`AI_DAILY_CALLS_PER_IP`) process belleğinde; yeniden başlatınca sıfırlanır. Günlük kota gerçek istemci IP'sine göre sayılır, yani [§3](#3-gerçek-istemci-ipsi) burada da şart. Paylaşılan bir NAT arkasındaki kullanıcılar (okul, ofis) aynı kotayı paylaşır; gerekirse değeri artırın.
 - **Tek worker.** Rate limit sayaçları process belleğinde tutuluyor; geçmiş SQLite'ta. Birden fazla uvicorn worker'ı veya replika çalıştırılırsa limitler worker başına sayılır. Bu durumda paylaşılan bir depo (Redis) gerekir. Yük şu an LLM çağrılarında (threadpool'da), CPU'da değil; tek worker yeterli.
 - **Geçmiş verisi** `pazarlab-data` volume'unda (`/app/data/history.db`). Yedekleme bu volume üzerinden yapılır. Persona sohbetleri sunucuda değil, kullanıcının tarayıcısında tutulur.
 - **Docker imajları** geliştirme ortamında build edilip doğrulanmadı (SECURITY_AUDIT S11). İlk dağıtımda `docker compose up --build` sonrası `docker exec pazarlab-backend whoami` komutu root olmayan bir kullanıcı döndürmelidir.

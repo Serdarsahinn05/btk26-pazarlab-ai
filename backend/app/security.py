@@ -15,7 +15,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from app.observability import log_access, request_id_var
+from app.observability import client_ip_var, log_access, request_id_var
 
 logger = logging.getLogger("security")
 
@@ -28,6 +28,7 @@ def install(app: FastAPI) -> None:
         request_id = uuid.uuid4().hex[:12]
         request.state.request_id = request_id
         request_id_var.set(request_id)
+        client_ip_var.set(request.client.host if request.client else "unknown")
         started = time.perf_counter()
         method, path = request.method, request.url.path
 
