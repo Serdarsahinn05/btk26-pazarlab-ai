@@ -20,6 +20,7 @@
 | 6 | `chore/next16-upgrade` | Next 14 → 16 (S14) | 0,5–1 gün | ✅ |
 | 7 | `chore/tailwind4` | Tailwind 3 → 4 (S15) | 0,5 gün | ✅ |
 | 8a | `feat/persona-chat-history` | F19: sohbet geçmişi | 0,25 gün | ✅ |
+| 8b | `docs/deployment` | F20: dağıtım dokümanı | 0,25 gün | ✅ |
 
 Sıralamanın gerekçesi: Önce güvenlik geliyor, çünkü açık CORS ve SSRF ile kota ve iç ağ riski demo sırasında bile var. Sonra B1 geliyor; AI katmanı çalışmıyorsa tasarımın gösterecek içeriği olmaz. Tasarım bunların üzerine kurulur.
 
@@ -165,6 +166,9 @@ Kabul kriteri: DESIGN.md'deki tüm kalıplar uygulanmış; bileşenlerde ham ren
   - Her persona kendi sohbetini koruyor (önceden persona değiştirmek sohbeti siliyordu). Cevap akışı bitince kaydediliyor, her parçada değil. "Sohbeti temizle" düğmesi.
   - Cevap hiç gelmezse (AI hatası, durdur) soru sohbetten çıkarılıp yazı kutusuna geri konuyor; cevapsız soru kaydedilmiyor. Cevap akarken persona değiştirilir veya temizlenirse yeni sohbete dokunulmuyor.
   - Doğrulama: `/api/persona-chat` sahte SSE ile Puppeteer 13/13 (akış, yenileme, önceki turların gönderilmesi, persona başına ayrı kayıt, hata yolu, temizleme). Gerçek Gemini o sırada 429 / zaman aşımı veriyordu; arayüz hatayı doğru gösterdi. Genel uçtan uca test 10/10.
+- [x] **8b** F20, dağıtım dokümanı (`docs/deployment.md`): nginx örneği (SSE yollarında `proxy_buffering off`, `gzip off`, 300 sn okuma süresi; 10 MB gövde), aynı alan adından frontend + API, `NEXT_PUBLIC_API_URL`'in build anında gömülmesi, `FORWARDED_ALLOW_IPS` ile gerçek istemci IP'si, tek worker kısıtı, kontrol listesi.
+  - Bulunan risk: proxy arkasında `FORWARDED_ALLOW_IPS` doğru verilmezse bütün kullanıcılar tek rate limit kotasını paylaşıyor. Dokümana eklendi.
+  - Doğrulama: uvicorn `--proxy-headers` ile güvenilen proxy'den gelen `X-Forwarded-For` istemci başına sayıldı (aynı IP 3. istekte 429, başka IP 404). Güvenilmeyen kaynaktan gelen başlık yok sayıldı, yani sahte başlıkla limit aşılamıyor. nginx config'i çalıştırılarak doğrulanmadı (bu makinede nginx yok, Docker daemon kapalı).
 
 ## Riskler
 - **Gemini model adları sık değişiyor.** B1'de model env'den okunacak; varsayılan seçilirken o günkü güncel model listesi kontrol edilecek.

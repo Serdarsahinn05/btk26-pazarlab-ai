@@ -181,6 +181,7 @@ npm run dev
 | [Tasarim Sistemi](DESIGN.md) | Renk, tipografi ve bilesen kurallari |
 | [Yol Haritasi](docs/ROADMAP.md) | Fazlar, kabul kriterleri, durum |
 | [Guvenlik Denetimi](docs/SECURITY_AUDIT.md) | Bulgular ve duzeltmeler |
+| [Dagitim](docs/deployment.md) | nginx arkasinda SSE, gercek istemci IP'si, uretim ayarlari |
 | [Iyilestirmeler](docs/IMPROVEMENTS.md) | Hatalar, teknik borc ve yeni ozellikler |
 
 ---
