@@ -84,6 +84,42 @@ class BuyersRange(BaseModel):
     runs: int
 
 
+class SegmentRate(BaseModel):
+    label: str
+    residents: int
+    buy_rate: float = Field(alias="buyRate")
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class TownRepresentative(BaseModel):
+    """A resident shown on the result screen, with a rule-based reason for the decision."""
+
+    id: str
+    name: str
+    age: int
+    city: str
+    occupation: str
+    persona: str
+    story: str
+    buy_probability: float = Field(alias="buyProbability")
+    decision: Literal["buy", "watch", "skip"]
+    reason: str
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class Improvement(BaseModel):
+    """One what-if change and what it did to the same town (Faz 12c)."""
+
+    key: str
+    label: str
+    delta_buyers: int = Field(alias="deltaBuyers")
+    delta_revenue: float = Field(alias="deltaRevenue")
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
 class SimulationResponse(BaseModel):
     overall_score: int = Field(alias="overallScore", ge=0, le=100)
     market_breadth_score: int = Field(alias="marketBreadthScore", ge=0, le=100)
@@ -110,5 +146,10 @@ class SimulationResponse(BaseModel):
     # 2 = town + willingness-to-pay engine (Faz 12b). Missing on results saved by the v1 engine.
     engine_version: Optional[int] = Field(default=None, alias="engineVersion")
     buyers_range: Optional[BuyersRange] = Field(default=None, alias="buyersRange")
+    # Faz 12c: cumulative buyers per week (week 1 direct, weeks 2–4 word of mouth), segments, cast, what-ifs.
+    adoption_curve: list[int] = Field(default_factory=list, alias="adoptionCurve")
+    segments: dict[str, list[SegmentRate]] = Field(default_factory=dict)
+    representatives: list[TownRepresentative] = Field(default_factory=list)
+    improvements: list[Improvement] = Field(default_factory=list)
 
     model_config = ConfigDict(populate_by_name=True)

@@ -207,6 +207,10 @@ def simulate_product(product: ProductInput) -> dict[str, Any]:
             for p in response.all_personas
         ],
         "weaknesses": response.weaknesses,
+        "adoptionCurveByWeek": response.adoption_curve,
+        "bestImprovements": [i.model_dump(by_alias=True) for i in response.improvements],
+        "segments": {k: [s.model_dump(by_alias=True) for s in v] for k, v in response.segments.items()},
+        "townRepresentatives": [r.model_dump(by_alias=True) for r in response.representatives],
         "inputWarnings": response.input_analysis.warnings if response.input_analysis else [],
         "ruleBasedAdvice": {
             "summary": insights.summary,
