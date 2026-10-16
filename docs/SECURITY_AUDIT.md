@@ -3,7 +3,7 @@
 - **Tarih:** 2026-10-16
 - **Kapsam:** `main` @ `4f3441e8`; backend (FastAPI + LangGraph), frontend (Next.js 14), Docker.
 - **Yöntem:** Kaynak kodun elle okunması (white-box). Düzeltmeler `backend/tests/test_security.py` ile otomatik test ediliyor.
-- **Son güncelleme:** Faz 6 (`chore/next16-upgrade`). S14 Next 16 ile kapandı (`npm audit --omit=dev` 0 açık); dev araçlarındaki kalan açıklar S15 olarak kabul edildi.
+- **Son güncelleme:** Faz 7 (`chore/tailwind4`). Tailwind 4 ile S15 daraldı (11 → 7 kayıt); kalanların yaması yok, kabul edildi.
 
 Durum değerleri: `açık`, `düzeltildi`, `kabul edildi`.
 
@@ -25,7 +25,7 @@ Durum değerleri: `açık`, `düzeltildi`, `kabul edildi`.
 | S12 | Orta | 422 yanıtı girdiyi geri yansıtıyor; `inf` fiyatı sunucuyu 500'e düşürüyor | düzeltildi |
 | S13 | Düşük | Link okuyucu ile API sınırları uyumsuz (görsel sayısı, kategori) | düzeltildi |
 | S14 | Yüksek | Next.js 14.2'de yamasız açıklar (`npm audit`: 1 kritik, 1 yüksek) | düzeltildi (Faz 6, `next@16.4.2`) |
-| S15 | Düşük | Dev araç zincirinde açıklar (`braces`, `postcss-selector-parser`; tailwind 3 ve `eslint-plugin-next` üzerinden) | kabul edildi |
+| S15 | Düşük | Dev araç zincirinde açıklar (`braces` ← `eslint-plugin-next`, `postcss-selector-parser` ← `@tailwindcss/typography`) | kabul edildi (Faz 7'de daraldı) |
 
 Kontrol edildi, sorun bulunmadı:
 - `.env` dosyaları git'te takip edilmiyor. `.gitignore` artık `.env.*` kalıbını da kapsıyor.
@@ -204,7 +204,11 @@ Bu alanların tamamı LLM prompt'larına giriyor. Sınırsız girdi, maliyet sal
 
 **Neden kabul:** Bu paketler yalnızca build ve lint sırasında, depodaki kendi kaynak dosyalarımız üzerinde çalışıyor; production imajına girmiyor (`standalone` çıktısında yoklar). `postcss-selector-parser` için yama yok; `braces` için tek yol `npm audit fix --force`, yani Tailwind 4'e major geçiş.
 
-**Plan:** Tailwind 4 geçişi (IMPROVEMENTS B.11) ile tekrar değerlendirilecek. Dependabot yeni sürümleri izliyor.
+**Faz 7 (Tailwind 4) sonrası:** 7 kayıt (5 yüksek, 2 orta). Tailwind 3 / `chokidar` zinciri kapandı. Kalanlar:
+- `braces@3.0.3` ← `micromatch` ← `fast-glob@3.3.1` ← `@next/eslint-plugin-next@16.4.2`. Etkilenen aralık `*`; düzeltilmiş sürüm yok.
+- `postcss-selector-parser@6.0.10` ← `@tailwindcss/typography@0.5.20` (en güncel sürüm, bu sürümü sabitliyor).
+
+İkisi de yalnızca lint ve build sırasında, kendi kaynak dosyalarımız üzerinde çalışıyor. Dependabot üst paketlerin yeni sürümlerini izliyor.
 
 ---
 

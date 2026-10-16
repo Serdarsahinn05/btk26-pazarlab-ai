@@ -59,7 +59,7 @@ export default function LandingPage() {
             </div>
             <dl className="mt-10 flex flex-wrap gap-4">
               {STATS.map((s) => (
-                <div key={s.label} className="card-paper !px-5 !py-3">
+                <div key={s.label} className="card-paper px-5! py-3!">
                   <dt className="sr-only">{s.label}</dt>
                   <dd className="font-display text-3xl font-extrabold leading-none">{s.value}</dd>
                   <dd className="mt-1 text-sm font-bold text-muted-foreground">{s.label}</dd>

@@ -47,8 +47,8 @@ export default function AnalysisWarning({ analysis, onConfirm, onCancel }: Analy
   ];
 
   return (
-    <div className="fixed inset-0 z-[100] grid place-items-center p-4">
-      <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={onCancel} aria-hidden />
+    <div className="fixed inset-0 z-100 grid place-items-center p-4">
+      <div className="absolute inset-0 bg-background/80 backdrop-blur-xs" onClick={onCancel} aria-hidden />
       <div
         ref={dialogRef}
         role="dialog"

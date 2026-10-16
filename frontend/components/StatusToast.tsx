@@ -24,7 +24,7 @@ export default function StatusToast({ toast, onClose }: { toast: ToastState | nu
     >
       <span>{toast.message}</span>
       {toast.onRetry && (
-        <button type="button" onClick={toast.onRetry} className="btn-sticker !px-3 !py-1 text-xs">
+        <button type="button" onClick={toast.onRetry} className="btn-sticker px-3! py-1! text-xs">
           Tekrar dene
         </button>
       )}
