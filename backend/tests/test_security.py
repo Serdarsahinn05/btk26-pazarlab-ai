@@ -104,7 +104,7 @@ def test_simulate_is_rate_limited(client, payload):
         lambda p: p.update(description="x" * 4001),
         lambda p: p.update(productName="x" * 121),
         lambda p: p.update(price=20_000_000),
-        lambda p: p.update(category="ayakkabi"),
+        lambda p: p.update(category="mobilya"),
         lambda p: p.update(images=["https://example.com/a.jpg"] * 7),
         lambda p: p["features"].update(colors=["c"] * 21),
         lambda p: p["targetAudience"].update(gender="g" * 41),

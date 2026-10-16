@@ -22,7 +22,7 @@
 | 8a | `feat/persona-chat-history` | F19: sohbet geçmişi | 0,25 gün | ✅ |
 | 8b | `docs/deployment` | F20: dağıtım dokümanı | 0,25 gün | ✅ |
 | 8c | `feat/observability` | B.8: JSON log, sağlık bilgisi | 0,25 gün | ✅ |
-| 8d | `feat/categories-more` | B.9: ayakkabı, çanta, kozmetik | 0,5 gün | ⬜ |
+| 8d | `feat/categories-more` | B.9: ayakkabı, çanta, kozmetik | 0,5 gün | ✅ |
 | 8e | `chore/language-cleanup` | B.10: dil tutarlılığı | 0,25 gün | ⬜ |
 | 9 | `feat/llm-providers` | B.12: Gemini + Claude + GPT, yedekli zincir | 1 gün | ⬜ |
 
@@ -179,6 +179,14 @@ Kabul kriteri: DESIGN.md'deki tüm kalıplar uygulanmış; bileşenlerde ham ren
   - İstek başına tek erişim satırı: yöntem, yol (sorgu dizesi hariç), durum, süre (ms). 411/413 erken redleri ve 500'ler dahil. SSE'de süre, ilk byte'a kadar geçen zaman. Başarılı `/api/health` DEBUG'da (Docker healthcheck gürültüsü). Dockerfile'da uvicorn'un kendi erişim logu kapatıldı (`--no-access-log`), satırlar çift olmuyor.
   - `/api/health` → `ai.lastSuccessAt`, `ai.lastErrorAt`, `ai.lastError` (yalnızca tür / `HTTP 429`; mesaj gövdesi yok). Kota sorunu log okumadan görülüyor.
   - Doğrulama: `tests/test_observability.py` (5 test, toplam 72): erişim satırı ve kimlik eşleşmesi, sorgu dizesinin loglanmaması, 413 satırı, threadpool'da kimliğin taşınması, JSON formatı, sağlıkta son 429. JSON çıktısı gerçek uvicorn ile görüldü. ruff temiz.
+- [x] **8d** B.9, yeni kategoriler: ayakkabı, çanta, kozmetik (`feat/categories-more`):
+  - `app/models/category.py`: `Category` ve gruplar (`CLOTHING`, `TECH`, `FASHION_ACCESSORIES`, `FASHION`, `BEAUTY`, `SEASONAL`). Önceden altı dosyada elle yazılmış küme kopyaları vardı; her kullanım yerinde yeni kategorilerin hangi yola gireceğine açıkça karar verildi (ör. ayakkabı sezona duyarlı, çanta ve kozmetik değil; kozmetikte marka eksikse uyarı).
+  - `category_rules.json`: ortalama fiyat, pazar genişliği, varsayılan ağırlıklar ve motivasyon ağırlıkları (ayakkabı: stil/ihtiyaç/trend; çanta: stil/ihtiyaç/hediye; kozmetik: ihtiyaç/problem çözme/trend/hediye; hepsinin toplamı 1). `meta.categories` güncellendi (eskiden 6 kategori yazıyordu).
+  - 8 yeni özellik: `soleMaterial`, `heelHeight`, `compartments`, `strapType`, `skinType`, `ingredients`, `volume`, `certifications`. Kalite puanı, girdi analizi (anahtar kelimeler, önemli alanlar), kural tabanlı tavsiye metinleri ve "iyileştirilmiş açıklama" bunları kullanıyor.
+  - Link okuyucu: yeni kategoriler listenin başında ("laptop çantası" → çanta, "24 saat kalıcı ruj" → kozmetik); 4 harf ve altı anahtar kelimeler kelime sınırıyla aranıyor ("bot" ≠ "robot"); "krem" yerine "kremi" ("krem rengi tişört" giyimde kalıyor). Yeni özellik anahtarları (taban, bölme, cilt tipi, hacim…) eşleniyor.
+  - Frontend: "Aksesuar & Bakım" ailesi ve üç kategori için form alanları; landing'deki kategori sayısı artık `CATEGORIES.length` (elle "10" yazıyordu).
+  - Bulunan hata **B17** (Türkçe karakterler kategori uyumunu düşürüyordu) bu fazda düzeltildi. Yazım sırasında düzenleme script'i bir regex'e görünmez backspace karakteri soktu; test yakaladı, düzeltildi, kod tabanında başka örnek yok.
+  - Doğrulama: `tests/test_categories.py` (30 test, toplam 102): kategori/kural/anahtar kelime tutarlılığı, 13 × 7 ağırlık normalizasyonu, üç yeni kategoriyle uçtan uca simülasyon (kategori uyumu ≥ 0,6, yanlış kategori önerisi yok), yeni alanların kalite puanını artırması, Türkçe = ASCII uyumu, link eşleme vakaları. Puppeteer 10/10: açılır listede 13 kategori ve yeni aile, her kategoride alanlar, istekte yeni alanlar, sonuç ekranı. Genel uçtan uca test 10/10.
 
 ## Riskler
 - **Gemini model adları sık değişiyor.** B1'de model env'den okunacak; varsayılan seçilirken o günkü güncel model listesi kontrol edilecek.

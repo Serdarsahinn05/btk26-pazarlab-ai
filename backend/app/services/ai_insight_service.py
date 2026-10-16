@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List
 
+from app.models.category import BEAUTY, CLOTHING, FASHION_ACCESSORIES, TECH
 from app.models.product import SimulationRequest
 from app.models.simulation import AiInsights, NormalizedProduct, PersonaFeedback, PersonaResult
 from app.services import llm_client
@@ -319,10 +320,16 @@ def _build_sales_recipe(
         f"{first_channel} icin 7 gunluk A/B test kur: bir varyant fayda odakli, digeri fiyat/guven odakli olsun.",
         "Iade, kargo ve garanti/fatura bilgisini fiyat alanina yakin gosterecek sekilde listelemeyi duzenle.",
     ]
-    if category in {"telefon", "laptop", "tablet", "akilli_saat", "kulaklik"}:
+    if category in TECH:
         recipe.insert(1, "Teknik ozellikleri karsilastirilabilir yaz: model, kapasite, pil, ekran ve garanti ayni blokta dursun.")
-    if category in {"tisort", "pantolon", "mont", "elbise", "etek"}:
+    if category in CLOTHING:
         recipe.insert(1, "Beden/kalip bilgisini ve gercek kullanim/kombin senaryosunu aciklamanin ilk 2 satirina al.")
+    if category == "ayakkabi":
+        recipe.insert(1, "Numara tablosunu, kalıbın dar/geniş olduğunu ve taban malzemesini açıklamanın ilk satırlarına al; yandan ve tabandan görsel ekle.")
+    if category == "canta":
+        recipe.insert(1, "Ölçüleri ve neyin sığdığını (laptop, A4, su şişesi) gösteren bir görsel ekle; bölmeleri ve askıyı tek blokta yaz.")
+    if category in BEAUTY:
+        recipe.insert(1, "İçerik listesini, cilt tipi uyumunu ve hacmi ilk satırlara al; dermatolojik test veya sertifika varsa ilk görselde göster.")
     if "price_sensitive_users_rejected" in weakness_signals or market_breadth_score < 50:
         recipe.append("Fiyat bariyerini olcmek icin ucretsiz kargo veya kupon varyantini ana fiyati dusurmeden test et.")
     if product_type == "trend/stil ürünü" and getattr(features, "colors", None):
@@ -339,10 +346,14 @@ def _build_marketing_advice(
     intent_conversion_score: int,
 ) -> str:
     channel_text = ", ".join(channels) if channels else "pazar yeri ici arama ve sosyal medya"
-    if category in {"telefon", "laptop", "tablet", "akilli_saat", "kulaklik"}:
+    if category in TECH:
         angle = "teknik kanit + guven + karsilastirma"
-    elif category in {"tisort", "pantolon", "mont", "elbise", "etek"}:
+    elif category in CLOTHING:
         angle = "stil, beden uyumu ve gercek kullanim gorselleri"
+    elif category in FASHION_ACCESSORIES:
+        angle = "stil, malzeme kalitesi ve gerçek kullanımda çekilmiş görseller"
+    elif category in BEAUTY:
+        angle = "içerik şeffaflığı, cilt tipi uyumu ve gerçek kullanıcı yorumları"
     else:
         angle = "net fayda ve guven"
     scope = "genis kitle kreatifleri" if market_breadth_score >= 55 else "arama niyeti yuksek daha dar kitle"
@@ -355,8 +366,14 @@ def _build_marketing_advice(
 def _build_description_advice(request: SimulationRequest, normalized_product: NormalizedProduct) -> str:
     if normalized_product.description_completeness >= 0.75:
         return "Aciklama temel olarak guclu; ilk paragrafi daha net fayda, ikinci paragrafi teknik/beden detaylari olacak sekilde duzenle."
-    if request.category in {"telefon", "laptop", "tablet", "akilli_saat", "kulaklik"}:
+    if request.category in TECH:
         return "Aciklamaya model, kapasite, pil/ekran, garanti-fatura ve kimler icin uygun oldugunu tablo gibi okunacak netlikte ekle."
+    if request.category == "ayakkabi":
+        return "Açıklamaya saya ve taban malzemesini, numara aralığını, kalıbın dar/geniş olduğunu, kullanım alanını ve iade bilgisini ayrı cümlelerle ekle."
+    if request.category == "canta":
+        return "Açıklamaya ölçüleri, malzemeyi, bölme sayısını, askı tipini ve neyin sığdığını ayrı cümlelerle ekle."
+    if request.category in BEAUTY:
+        return "Açıklamaya öne çıkan içerikleri, cilt/saç tipini, hacmi, kullanım şeklini ve test/sertifika bilgisini ayrı cümlelerle ekle."
     return "Aciklamaya kumas, kalip, beden araligi, sezon, kombin/kullanim senaryosu ve iade bilgisini ayri cumlelerle ekle."
 
 
@@ -371,7 +388,7 @@ def _build_pricing_advice(request: SimulationRequest, normalized_product: Normal
 def _build_season_advice(request: SimulationRequest, normalized_product: NormalizedProduct) -> str:
     category = request.category
     season = getattr(request.features, "season", None)
-    if category in {"telefon", "laptop", "tablet", "akilli_saat", "kulaklik"}:
+    if category in TECH:
         return "Teknoloji urunlerinde sezon etkisi dusuk; okul donemi, yilbasi, maas haftasi ve kampanya donemleri ayri test edilmeli."
     if normalized_product.season_fit >= 0.80:
         return f"Sezon uyumu guclu ({season or 'belirtilen sezon'}). Baslik, ilk gorsel ve kampanya metninde bu kullanim donemini one cikar."
@@ -384,6 +401,12 @@ def _build_improved_description(request: SimulationRequest, category_str: str) -
     for label, value in [
         ("Marka/model", getattr(features, "brand", None)),
         ("Kumas", getattr(features, "fabric", None)),
+        ("Malzeme", getattr(features, "material", None)),
+        ("Taban", getattr(features, "sole_material", None)),
+        ("İçerik", getattr(features, "ingredients", None)),
+        ("Cilt tipi", getattr(features, "skin_type", None)),
+        ("Hacim", getattr(features, "volume", None)),
+        ("Ölçü", getattr(features, "dimensions", None)),
         ("Kalip", getattr(features, "fit", None)),
         ("Beden", getattr(features, "size_range", None)),
         ("Ekran", getattr(features, "screen_size", None)),

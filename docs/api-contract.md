@@ -34,7 +34,7 @@
 
 | Alan | Tip | Kural |
 |---|---|---|
-| `category` | enum | `tisort, pantolon, mont, elbise, etek, telefon, laptop, kulaklik, tablet, akilli_saat`; başka değer 422 |
+| `category` | enum | `tisort, pantolon, mont, elbise, etek, telefon, laptop, kulaklik, tablet, akilli_saat, ayakkabi, canta, kozmetik`; başka değer 422 (gruplar: `backend/app/models/category.py`) |
 | `purchaseMotivation` | enum | `stil_begeni, ihtiyac, problem_cozme, yedek_parca_tamir, hediye, trend, profesyonel_kullanim` |
 | `productName` | string | 4–120 karakter |
 | `productUrl` | string? | ≤ 2048 karakter |

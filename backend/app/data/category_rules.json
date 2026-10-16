@@ -7,7 +7,14 @@
       "mont",
       "telefon",
       "laptop",
-      "kulaklik"
+      "kulaklik",
+      "elbise",
+      "etek",
+      "tablet",
+      "akilli_saat",
+      "ayakkabi",
+      "canta",
+      "kozmetik"
     ],
     "motivations": [
       "stil_begeni",
@@ -990,6 +997,312 @@
           "shippingReturnScore": 0.08,
           "targetAudienceFit": 0.07,
           "differentiationScore": 0.03
+        }
+      }
+    },
+    "ayakkabi": {
+      "label": "Moda / Ayakkabi",
+      "averagePrice": 1500,
+      "marketBreadthBase": 68,
+      "applicableAudienceFields": [
+        "ageRange",
+        "gender",
+        "incomeLevel"
+      ],
+      "defaultMotivation": "stil_begeni",
+      "defaultWeights": {
+        "priceFit": 0.15,
+        "qualityScore": 0.17,
+        "trendFit": 0.14,
+        "brandTrust": 0.07,
+        "descriptionCompleteness": 0.09,
+        "visualAppeal": 0.17,
+        "seasonFit": 0.08,
+        "shippingReturnScore": 0.07,
+        "targetAudienceFit": 0.04,
+        "differentiationScore": 0.02
+      },
+      "formFields": [
+        {
+          "key": "material",
+          "type": "text",
+          "label": "Saya malzemesi"
+        },
+        {
+          "key": "soleMaterial",
+          "type": "text",
+          "label": "Taban"
+        },
+        {
+          "key": "sizeRange",
+          "type": "text",
+          "label": "Numara araligi"
+        },
+        {
+          "key": "fit",
+          "type": "select",
+          "label": "Kalip"
+        },
+        {
+          "key": "heelHeight",
+          "type": "text",
+          "label": "Topuk / taban yuksekligi"
+        },
+        {
+          "key": "useCase",
+          "type": "text",
+          "label": "Kullanim alani"
+        },
+        {
+          "key": "waterproof",
+          "type": "checkbox",
+          "label": "Su gecirmez"
+        },
+        {
+          "key": "season",
+          "type": "select",
+          "label": "Sezon"
+        }
+      ],
+      "motivationWeights": {
+        "stil_begeni": {
+          "priceFit": 0.15,
+          "qualityScore": 0.17,
+          "trendFit": 0.14,
+          "brandTrust": 0.07,
+          "descriptionCompleteness": 0.09,
+          "visualAppeal": 0.17,
+          "seasonFit": 0.08,
+          "shippingReturnScore": 0.07,
+          "targetAudienceFit": 0.04,
+          "differentiationScore": 0.02
+        },
+        "ihtiyac": {
+          "priceFit": 0.19,
+          "qualityScore": 0.21,
+          "trendFit": 0.07,
+          "brandTrust": 0.07,
+          "descriptionCompleteness": 0.12,
+          "visualAppeal": 0.1,
+          "seasonFit": 0.09,
+          "shippingReturnScore": 0.1,
+          "targetAudienceFit": 0.03,
+          "differentiationScore": 0.02
+        },
+        "trend": {
+          "priceFit": 0.12,
+          "qualityScore": 0.12,
+          "trendFit": 0.22,
+          "brandTrust": 0.08,
+          "descriptionCompleteness": 0.07,
+          "visualAppeal": 0.22,
+          "seasonFit": 0.06,
+          "shippingReturnScore": 0.06,
+          "targetAudienceFit": 0.03,
+          "differentiationScore": 0.02
+        }
+      }
+    },
+    "canta": {
+      "label": "Moda / Canta",
+      "averagePrice": 900,
+      "marketBreadthBase": 62,
+      "applicableAudienceFields": [
+        "ageRange",
+        "gender",
+        "incomeLevel"
+      ],
+      "defaultMotivation": "stil_begeni",
+      "defaultWeights": {
+        "priceFit": 0.15,
+        "qualityScore": 0.15,
+        "trendFit": 0.15,
+        "brandTrust": 0.08,
+        "descriptionCompleteness": 0.1,
+        "visualAppeal": 0.2,
+        "seasonFit": 0.03,
+        "shippingReturnScore": 0.06,
+        "targetAudienceFit": 0.05,
+        "differentiationScore": 0.03
+      },
+      "formFields": [
+        {
+          "key": "material",
+          "type": "text",
+          "label": "Malzeme"
+        },
+        {
+          "key": "dimensions",
+          "type": "text",
+          "label": "Olculer / hacim"
+        },
+        {
+          "key": "compartments",
+          "type": "text",
+          "label": "Bolmeler"
+        },
+        {
+          "key": "strapType",
+          "type": "select",
+          "label": "Aski tipi"
+        },
+        {
+          "key": "useCase",
+          "type": "text",
+          "label": "Kullanim alani"
+        },
+        {
+          "key": "waterproof",
+          "type": "checkbox",
+          "label": "Su gecirmez"
+        },
+        {
+          "key": "colors",
+          "type": "multi",
+          "label": "Renk secenekleri"
+        }
+      ],
+      "motivationWeights": {
+        "stil_begeni": {
+          "priceFit": 0.15,
+          "qualityScore": 0.15,
+          "trendFit": 0.15,
+          "brandTrust": 0.08,
+          "descriptionCompleteness": 0.1,
+          "visualAppeal": 0.2,
+          "seasonFit": 0.03,
+          "shippingReturnScore": 0.06,
+          "targetAudienceFit": 0.05,
+          "differentiationScore": 0.03
+        },
+        "ihtiyac": {
+          "priceFit": 0.2,
+          "qualityScore": 0.2,
+          "trendFit": 0.07,
+          "brandTrust": 0.07,
+          "descriptionCompleteness": 0.14,
+          "visualAppeal": 0.12,
+          "seasonFit": 0.02,
+          "shippingReturnScore": 0.08,
+          "targetAudienceFit": 0.05,
+          "differentiationScore": 0.05
+        },
+        "hediye": {
+          "priceFit": 0.14,
+          "qualityScore": 0.14,
+          "trendFit": 0.14,
+          "brandTrust": 0.12,
+          "descriptionCompleteness": 0.08,
+          "visualAppeal": 0.22,
+          "seasonFit": 0.02,
+          "shippingReturnScore": 0.08,
+          "targetAudienceFit": 0.04,
+          "differentiationScore": 0.02
+        }
+      }
+    },
+    "kozmetik": {
+      "label": "Bakim / Kozmetik",
+      "averagePrice": 450,
+      "marketBreadthBase": 70,
+      "applicableAudienceFields": [
+        "ageRange",
+        "gender",
+        "incomeLevel"
+      ],
+      "defaultMotivation": "ihtiyac",
+      "defaultWeights": {
+        "priceFit": 0.17,
+        "qualityScore": 0.2,
+        "trendFit": 0.06,
+        "brandTrust": 0.16,
+        "descriptionCompleteness": 0.15,
+        "visualAppeal": 0.08,
+        "seasonFit": 0.04,
+        "shippingReturnScore": 0.06,
+        "targetAudienceFit": 0.06,
+        "differentiationScore": 0.02
+      },
+      "formFields": [
+        {
+          "key": "brand",
+          "type": "text",
+          "label": "Marka"
+        },
+        {
+          "key": "skinType",
+          "type": "select",
+          "label": "Cilt / sac tipi"
+        },
+        {
+          "key": "ingredients",
+          "type": "text",
+          "label": "One cikan icerikler"
+        },
+        {
+          "key": "volume",
+          "type": "text",
+          "label": "Hacim / gramaj"
+        },
+        {
+          "key": "certifications",
+          "type": "text",
+          "label": "Test ve sertifikalar"
+        },
+        {
+          "key": "useCase",
+          "type": "text",
+          "label": "Kullanim amaci"
+        }
+      ],
+      "motivationWeights": {
+        "ihtiyac": {
+          "priceFit": 0.17,
+          "qualityScore": 0.2,
+          "trendFit": 0.06,
+          "brandTrust": 0.16,
+          "descriptionCompleteness": 0.15,
+          "visualAppeal": 0.08,
+          "seasonFit": 0.04,
+          "shippingReturnScore": 0.06,
+          "targetAudienceFit": 0.06,
+          "differentiationScore": 0.02
+        },
+        "problem_cozme": {
+          "priceFit": 0.12,
+          "qualityScore": 0.24,
+          "trendFit": 0.03,
+          "brandTrust": 0.16,
+          "descriptionCompleteness": 0.18,
+          "visualAppeal": 0.05,
+          "seasonFit": 0.03,
+          "shippingReturnScore": 0.05,
+          "targetAudienceFit": 0.1,
+          "differentiationScore": 0.04
+        },
+        "trend": {
+          "priceFit": 0.13,
+          "qualityScore": 0.13,
+          "trendFit": 0.2,
+          "brandTrust": 0.12,
+          "descriptionCompleteness": 0.09,
+          "visualAppeal": 0.18,
+          "seasonFit": 0.03,
+          "shippingReturnScore": 0.05,
+          "targetAudienceFit": 0.05,
+          "differentiationScore": 0.02
+        },
+        "hediye": {
+          "priceFit": 0.14,
+          "qualityScore": 0.14,
+          "trendFit": 0.12,
+          "brandTrust": 0.18,
+          "descriptionCompleteness": 0.08,
+          "visualAppeal": 0.2,
+          "seasonFit": 0.02,
+          "shippingReturnScore": 0.07,
+          "targetAudienceFit": 0.03,
+          "differentiationScore": 0.02
         }
       }
     }
