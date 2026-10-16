@@ -11,7 +11,8 @@
 | GET | `/api/health` | – | `{ status, ai: { configured, model }, research: { configured } }` (ağa çıkmaz; `model`, ilk AI çağrısına kadar `null` olabilir) |
 | POST | `/api/analyze-input` | `SimulationRequest` | `InputAnalysisResponse` |
 | POST | `/api/read-product-link` | `{ "url": string }` (8–2048 karakter) | `ProductLinkReadResponse` |
-| POST | `/api/simulate` | `SimulationRequest` | `SimulationResponse` |
+| POST | `/api/simulate` | `SimulationRequest` | `SimulationResponse` (+ `simulationId`) |
+| GET | `/api/simulations/{id}` | – | `{ id, createdAt, productName, category, response: SimulationResponse }`; bilinmeyen/süresi dolmuş → 404 |
 
 **Hatalar** (her yanıtta `X-Request-ID` başlığı vardır):
 
@@ -81,6 +82,7 @@
 | `benchmarkAnalysis` | string? | Markdown rakip/pazar analizi |
 | `images` | string[] | İstekteki görseller (yankı) |
 | `inputAnalysis` | `InputAnalysisResponse?` | |
+| `simulationId` | string? | Paylaşım kimliği (12 karakter). Kayıt yapılamadıysa `null` |
 
 ### PersonaResult
 

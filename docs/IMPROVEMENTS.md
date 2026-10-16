@@ -39,6 +39,7 @@ Bu dosya iki bölümden oluşuyor: (A) mevcut koddaki hatalar ve borçlar, (B) y
 | F10 | Düşük | ~~`next.config.mjs` boş, Docker imajı tüm `node_modules`'ü kopyalıyor.~~ | Faz 2'de `output: 'standalone'` ve güvenlik başlıkları eklendi. |
 | F15 | Düşük | Backend'in ürettiği bazı metinler Türkçe karaktersiz ("Urun bilgileri analizden once gozden gecirilmeli", fallback tavsiyeleri, `FALLBACK_MAP`). Yeni tasarımda kritik risk kutusunda göze batıyor. | `input_analysis_service.py`, `ai_insight_service.py` ve `simulation_service.py` içindeki kullanıcıya dönen sabit metinleri Türkçe karakterlerle yeniden yaz. |
 | F16 | Düşük | `frontend/public/pp_icons/` artık hiçbir yerde kullanılmıyor (tartışmada rastgele foto yerine persona rengi + baş harf kullanılıyor). | İstenirse persona başına sabit bir görsel olarak geri getir; istenmezse klasörü sil. |
+| F18 | Düşük | Paylaşım linki yalnızca kimliğin gizliliğine dayanıyor (12 karakter ≈ 71 bit, tahmin edilemez); link kimin eline geçerse sonucu görür. Link iptali/silme yok. | Gerekirse sonuç sahibine bir silme anahtarı ver (`DELETE /api/simulations/{id}` + `X-Delete-Key`); kişisel veri içeren ürünler için kaydı kapatma seçeneği (`HISTORY_ENABLED`) şu an var. |
 | F17 | Düşük | Gemini yavaşken bir simülasyon 2 dakikayı aşabiliyor; ilerleme adımları tahmini sürelere göre ilerliyor. | Faz 5c'deki SSE ile gerçek adımları göster. |
 | F12 | ✅ Faz 3 | **Veri kaybı:** Simülasyon başarısız olunca veya girdi uyarısı iptal edilince form unmount edilip baştan oluşturuluyordu; kullanıcının yazdığı her şey kayboluyordu. | Form yükleme sırasında gizleniyor, unmount edilmiyor. |
 | F13 | ✅ Faz 3 | Link okuyucu fiyatı `"1299,99"` biçiminde yazıyordu; `type="number"` alanı bunu reddettiği için fiyat hep boş kalıyordu. Linkten gelen 120 karakterden uzun başlıklar da gönderimde 422'ye yol açacaktı. | Fiyat noktalı yazılıyor; değerler backend sınırlarına göre kırpılıyor; alanlarda `maxLength`. |
@@ -47,14 +48,14 @@ Bu dosya iki bölümden oluşuyor: (A) mevcut koddaki hatalar ve borçlar, (B) y
 
 ## B. Yeni özellikler
 
-1. **Sonuç geçmişi ve paylaşım**
+1. ✅ **Sonuç geçmişi ve paylaşım** (Faz 5a)
    - *Adım 1 (hızlı):* Sonuçlar localStorage'a yazılır. "Geçmiş" sekmesi eklenir, JSON olarak dışa/içe aktarılabilir. Bu, yaz-planı'ndaki yedekleme kalıbının aynısı.
    - *Adım 2:* Backend'de SQLite (`sqlmodel` gerekmez, stdlib `sqlite3` yeterli). `POST /api/simulations` sonucu kaydeder, `GET /api/simulations/{id}` getirir. Paylaşılabilir `/r/{id}` sayfası.
 2. **A/B karşılaştırma:** Aynı ürünün iki varyantı (farklı fiyat, başlık veya açıklama) yan yana iki segmentli halkayla gösterilir; fark tablosu eklenir.
 3. **Fiyat duyarlılık eğrisi:** Simülasyon çekirdeği deterministik ve LLM'siz çalışıyor. `POST /api/price-sweep`, fiyatın %60 ile %140'ı arasında 9 noktada `run_simulation` çalıştırıp alım oranı ve gelir eğrisini döner. "Optimum fiyat" önerisi verir.
 4. **Gerçek persona sohbeti:** Mevcut "AI chat" tek seferlik bir tartışma. `POST /api/persona-chat` ile seçilen personaya takip sorusu sorulur. Yanıtlar SSE ile akar; persona prompt'u yalnızca sunucuda kalır; rate limit uygulanır.
 5. **Canlı ilerleme:** Sahte terminal logu yerine LangGraph adımları (`input_analysis → research → benchmark → simulate → debate`) SSE ile gerçek zamanlı gösterilir.
-6. **Rapor dışa aktarımı:** Markdown veya PDF rapor: skorlar, persona tablosu, aksiyon planı. Tarayıcının `print` CSS'i ilk sürüm için yeterli.
+6. ✅ (Markdown + yazdır, Faz 5a) **Rapor dışa aktarımı:** Markdown veya PDF rapor: skorlar, persona tablosu, aksiyon planı. Tarayıcının `print` CSS'i ilk sürüm için yeterli.
 7. **Test ve CI**
    - pytest: aynı girdinin aynı skoru verdiği deterministiklik testleri, Pydantic sınır testleri, SSRF testleri, LLM mock'u ile graph testi.
    - Vitest ve Testing Library: `lib/api` hata yolları, halka bileşeni.

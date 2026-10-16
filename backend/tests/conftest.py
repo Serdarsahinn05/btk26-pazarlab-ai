@@ -23,6 +23,12 @@ VALID_REQUEST = {
 
 
 @pytest.fixture(autouse=True)
+def _temp_history_db(tmp_path, monkeypatch):
+    # Every /api/simulate call persists a row; never touch the real database from tests.
+    monkeypatch.setenv("HISTORY_DB_PATH", str(tmp_path / "history.db"))
+
+
+@pytest.fixture(autouse=True)
 def _reset_rate_limits():
     from app.security import RateLimit
 

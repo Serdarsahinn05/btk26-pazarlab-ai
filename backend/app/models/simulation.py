@@ -94,5 +94,7 @@ class SimulationResponse(BaseModel):
 
 
     input_analysis: Optional[InputAnalysisResponse] = Field(default=None, alias="inputAnalysis")
+    # Share id from history_store; None when saving failed or history is disabled.
+    simulation_id: Optional[str] = Field(default=None, alias="simulationId")
 
     model_config = ConfigDict(populate_by_name=True)

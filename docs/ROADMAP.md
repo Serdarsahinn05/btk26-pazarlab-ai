@@ -13,7 +13,7 @@
 | 2 | `fix/security-hardening` | S1–S13 | 1–1,5 gün | ✅ |
 | 3 | `fix/core-bugs` | B1–B7, F1–F7, temel testler | 1 gün | ✅ |
 | 4 | `feat/redesign-canli-pazar` | DESIGN.md uygulaması ("Canlı pazar yeri"), F8–F14 | 2–3 gün | ✅ |
-| 5a | `feat/history-share` | Geçmiş, paylaşım, export | 1 gün | ⬜ |
+| 5a | `feat/history-share` | Geçmiş, paylaşım, export | 1 gün | ✅ |
 | 5b | `feat/price-sweep-ab` | Fiyat eğrisi, A/B karşılaştırma | 1 gün | ⬜ |
 | 5c | `feat/persona-chat-sse` | Persona sohbeti, canlı ilerleme | 1,5 gün | ⬜ |
 | 5d | `ci/pipeline` | CI, bağımlılık taraması | 0,5 gün | ⬜ |
@@ -102,7 +102,10 @@ Kabul kriteri: DESIGN.md'deki tüm kalıplar uygulanmış; bileşenlerde ham ren
 - Yapılmadı: `impeccable audit` → `ponytail-review` denetimi (ayrı bir oturumda önerilir). Gerçek cihazda ekran okuyucu testi yapılmadı.
 
 ## Faz 5: Yeni özellikler
-- [ ] **5a** Geçmiş: önce localStorage ve JSON dışa/içe aktarma, sonra SQLite ve `/r/{id}` paylaşım linki. Markdown/print rapor.
+- [x] **5a** Geçmiş ve paylaşım:
+  - Backend: `history_store.py` (stdlib sqlite3). `/api/simulate` sonucu kaydeder ve `simulationId` döner; `GET /api/simulations/{id}` sonucu getirir. Listeleme uç noktası yok (giriş sistemi olmadığı için sonuçlar yalnızca linki bilen tarafından açılır). 12 karakterlik rastgele kimlik; base64 görseller kaydedilmez; 90 gün / 5000 satır saklama; kayıt hatası simülasyonu bozmaz; `HISTORY_ENABLED=false` ile kapatılır. Docker'da `pazarlab-data` volume'u.
+  - Frontend: paylaşım linki `/dashboard?r=<id>` (ayrı sayfa yerine dashboard; sekmeler ve persona linkleri `r`'yi koruyor). Tarayıcı geçmişi (`lib/history.ts`, 20 kayıt, tam sonuçla birlikte; kota dolarsa en eskiler düşer), "Son simülasyonlar" kartı (aç / sil / yedek indir / yedekten yükle), "Linki kopyala" ve "Markdown" rapor indirme (`lib/report.ts`), mevcut Yazdır/PDF.
+  - Doğrulama: `tests/test_history.py` (5 test, toplam 50). Puppeteer uçtan uca 11/11: URL'de kimlik, yenilemede kalıcılık, sekme değişiminde korunma, boş tarayıcıda sunucudan açılma, bilinmeyen kimlikte hata, geçmiş listesi.
 - [ ] **5b** `/api/price-sweep` endpoint'i ve eğri grafiği (SVG); A/B karşılaştırma görünümü.
 - [ ] **5c** `/api/persona-chat` (SSE) ve canlı graph ilerlemesi (SSE).
 - [ ] **5d** GitHub Actions: ruff, pytest, lint, build, `pip-audit`, `npm audit`; Dependabot.

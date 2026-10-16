@@ -1,0 +1,57 @@
+import { SimulationResponse } from "@/types";
+import { DECISION_LABEL, decisionOf, personaLabel } from "@/lib/personas";
+
+/** Plain Markdown report of a simulation, for pasting into docs or sending to a team. */
+export function simulationToMarkdown(result: SimulationResponse, productName: string, shareUrl?: string): string {
+  const dist = result.decisionDistribution;
+  const personas = [...(result.allPersonas?.length ? result.allPersonas : result.topPersonas)].sort(
+    (a, b) => b.purchaseProbability - a.purchaseProbability
+  );
+  const lines = [
+    `# PazarLab AI raporu: ${productName}`,
+    "",
+    `Tarih: ${new Date().toLocaleString("tr-TR")}${shareUrl ? ` · Sonuç linki: ${shareUrl}` : ""}`,
+    result.aiInsights.aiGenerated === false ? "\n> Not: AI kullanılamadı; tavsiyeler kural tabanlı üretildi." : "",
+    "",
+    "## Karar",
+    "",
+    `- Genel skor: **${result.overallScore}/100**`,
+    dist ? `- ${result.simulatedConsumers} sentetik tüketici: ${dist.buy} aldı · ${dist.watch} kararsız · ${dist.skip} almadı` : "",
+    `- Pazar genişliği ${result.marketBreadthScore}/100 · Niyet dönüşümü ${result.intentConversionScore}/100 · Problem uyumu ${result.problemSolutionFit}/100`,
+    "",
+    "## Özet",
+    "",
+    result.aiInsights.summary,
+    "",
+    "## İlk aksiyonlar",
+    "",
+    ...result.aiInsights.salesRecipe.map((a, i) => `${i + 1}. ${a}`),
+    "",
+    "## Zayıflıklar",
+    "",
+    ...(result.weaknesses.length ? result.weaknesses.map((w) => `- ${w}`) : ["- Belirgin bir zayıflık bulunmadı."]),
+    "",
+    "## Kanal önerileri",
+    "",
+    result.aiInsights.channelRecommendation.join(", "),
+    "",
+    result.aiInsights.marketingAdvice,
+    "",
+    "## Personalar",
+    "",
+    "| Persona | Satın alma eğilimi | Karar |",
+    "|---|---|---|",
+    ...personas.map(
+      (p) => `| ${personaLabel(p.name)} | %${Math.round(p.purchaseProbability * 100)} | ${DECISION_LABEL[decisionOf(p.decision, p.purchaseProbability)]} |`
+    ),
+    "",
+    "## İyileştirilmiş açıklama",
+    "",
+    result.aiInsights.improvedDescription,
+    "",
+    "---",
+    "Sonuçlar talep sinyalidir, gerçek dönüşüm oranı veya satış garantisi değildir.",
+    "",
+  ];
+  return lines.filter((line, i, all) => !(line === "" && all[i - 1] === "")).join("\n");
+}

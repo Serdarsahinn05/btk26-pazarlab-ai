@@ -1,5 +1,12 @@
 import axios from "axios";
-import { HealthStatus, InputAnalysisResponse, ProductLinkReadResponse, SimulationRequest, SimulationResponse } from "@/types";
+import {
+  HealthStatus,
+  InputAnalysisResponse,
+  ProductLinkReadResponse,
+  SimulationRequest,
+  SimulationResponse,
+  StoredSimulation,
+} from "@/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -29,6 +36,7 @@ export function apiErrorMessage(error: unknown): string {
     return field ? `Form alanı geçersiz: ${field}.` : "Form bilgileri geçersiz.";
   }
   if (status === 413) return "Gönderilen veri çok büyük. Daha az veya daha küçük görsel deneyin.";
+  if (status === 404 && detail) return detail;
   if (detail) return detail + requestId;
   return `Sunucu hatası${requestId}.`;
 }
@@ -45,6 +53,11 @@ export const analyzeProductInput = async (data: SimulationRequest): Promise<Inpu
 
 export const readProductLink = async (url: string): Promise<ProductLinkReadResponse> => {
   const response = await client.post("/api/read-product-link", { url }, { timeout: 60_000 });
+  return response.data;
+};
+
+export const getSimulation = async (id: string): Promise<StoredSimulation> => {
+  const response = await client.get(`/api/simulations/${encodeURIComponent(id)}`, { timeout: 15_000 });
   return response.data;
 };
 

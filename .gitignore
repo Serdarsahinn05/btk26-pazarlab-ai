@@ -8,6 +8,7 @@ __pycache__/
 .env.*
 !.env.example
 backend/.env
+backend/data/*.db*
 BTK'26/
 
 .venv/

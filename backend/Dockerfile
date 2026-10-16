@@ -11,8 +11,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app ./app
 
-RUN useradd --system --uid 10001 --no-create-home app
+RUN useradd --system --uid 10001 --no-create-home app \
+ && mkdir -p /app/data && chown app /app/data
 USER app
+# Simulation history (sqlite). Mounted as a volume in docker-compose.yml.
+ENV HISTORY_DB_PATH=/app/data/pazarlab.db
+VOLUME ["/app/data"]
 
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
