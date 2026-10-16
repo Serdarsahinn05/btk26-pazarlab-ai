@@ -7,49 +7,53 @@ from app.models.category import BEAUTY, CLOTHING, FASHION_ACCESSORIES, TECH
 from app.models.product import SimulationRequest
 from app.models.simulation import AiInsights, NormalizedProduct, PersonaFeedback, PersonaResult
 from app.services import llm_client
+from app.services.labels import category_label, income_label, motivation_label, persona_label
 from app.utils.scoring_utils import infer_product_type, recommend_channels
+from app.utils.text_utils import fold_text
 
 logger = logging.getLogger("ai_insights")
 
 
 SYSTEM_PROMPT = """
-Sen PazarLab AI icin agentic e-ticaret analiz kurulusan. Tek cevap uretmeden once 5 uzmani sirayla calistir:
-1) Skor hakemi: verilen skorlarin ne anlama geldigini gercek donusum orani gibi abartmadan yorumlar.
-2) Persona stratejisti: topPersonas ve allPersonas listesinden hangi kitlelerin neden ikna oldugunu/olmadigini ayirir.
-3) Listeleme doktoru: baslik, aciklama, gorsel, guven, kargo/iade ve teknik detay eksiklerini bulur.
-4) Kanal planlayici: pazarlama kanali, mesaj dili ve 7 gunluk test planini secilen motivasyona gore kurar.
-5) Risk denetcisi: input uyari sinyallerini ve zayifliklari dikkate alir; emin olmadigi yerde saticiya dogrulama onerir.
+Sen PazarLab AI için ajan tabanlı bir e-ticaret analiz kurulusun. Tek cevap üretmeden önce 5 uzmanı sırayla çalıştır:
+1) Skor hakemi: verilen skorların ne anlama geldiğini gerçek dönüşüm oranı gibi abartmadan yorumlar.
+2) Persona stratejisti: topPersonas ve allPersonas listesinden hangi kitlelerin neden ikna olduğunu/olmadığını ayırır.
+3) Listeleme doktoru: başlık, açıklama, görsel, güven, kargo/iade ve teknik detay eksiklerini bulur.
+4) Kanal planlayıcı: pazarlama kanalını, mesaj dilini ve 7 günlük test planını seçilen motivasyona göre kurar.
+5) Risk denetçisi: girdi uyarı sinyallerini ve zayıflıkları dikkate alır; emin olmadığı yerde satıcıya doğrulama önerir.
 
-Urun Bilgisi:
+Ürün bilgisi:
 - Kategori: {category}
-- Satin alma motivasyonu: {purchaseMotivation}
-- Pazar genisligi skoru: {marketBreadthScore}/100
-- Satin alma niyeti skoru: {intentConversionScore}/100
-- Ihtiyac/problem uyumu skoru: {problemSolutionFit}/100
+- Satın alma motivasyonu: {purchaseMotivation}
+- Pazar genişliği skoru: {marketBreadthScore}/100
+- Satın alma niyeti skoru: {intentConversionScore}/100
+- İhtiyaç/problem uyumu skoru: {problemSolutionFit}/100
 
 Kurallar:
-- Kucuk/orta olcekli saticinin uygulayabilecegi net aksiyonlar yaz.
-- Genel, tekrar eden, mock gibi cumleler kullanma: "aciklamayi guclendir", "sosyal medya kullan" tek basina yasak.
-- Her oneride en az bir somut nesne olsun: hangi alan, hangi mesaj, hangi kanal, hangi test, hangi kanit?
-- Satin alma niyeti skorunu gercek site donusum orani gibi yorumlama; bu skor fiyat, guven, aciklama ve teknik detaylardan turetilmis egilim skorudur.
-- Zayif input varsa sonucu fazla kesin anlatma; once hangi verinin dogrulanmasi gerektigini soyle.
-- Niche urunlerde (pazar genisligi < 40) genis kitle reklami yerine arama niyeti yuksek kullanicilari vurgula.
-- Persona yorumlari: allPersonas listesindeki her persona icin karakterine uygun, birinci sahis agzindan, birbirinden farkli 1-2 cumle yaz. Her yorumda o personanin karar sebebi gecsin.
-- personaFeedback.action alaninda saticinin o personayi ikna etmek icin yapacagi tek kritik dokunusu yaz.
-- Cevabi SADECE JSON formatinda dondur. Baska metin ekleme.
+- Bütün metinleri doğal Türkçeyle ve Türkçe karakterlerle (ç, ğ, ı, İ, ö, ş, ü) yaz; harfleri ASCII'ye çevirme.
+- Küçük/orta ölçekli satıcının uygulayabileceği net aksiyonlar yaz.
+- Genel, tekrar eden, şablon gibi cümleler kullanma: "açıklamayı güçlendir", "sosyal medya kullan" tek başına yasak.
+- Her öneride en az bir somut nesne olsun: hangi alan, hangi mesaj, hangi kanal, hangi test, hangi kanıt?
+- Satın alma niyeti skorunu gerçek site dönüşüm oranı gibi yorumlama; bu skor fiyat, güven, açıklama ve teknik detaylardan türetilmiş eğilim skorudur.
+- Zayıf girdi varsa sonucu fazla kesin anlatma; önce hangi verinin doğrulanması gerektiğini söyle.
+- Niş ürünlerde (pazar genişliği < 40) geniş kitle reklamı yerine arama niyeti yüksek kullanıcıları vurgula.
+- Persona yorumları: allPersonas listesindeki her persona için karakterine uygun, birinci şahıs ağzından, birbirinden farklı 1-2 cümle yaz. Her yorumda o personanın karar sebebi geçsin.
+- personaFeedback.name alanına allPersonas içindeki name değerini aynen yaz.
+- personaFeedback.action alanına satıcının o personayı ikna etmek için yapacağı tek kritik dokunuşu yaz.
+- Cevabı SADECE JSON formatında döndür. Başka metin ekleme.
 
 {{
-  "summary": "2 cumle: skorlarin anlami + en kritik risk/firsat",
-  "productTypeInsight": "Urun tipi, kitle genisligi ve satin alma motivasyonu yorumu",
-  "salesRecipe": ["4-5 maddelik sirali aksiyon listesi; her madde uygulanabilir ve olculebilir"],
-  "marketingAdvice": "Kanal + kreatif acisi + hedef persona + 7 gunluk test mantigi",
-  "descriptionAdvice": "Aciklamada hangi bilgi eksik ve hangi sirayla eklenmeli",
-  "pricingAdvice": "Fiyat algisi, kampanya/kupon/kargo testi ve ne zaman indirim yapilmamali",
-  "seasonAdvice": "Sezon, kampanya donemi veya teknoloji urunlerinde donemsel talep yorumu",
+  "summary": "2 cümle: skorların anlamı + en kritik risk/fırsat",
+  "productTypeInsight": "Ürün tipi, kitle genişliği ve satın alma motivasyonu yorumu",
+  "salesRecipe": ["4-5 maddelik sıralı aksiyon listesi; her madde uygulanabilir ve ölçülebilir"],
+  "marketingAdvice": "Kanal + kreatif açısı + hedef persona + 7 günlük test mantığı",
+  "descriptionAdvice": "Açıklamada hangi bilgi eksik ve hangi sırayla eklenmeli",
+  "pricingAdvice": "Fiyat algısı, kampanya/kupon/kargo testi ve ne zaman indirim yapılmamalı",
+  "seasonAdvice": "Sezon, kampanya dönemi veya teknoloji ürünlerinde dönemsel talep yorumu",
   "channelRecommendation": ["Instagram", "TikTok", "Google Search", "SEO"],
-  "improvedDescription": "Saticinin direkt kullanabilecegi, urun ozelliklerine dayali, abartisiz aciklama",
+  "improvedDescription": "Satıcının doğrudan kullanabileceği, ürün özelliklerine dayalı, abartısız açıklama",
   "personaFeedback": [
-    {{"name": "Persona adi", "feedback": "Ben diliyle karar yorumu", "action": "Bu personayi ikna edecek tek kritik dokunus"}}
+    {{"name": "Persona adı", "feedback": "Ben diliyle karar yorumu", "action": "Bu personayı ikna edecek tek kritik dokunuş"}}
   ]
 }}
 """.strip()
@@ -178,7 +182,7 @@ def generate_insights(
         )
 
         product_type_insight = (
-            f"Bu ürün {motivation_str} motivasyonuyla alınan bir {product_type}. {motivation_line}{niche_note}"
+            f"Bu ürün \"{motivation_label(motivation_str)}\" motivasyonuyla alınan bir {product_type}. {motivation_line}{niche_note}"
         )
 
         sales_recipe = _build_sales_recipe(
@@ -189,7 +193,7 @@ def generate_insights(
             market_breadth_score=market_breadth_score,
         )
 
-        top_persona_names = ", ".join(p.name for p in top_personas[:3])
+        top_persona_names = ", ".join(persona_label(p.name) for p in top_personas[:3])
         marketing_advice = _build_marketing_advice(
             category=category_str,
             product_type=product_type,
@@ -220,6 +224,8 @@ def generate_insights(
 
 def _parse_persona_feedback(raw_value: Any, all_personas: list[PersonaResult]) -> list[PersonaFeedback]:
     valid_names = {persona.name for persona in all_personas}
+    # The model may echo a persona name with Turkish letters ("Trend Takipçisi"); match it to the id either way.
+    by_folded = {fold_text(name): name for name in valid_names}
     if not isinstance(raw_value, list):
         return _build_persona_feedback(all_personas)
 
@@ -227,8 +233,8 @@ def _parse_persona_feedback(raw_value: Any, all_personas: list[PersonaResult]) -
     for item in raw_value:
         if not isinstance(item, dict):
             continue
-        name = str(item.get("name", "")).strip()
-        if name not in valid_names:
+        name = by_folded.get(fold_text(str(item.get("name", "")).strip()))
+        if name is None:
             continue
         feedback = str(item.get("feedback", "")).strip()
         action = str(item.get("action", "")).strip()
@@ -255,52 +261,54 @@ def _build_persona_feedback(all_personas: list[PersonaResult]) -> list[PersonaFe
 def _fallback_persona_voice(persona: PersonaResult) -> str:
     probability = persona.purchase_probability
     decision = persona.decision
-    profile = (persona.personality_type or persona.name).lower()
+    # Folded, because profiles are Turkish ("Müfettiş") and the keywords below are ASCII.
+    profile = fold_text(persona.personality_type or persona.name)
+    name = fold_text(persona.name)
     base_reason = persona.micro_feedback or persona.reason
 
-    if "fiyat" in persona.name.lower() or "hesap" in profile:
+    if "fiyat" in name or "hesap" in profile:
         if decision == "buy":
-            return "Benim icin fiyat-fayda dengesi net gorunuyor; ekstra kargo surprizi yoksa sepete atarim."
-        return "Ben once toplam maliyete bakarim; kupon veya ucretsiz kargo gormeden beklerim."
-    if "trend" in persona.name.lower() or "heves" in profile:
+            return "Benim için fiyat-fayda dengesi net görünüyor; ekstra kargo sürprizi yoksa sepete atarım."
+        return "Ben önce toplam maliyete bakarım; kupon veya ücretsiz kargo görmeden beklerim."
+    if "trend" in name or "heves" in profile:
         if probability >= 0.55:
-            return "Gorsel ve trend hissi beni yakalar; kombin/video ornegi gorursem daha hizli karar veririm."
-        return "Urun ilgimi cekebilir ama sosyal kanit ve daha canli gorsel olmadan heyecanlanmam."
-    if "kalite" in persona.name.lower() or "mufettis" in profile:
+            return "Görsel ve trend hissi beni yakalar; kombin/video örneği görürsem daha hızlı karar veririm."
+        return "Ürün ilgimi çekebilir ama sosyal kanıt ve daha canlı görsel olmadan heyecanlanmam."
+    if "kalite" in name or "mufettis" in profile:
         if probability >= 0.55:
-            return "Malzeme ve garanti bilgisi yeterince netse daha pahali olsa bile dusunurum."
-        return "Kalite kaniti eksikse sadece guzel gorunmesi beni ikna etmez."
-    if "detay" in persona.name.lower() or "analist" in profile or "teknik" in profile:
+            return "Malzeme ve garanti bilgisi yeterince netse daha pahalı olsa bile düşünürüm."
+        return "Kalite kanıtı eksikse sadece güzel görünmesi beni ikna etmez."
+    if "detay" in name or "analist" in profile or "teknik" in profile:
         if probability >= 0.55:
-            return "Olcu, teknik detay ve kullanim senaryosu acik oldugu icin karar vermem kolaylasir."
-        return "Ben tablo, olcu ve uyumluluk gormeden satin almam; eksik bilgi risk demek."
-    if "marka" in persona.name.lower() or "guven" in profile:
+            return "Ölçü, teknik detay ve kullanım senaryosu açık olduğu için karar vermem kolaylaşır."
+        return "Ben tablo, ölçü ve uyumluluk görmeden satın almam; eksik bilgi risk demek."
+    if "marka" in name or "guven" in profile:
         if probability >= 0.55:
-            return "Garanti, iade ve fatura bilgisi guven verirse markayi daha rahat denerim."
-        return "Marka veya satici guveni net degilse fiyati iyi olsa bile geri dururum."
-    if "premium" in persona.name.lower() or "statu" in profile:
+            return "Garanti, iade ve fatura bilgisi güven verirse markayı daha rahat denerim."
+        return "Marka veya satıcı güveni net değilse fiyatı iyi olsa bile geri dururum."
+    if "premium" in name or "statu" in profile:
         if probability >= 0.55:
-            return "Sunum kaliteli ve urun kendini ozel hissettiriyorsa premium fiyati kabul edebilirim."
-        return "Premium algi icin paketleme, malzeme ve marka hikayesi daha guclu olmali."
+            return "Sunum kaliteli ve ürün kendini özel hissettiriyorsa premium fiyatı kabul edebilirim."
+        return "Premium algı için paketleme, malzeme ve marka hikâyesi daha güçlü olmalı."
     if decision == "buy":
-        return f"Benim ihtiyacima uyuyor; {base_reason}"
+        return f"Benim ihtiyacıma uyuyor; {base_reason}"
     if decision == "skip":
-        return f"Su haliyle beni tam ikna etmiyor; {base_reason}"
-    return f"Kararsiz kalirim; {base_reason}"
+        return f"Şu hâliyle beni tam ikna etmiyor; {base_reason}"
+    return f"Kararsız kalırım; {base_reason}"
 
 
 def _fallback_persona_action(persona: PersonaResult) -> str:
-    name = persona.name.lower()
+    name = fold_text(persona.name)
     if "fiyat" in name or "sepet" in name:
-        return "Toplam fiyat, kargo ve kupon bilgisini ilk ekranda goster."
-    if "trend" in name or "dürtü" in name or "durtu" in name:
-        return "Ilk gorseli kisa video/kombin veya kullanim sahnesiyle test et."
+        return "Toplam fiyat, kargo ve kupon bilgisini ilk ekranda göster."
+    if "trend" in name or "durtu" in name:
+        return "İlk görseli kısa video/kombin veya kullanım sahnesiyle test et."
     if "kalite" in name or "premium" in name:
-        return "Malzeme, garanti ve kalite kanitini aciklamanin ilk paragrafina al."
+        return "Malzeme, garanti ve kalite kanıtını açıklamanın ilk paragrafına al."
     if "detay" in name or "problem" in name or "teknik" in name:
-        return "Olcu, uyumluluk ve teknik ozellikleri tablo gibi okunur hale getir."
+        return "Ölçü, uyumluluk ve teknik özellikleri tablo gibi okunur hâle getir."
     if "marka" in name or "sosyal" in name:
-        return "Yorum, iade, fatura ve satici guveni sinyallerini gorunur yap."
+        return "Yorum, iade, fatura ve satıcı güveni sinyallerini görünür yap."
     return persona.advice
 
 
@@ -313,17 +321,17 @@ def _build_sales_recipe(
 ) -> List[str]:
     features = request.features
     category = str(request.category)
-    first_channel = channels[0] if channels else "en guclu kanal"
+    first_channel = channels[0] if channels else "en güçlü kanal"
     recipe = [
-        f"Basligi '{request.product_name}' + ana fayda + hedef kullanim senaryosu seklinde netlestir.",
-        "Ilk gorselde urunun karar verdiren ozelligini goster: kiyafette kalip/renk, teknolojide ekran-batarya-performans.",
-        f"{first_channel} icin 7 gunluk A/B test kur: bir varyant fayda odakli, digeri fiyat/guven odakli olsun.",
-        "Iade, kargo ve garanti/fatura bilgisini fiyat alanina yakin gosterecek sekilde listelemeyi duzenle.",
+        f"Başlığı '{request.product_name}' + ana fayda + hedef kullanım senaryosu şeklinde netleştir.",
+        "İlk görselde ürünün karar verdiren özelliğini göster: kıyafette kalıp/renk, teknolojide ekran-batarya-performans.",
+        f"{first_channel} için 7 günlük A/B test kur: bir varyant fayda odaklı, diğeri fiyat/güven odaklı olsun.",
+        "İade, kargo ve garanti/fatura bilgisini fiyat alanına yakın gösterecek şekilde listelemeyi düzenle.",
     ]
     if category in TECH:
-        recipe.insert(1, "Teknik ozellikleri karsilastirilabilir yaz: model, kapasite, pil, ekran ve garanti ayni blokta dursun.")
+        recipe.insert(1, "Teknik özellikleri karşılaştırılabilir yaz: model, kapasite, pil, ekran ve garanti aynı blokta dursun.")
     if category in CLOTHING:
-        recipe.insert(1, "Beden/kalip bilgisini ve gercek kullanim/kombin senaryosunu aciklamanin ilk 2 satirina al.")
+        recipe.insert(1, "Beden/kalıp bilgisini ve gerçek kullanım/kombin senaryosunu açıklamanın ilk 2 satırına al.")
     if category == "ayakkabi":
         recipe.insert(1, "Numara tablosunu, kalıbın dar/geniş olduğunu ve taban malzemesini açıklamanın ilk satırlarına al; yandan ve tabandan görsel ekle.")
     if category == "canta":
@@ -331,9 +339,9 @@ def _build_sales_recipe(
     if category in BEAUTY:
         recipe.insert(1, "İçerik listesini, cilt tipi uyumunu ve hacmi ilk satırlara al; dermatolojik test veya sertifika varsa ilk görselde göster.")
     if "price_sensitive_users_rejected" in weakness_signals or market_breadth_score < 50:
-        recipe.append("Fiyat bariyerini olcmek icin ucretsiz kargo veya kupon varyantini ana fiyati dusurmeden test et.")
+        recipe.append("Fiyat bariyerini ölçmek için ücretsiz kargo veya kupon varyantını ana fiyatı düşürmeden test et.")
     if product_type == "trend/stil ürünü" and getattr(features, "colors", None):
-        recipe.append("Renk varyantlarini ayri gorsel setleriyle test et; tek ilanda tum renkleri gizleme.")
+        recipe.append("Renk varyantlarını ayrı görsel setleriyle test et; tek ilanda tüm renkleri gizleme.")
     return recipe[:5]
 
 
@@ -345,54 +353,54 @@ def _build_marketing_advice(
     market_breadth_score: int,
     intent_conversion_score: int,
 ) -> str:
-    channel_text = ", ".join(channels) if channels else "pazar yeri ici arama ve sosyal medya"
+    channel_text = ", ".join(channels) if channels else "pazar yeri içi arama ve sosyal medya"
     if category in TECH:
-        angle = "teknik kanit + guven + karsilastirma"
+        angle = "teknik kanıt + güven + karşılaştırma"
     elif category in CLOTHING:
-        angle = "stil, beden uyumu ve gercek kullanim gorselleri"
+        angle = "stil, beden uyumu ve gerçek kullanım görselleri"
     elif category in FASHION_ACCESSORIES:
         angle = "stil, malzeme kalitesi ve gerçek kullanımda çekilmiş görseller"
     elif category in BEAUTY:
         angle = "içerik şeffaflığı, cilt tipi uyumu ve gerçek kullanıcı yorumları"
     else:
-        angle = "net fayda ve guven"
-    scope = "genis kitle kreatifleri" if market_breadth_score >= 55 else "arama niyeti yuksek daha dar kitle"
+        angle = "net fayda ve güven"
+    scope = "geniş kitle kreatifleri" if market_breadth_score >= 55 else "arama niyeti yüksek, daha dar bir kitle"
     return (
-        f"Kanal odagi: {channel_text}. Mesaj dili {angle} uzerine kurulsun. "
-        f"{scope} ile basla; satin alma niyeti skoru {intent_conversion_score}/100 oldugu icin personalar ({top_persona_names}) bazinda iki farkli metin test et."
+        f"Kanal odağı: {channel_text}. Mesaj dili {angle} üzerine kurulsun. "
+        f"{scope} ile başla; satın alma niyeti skoru {intent_conversion_score}/100 olduğu için personalar ({top_persona_names}) bazında iki farklı metin test et."
     )
 
 
 def _build_description_advice(request: SimulationRequest, normalized_product: NormalizedProduct) -> str:
     if normalized_product.description_completeness >= 0.75:
-        return "Aciklama temel olarak guclu; ilk paragrafi daha net fayda, ikinci paragrafi teknik/beden detaylari olacak sekilde duzenle."
+        return "Açıklama temelde güçlü; ilk paragrafı daha net fayda, ikinci paragrafı teknik/beden detayları olacak şekilde düzenle."
     if request.category in TECH:
-        return "Aciklamaya model, kapasite, pil/ekran, garanti-fatura ve kimler icin uygun oldugunu tablo gibi okunacak netlikte ekle."
+        return "Açıklamaya model, kapasite, pil/ekran, garanti-fatura ve kimler için uygun olduğunu tablo gibi okunacak netlikte ekle."
     if request.category == "ayakkabi":
         return "Açıklamaya saya ve taban malzemesini, numara aralığını, kalıbın dar/geniş olduğunu, kullanım alanını ve iade bilgisini ayrı cümlelerle ekle."
     if request.category == "canta":
         return "Açıklamaya ölçüleri, malzemeyi, bölme sayısını, askı tipini ve neyin sığdığını ayrı cümlelerle ekle."
     if request.category in BEAUTY:
         return "Açıklamaya öne çıkan içerikleri, cilt/saç tipini, hacmi, kullanım şeklini ve test/sertifika bilgisini ayrı cümlelerle ekle."
-    return "Aciklamaya kumas, kalip, beden araligi, sezon, kombin/kullanim senaryosu ve iade bilgisini ayri cumlelerle ekle."
+    return "Açıklamaya kumaş, kalıp, beden aralığı, sezon, kombin/kullanım senaryosu ve iade bilgisini ayrı cümlelerle ekle."
 
 
 def _build_pricing_advice(request: SimulationRequest, normalized_product: NormalizedProduct) -> str:
     if normalized_product.price_risk >= 0.45:
-        return "Fiyat algisi riskli. Ana fiyati hemen dusurmek yerine kupon, set indirimi veya ucretsiz kargo varyanti test et."
+        return "Fiyat algısı riskli. Ana fiyatı hemen düşürmek yerine kupon, set indirimi veya ücretsiz kargo varyantı test et."
     if normalized_product.price_fit >= 0.75:
-        return "Fiyat kategori ortalamasina yakin gorunuyor. Premium algi icin garanti, kalite kaniti ve hizli kargo mesajini fiyatla birlikte goster."
-    return "Fiyat testi icin iki varyant yeterli: mevcut fiyat + guven vurgusu ve kucuk indirim + aciliyet mesaji."
+        return "Fiyat kategori ortalamasına yakın görünüyor. Premium algı için garanti, kalite kanıtı ve hızlı kargo mesajını fiyatla birlikte göster."
+    return "Fiyat testi için iki varyant yeterli: mevcut fiyat + güven vurgusu ve küçük indirim + aciliyet mesajı."
 
 
 def _build_season_advice(request: SimulationRequest, normalized_product: NormalizedProduct) -> str:
     category = request.category
     season = getattr(request.features, "season", None)
     if category in TECH:
-        return "Teknoloji urunlerinde sezon etkisi dusuk; okul donemi, yilbasi, maas haftasi ve kampanya donemleri ayri test edilmeli."
+        return "Teknoloji ürünlerinde sezon etkisi düşük; okul dönemi, yılbaşı, maaş haftası ve kampanya dönemleri ayrı test edilmeli."
     if normalized_product.season_fit >= 0.80:
-        return f"Sezon uyumu guclu ({season or 'belirtilen sezon'}). Baslik, ilk gorsel ve kampanya metninde bu kullanim donemini one cikar."
-    return "Sezon uyumu zayifsa urunu indirim/alternatif kullanim senaryosuyla konumlandir; ana reklam butcesini sezon pikine sakla."
+        return f"Sezon uyumu güçlü ({season or 'belirtilen sezon'}). Başlık, ilk görsel ve kampanya metninde bu kullanım dönemini öne çıkar."
+    return "Sezon uyumu zayıfsa ürünü indirim/alternatif kullanım senaryosuyla konumlandır; ana reklam bütçesini sezon zirvesine sakla."
 
 
 def _build_improved_description(request: SimulationRequest, category_str: str) -> str:
@@ -400,26 +408,26 @@ def _build_improved_description(request: SimulationRequest, category_str: str) -
     feature_parts = []
     for label, value in [
         ("Marka/model", getattr(features, "brand", None)),
-        ("Kumas", getattr(features, "fabric", None)),
+        ("Kumaş", getattr(features, "fabric", None)),
         ("Malzeme", getattr(features, "material", None)),
         ("Taban", getattr(features, "sole_material", None)),
         ("İçerik", getattr(features, "ingredients", None)),
         ("Cilt tipi", getattr(features, "skin_type", None)),
         ("Hacim", getattr(features, "volume", None)),
         ("Ölçü", getattr(features, "dimensions", None)),
-        ("Kalip", getattr(features, "fit", None)),
+        ("Kalıp", getattr(features, "fit", None)),
         ("Beden", getattr(features, "size_range", None)),
         ("Ekran", getattr(features, "screen_size", None)),
         ("RAM", getattr(features, "ram", None)),
         ("Depolama", getattr(features, "storage", None)),
         ("Batarya", getattr(features, "battery", None)),
-        ("Kullanim", getattr(features, "use_case", None)),
+        ("Kullanım", getattr(features, "use_case", None)),
     ]:
         if value:
             feature_parts.append(f"{label}: {value}")
-    details = "; ".join(feature_parts[:6]) or "urun detaylari acik ve karar vermeyi kolaylastiracak sekilde sunulur"
-    trust = "Garanti/fatura bilgisi ve kolay iade secenegiyle guvenli alisveris desteklenir." if request.commerce.warranty else "Kolay iade ve net kargo bilgisiyle satin alma riski azaltilir."
+    details = "; ".join(feature_parts[:6]) or "ürün detayları açık ve karar vermeyi kolaylaştıracak şekilde sunulur"
+    trust = "Garanti/fatura bilgisi ve kolay iade seçeneğiyle güvenli alışveriş desteklenir." if request.commerce.warranty else "Kolay iade ve net kargo bilgisiyle satın alma riski azaltılır."
     return (
-        f"{request.product_name}, {category_str} kategorisinde {request.target_audience.income_level} segment icin konumlanan bir urundur. "
+        f"{request.product_name}, {category_label(category_str)} kategorisinde {income_label(request.target_audience.income_level)} fiyat segmenti için konumlanan bir üründür. "
         f"{details}. {request.description.strip()} {trust}"
     )

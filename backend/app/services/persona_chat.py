@@ -4,7 +4,7 @@ import json
 from typing import Any, Optional
 
 from app.services.prompt_safety import clip
-from app.services.simulation_service import load_persona_data
+from app.services.normalization_service import load_persona_data
 
 
 def find_persona(name: str) -> Optional[dict[str, Any]]:
@@ -30,7 +30,7 @@ def build_persona_prompt(persona: dict[str, Any], request: dict[str, Any], respo
         "urununZayifliklari": [clip(w, 160) for w in response.get("weaknesses", [])[:5]],
     }
     return (
-        f"Sen PazarLab simülasyonundaki '{persona['name']}' adlı tüketici personasısın. "
+        f"Sen PazarLab simülasyonundaki '{persona.get('displayName', persona['name'])}' adlı tüketici personasısın. "
         f"Karakterin: {persona.get('aiRoleplayPrompt', '')} "
         f"Alışveriş alışkanlığın: {traits.get('shoppingHabit', '')}. Değerlerin: {traits.get('values', '')}. "
         f"En büyük korkun: {traits.get('biggestFear', '')}.\n\n"

@@ -38,7 +38,7 @@ def install(app: FastAPI) -> None:
                 return _error(411, "Content-Length gerekli.", request_id)
             if not length.isdigit() or int(length) > MAX_BODY_BYTES:
                 log_access(method, path, 413, started)
-                return _error(413, "Istek govdesi cok buyuk.", request_id)
+                return _error(413, "İstek gövdesi çok büyük.", request_id)
 
         try:
             response = await call_next(request)
@@ -69,7 +69,7 @@ def install(app: FastAPI) -> None:
     async def unhandled(request: Request, exc: Exception):
         request_id = getattr(request.state, "request_id", "-")
         logger.exception("Unhandled error [%s] %s %s", request_id, request.method, request.url.path)
-        return _error(500, "Beklenmeyen bir hata olustu.", request_id)
+        return _error(500, "Beklenmeyen bir hata oluştu.", request_id)
 
 
 def _error(status: int, detail: str, request_id: str) -> JSONResponse:
@@ -115,7 +115,7 @@ class RateLimit:
                 retry_after = int(self.window - (now - hits[0])) + 1
                 raise HTTPException(
                     status_code=429,
-                    detail="Cok fazla istek. Lutfen biraz sonra tekrar deneyin.",
+                    detail="Çok fazla istek. Lütfen biraz sonra tekrar deneyin.",
                     headers={"Retry-After": str(retry_after)},
                 )
             hits.append(now)

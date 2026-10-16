@@ -1,8 +1,6 @@
-import json
 import random
 import logging
 from collections import defaultdict
-from functools import lru_cache
 from pathlib import Path
 from typing import Any, Optional
 
@@ -15,6 +13,7 @@ from app.services.normalization_service import (
     get_category_rule,
     get_motivation_modifier,
     get_normalized_weights,
+    load_persona_data,
     normalize_product,
 )
 from app.utils.math_utils import clamp, clamp_score, stable_seed
@@ -22,12 +21,6 @@ from app.utils.math_utils import clamp, clamp_score, stable_seed
 
 DATA_DIR = Path(__file__).resolve().parents[1] / "data"
 logger = logging.getLogger("simulation")
-
-
-@lru_cache(maxsize=1)
-def load_persona_data() -> dict[str, Any]:
-    with (DATA_DIR / "personas.json").open(encoding="utf-8") as file:
-        return json.load(file)
 
 
 def _seed_payload(request: SimulationRequest) -> dict[str, Any]:
@@ -288,24 +281,24 @@ def _persona_micro_feedback(
 ) -> str:
     if probability >= 0.62:
         if product.trend_fit >= 0.72 and name in {"Trend Takipcisi", "Durtusel Alici", "Sosyal Onay Arayan"}:
-            return "Trend ve gorsel cekicilik bu grubu hizli ikna ediyor."
+            return "Trend ve görsel çekicilik bu grubu hızlı ikna ediyor."
         if product.quality_score >= 0.72 and name in {"Premium Alici", "Kalite Odakli Alici"}:
-            return "Kalite algisi fiyat bariyerini dengeliyor."
+            return "Kalite algısı fiyat bariyerini dengeliyor."
         if product.description_completeness >= 0.72 and "Detayci" in name:
-            return "Detay seviyesi karar vermesini kolaylastiriyor."
-        return "Genel profil uyumu yuksek; bu grup birincil hedeflenebilir."
+            return "Detay seviyesi karar vermesini kolaylaştırıyor."
+        return "Genel profil uyumu yüksek; bu grup birincil hedeflenebilir."
 
     if "brand_trust_low" in weakness_signals and name in {"Marka Sadigi", "Premium Alici", "Kalite Odakli Alici"}:
-        return "Marka guveni ve garanti kaniti olmadan temkinli kalir."
+        return "Marka güveni ve garanti kanıtı olmadan temkinli kalır."
     if "price_sensitive_users_rejected" in weakness_signals and name in {"Fiyat Hassas Alici", "Kararsiz Sepet Bekletici"}:
-        return "Kupon, kargo avantaji veya net fiyat faydasi bekler."
+        return "Kupon, kargo avantajı veya net fiyat faydası bekler."
     if "description_incomplete" in weakness_signals and ("Detayci" in name or "Problem" in name):
-        return "Olcu, uyumluluk ve kullanim detayi eksikse satin alma ertelenir."
+        return "Ölçü, uyumluluk ve kullanım detayı eksikse satın alma ertelenir."
     if "shipping_return_weak" in weakness_signals and name in {"Pratik Cozum Arayan", "Kararsiz Sepet Bekletici"}:
-        return "Iade ve teslimat guvencesi netlesirse niyet artar."
+        return "İade ve teslimat güvencesi netleşirse niyet artar."
     if probability >= 0.42:
-        return "Kucuk guven sinyalleriyle tekrar hedeflenebilir."
-    return "Bu urunle profil uyumu dusuk; reklam butcesinde ikincil kalmali."
+        return "Küçük güven sinyalleriyle tekrar hedeflenebilir."
+    return "Bu ürünle profil uyumu düşük; reklam bütçesinde ikincil kalmalı."
 
 
 def _market_breadth_score(request: SimulationRequest) -> int:
@@ -416,14 +409,14 @@ def _weakness_signals(request: SimulationRequest, product: NormalizedProduct, in
 
 def _weakness_message(signal: str) -> str:
     messages = {
-        "brand_trust_low": "Marka guveni dusuk.",
+        "brand_trust_low": "Marka güveni düşük.",
         "warranty_missing": "Garanti bilgisi eksik.",
-        "price_sensitive_users_rejected": "Fiyat hassas kullanicilar icin fiyat riskli algilaniyor.",
-        "description_incomplete": "Urun aciklamasi karar icin yeterince detayli degil.",
-        "shipping_return_weak": "Kargo, iade veya teslimat guvencesi zayif.",
-        "compatibility_unclear": "Uyumlu model ve olcu bilgisi yeterince net degil.",
-        "input_needs_review": "Urun bilgileri analizden once gozden gecirilmeli.",
-        "category_mismatch": "Secilen kategori ile girilen urun bilgileri uyumsuz olabilir.",
-        "input_plausibility_low": "Urun adi veya aciklama anlamsiz gorunuyor.",
+        "price_sensitive_users_rejected": "Fiyat hassas kullanıcılar için fiyat riskli algılanıyor.",
+        "description_incomplete": "Ürün açıklaması karar için yeterince detaylı değil.",
+        "shipping_return_weak": "Kargo, iade veya teslimat güvencesi zayıf.",
+        "compatibility_unclear": "Uyumlu model ve ölçü bilgisi yeterince net değil.",
+        "input_needs_review": "Ürün bilgileri analizden önce gözden geçirilmeli.",
+        "category_mismatch": "Seçilen kategori ile girilen ürün bilgileri uyumsuz olabilir.",
+        "input_plausibility_low": "Ürün adı veya açıklama anlamsız görünüyor.",
     }
-    return messages.get(signal, "Urun kararini etkileyen bir zayif sinyal var.")
+    return messages.get(signal, "Ürün kararını etkileyen zayıf bir sinyal var.")

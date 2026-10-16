@@ -63,10 +63,11 @@
   "personaTypes": [
     {
       "name": "Fiyat Hassas Alici",
+      "displayName": "Fiyat Hassas Alıcı",
       "count": 42,
       "preferredMotivations": ["ihtiyac", "yedek_parca_tamir"],
-      "reason": "Fiyat uygunlugu ve kampanya sinyallerine hizli tepki verir.",
-      "advice": "Net fiyat avantajini, ucretsiz kargoyu ve indirim mesajini one cikar.",
+      "reason": "Fiyat uygunluğu ve kampanya sinyallerine hızlı tepki verir.",
+      "advice": "Net fiyat avantajını, ücretsiz kargoyu ve indirim mesajını öne çıkar.",
       "ranges": {
         "priceSensitivity": [0.80, 0.98],
         "qualityExpectation": [0.45, 0.70],
@@ -92,10 +93,11 @@
     },
     {
       "name": "Trend Takipcisi",
+      "displayName": "Trend Takipçisi",
       "count": 42,
       "preferredMotivations": ["stil_begeni", "trend"],
-      "reason": "Stil, gorsel cekicilik ve sosyal medya etkisi bu persona icin gucludur.",
-      "advice": "Kisa video, kombin gorselleri ve trend kelimeleriyle kampanya kur.",
+      "reason": "Stil, görsel çekicilik ve sosyal medya etkisi bu persona için güçlüdür.",
+      "advice": "Kısa video, kombin görselleri ve trend kelimeleriyle kampanya kur.",
       "ranges": {
         "priceSensitivity": [0.35, 0.60],
         "qualityExpectation": [0.45, 0.70],
@@ -121,10 +123,11 @@
     },
     {
       "name": "Kalite Odakli Alici",
+      "displayName": "Kalite Odaklı Alıcı",
       "count": 42,
       "preferredMotivations": ["profesyonel_kullanim", "ihtiyac"],
-      "reason": "Malzeme, dayaniklilik ve garanti sinyalleriyle ikna olur.",
-      "advice": "Kalite belgelerini, garanti bilgisini ve uzun omurlu kullanim vaadini ekle.",
+      "reason": "Malzeme, dayanıklılık ve garanti sinyalleriyle ikna olur.",
+      "advice": "Kalite belgelerini, garanti bilgisini ve uzun ömürlü kullanım vaadini ekle.",
       "ranges": {
         "priceSensitivity": [0.35, 0.60],
         "qualityExpectation": [0.82, 0.98],
@@ -150,10 +153,11 @@
     },
     {
       "name": "Detayci Arastirmaci",
+      "displayName": "Detaycı Araştırmacı",
       "count": 42,
       "preferredMotivations": ["problem_cozme", "profesyonel_kullanim"],
-      "reason": "Ayrintili aciklama, olcu ve kullanim senaryosu gormeden karar vermez.",
-      "advice": "Tablo, olcu, uyumluluk ve sik sorulan sorular bolumu ekle.",
+      "reason": "Ayrıntılı açıklama, ölçü ve kullanım senaryosu görmeden karar vermez.",
+      "advice": "Tablo, ölçü, uyumluluk ve sık sorulan sorular bölümü ekle.",
       "ranges": {
         "priceSensitivity": [0.45, 0.70],
         "qualityExpectation": [0.65, 0.90],
@@ -179,10 +183,11 @@
     },
     {
       "name": "Durtusel Alici",
+      "displayName": "Dürtüsel Alıcı",
       "count": 42,
       "preferredMotivations": ["hediye", "trend", "stil_begeni"],
-      "reason": "Gorsel etki, hizli karar ve acil tekliflerle satin almaya yaklasir.",
-      "advice": "Sinirli stok, hediye paketi ve hizli teslimat mesajlarini kullan.",
+      "reason": "Görsel etki, hızlı karar ve acil tekliflerle satın almaya yaklaşır.",
+      "advice": "Sınırlı stok, hediye paketi ve hızlı teslimat mesajlarını kullan.",
       "ranges": {
         "priceSensitivity": [0.30, 0.55],
         "qualityExpectation": [0.35, 0.60],
@@ -208,10 +213,11 @@
     },
     {
       "name": "Marka Sadigi",
+      "displayName": "Marka Sadığı",
       "count": 42,
       "preferredMotivations": ["hediye", "profesyonel_kullanim"],
-      "reason": "Marka guveni, garanti ve sosyal kanit eksikse mesafeli kalir.",
-      "advice": "Yorum, garanti, marka hikayesi ve iade politikasini gorunur yap.",
+      "reason": "Marka güveni, garanti ve sosyal kanıt eksikse mesafeli kalır.",
+      "advice": "Yorum, garanti, marka hikâyesi ve iade politikasını görünür yap.",
       "ranges": {
         "priceSensitivity": [0.25, 0.50],
         "qualityExpectation": [0.65, 0.90],
@@ -237,10 +243,11 @@
     },
     {
       "name": "Sosyal Onay Arayan",
+      "displayName": "Sosyal Onay Arayan",
       "count": 42,
       "preferredMotivations": ["stil_begeni", "hediye", "trend"],
-      "reason": "Yorum, puan, populerlik ve paylasilabilir gorsellerden etkilenir.",
-      "advice": "Kullanici yorumu, once-sonra gorseli ve sosyal kanit dilini ekle.",
+      "reason": "Yorum, puan, popülerlik ve paylaşılabilir görsellerden etkilenir.",
+      "advice": "Kullanıcı yorumu, önce-sonra görseli ve sosyal kanıt dilini ekle.",
       "ranges": {
         "priceSensitivity": [0.35, 0.60],
         "qualityExpectation": [0.45, 0.70],
@@ -266,10 +273,11 @@
     },
     {
       "name": "Pratik Cozum Arayan",
+      "displayName": "Pratik Çözüm Arayan",
       "count": 42,
       "preferredMotivations": ["ihtiyac", "problem_cozme"],
-      "reason": "Urunun gunluk hayatta net fayda saglamasina bakar.",
-      "advice": "Pratik kullanim, kolay kurulum ve hizli sonuc mesajlarini vurgula.",
+      "reason": "Ürünün günlük hayatta net fayda sağlamasına bakar.",
+      "advice": "Pratik kullanım, kolay kurulum ve hızlı sonuç mesajlarını vurgula.",
       "ranges": {
         "priceSensitivity": [0.50, 0.75],
         "qualityExpectation": [0.55, 0.80],
@@ -295,10 +303,11 @@
     },
     {
       "name": "Premium Alici",
+      "displayName": "Premium Alıcı",
       "count": 41,
       "preferredMotivations": ["profesyonel_kullanim", "hediye", "stil_begeni"],
-      "reason": "Kalite, guven ve premium sunum varsa yuksek fiyati tolere eder.",
-      "advice": "Premium malzeme, garanti, paketleme ve marka degerini one cikar.",
+      "reason": "Kalite, güven ve premium sunum varsa yüksek fiyatı tolere eder.",
+      "advice": "Premium malzeme, garanti, paketleme ve marka değerini öne çıkar.",
       "ranges": {
         "priceSensitivity": [0.15, 0.35],
         "qualityExpectation": [0.85, 0.99],
@@ -324,10 +333,11 @@
     },
     {
       "name": "Kararsiz Sepet Bekletici",
+      "displayName": "Kararsız Sepet Bekletici",
       "count": 41,
       "preferredMotivations": ["ihtiyac", "hediye"],
-      "reason": "Guven, fiyat ve iade bilgisi netlesmeden kararini erteler.",
-      "advice": "Iade kolayligi, garanti ve kisa sureli kampanya ile karar bariyerini azalt.",
+      "reason": "Güven, fiyat ve iade bilgisi netleşmeden kararını erteler.",
+      "advice": "İade kolaylığı, garanti ve kısa süreli kampanya ile karar bariyerini azalt.",
       "ranges": {
         "priceSensitivity": [0.60, 0.85],
         "qualityExpectation": [0.55, 0.80],
@@ -353,10 +363,11 @@
     },
     {
       "name": "Problem Cozum Odakli Kullanici",
+      "displayName": "Problem Çözüm Odaklı Kullanıcı",
       "count": 41,
       "preferredMotivations": ["problem_cozme", "yedek_parca_tamir"],
-      "reason": "Belirli bir sorunu hizli ve net bicimde cozmek ister.",
-      "advice": "Problem, uyumluluk, olcu, montaj ve sonuc faydasini cok net yaz.",
+      "reason": "Belirli bir sorunu hızlı ve net biçimde çözmek ister.",
+      "advice": "Problem, uyumluluk, ölçü, montaj ve sonuç faydasını çok net yaz.",
       "ranges": {
         "priceSensitivity": [0.45, 0.70],
         "qualityExpectation": [0.60, 0.85],
@@ -382,10 +393,11 @@
     },
     {
       "name": "Detayci Uyum Kontrolcusu",
+      "displayName": "Detaycı Uyum Kontrolcüsü",
       "count": 41,
       "preferredMotivations": ["yedek_parca_tamir", "problem_cozme"],
-      "reason": "Model uyumu, olcu ve teknik detay acik degilse satin almaz.",
-      "advice": "Uyumlu modelleri, olculeri ve montaj adimlarini urun basligina kadar tasiyin.",
+      "reason": "Model uyumu, ölçü ve teknik detay açık değilse satın almaz.",
+      "advice": "Uyumlu modelleri, ölçüleri ve montaj adımlarını ürün başlığına kadar taşı.",
       "ranges": {
         "priceSensitivity": [0.35, 0.60],
         "qualityExpectation": [0.60, 0.85],

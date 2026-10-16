@@ -27,8 +27,8 @@ except ImportError:
 
 logger = logging.getLogger("product_scraper")
 
-PUBLIC_URL_ERROR = "Bu link okunamadi. Herkese acik bir http/https urun sayfasi girin."
-FETCH_FAILED_MESSAGE = "Urun sayfasi su anda okunamadi. Bilgileri elle girebilirsiniz."
+PUBLIC_URL_ERROR = "Bu link okunamadı. Herkese açık bir http/https ürün sayfası girin."
+FETCH_FAILED_MESSAGE = "Ürün sayfası şu anda okunamadı. Bilgileri elle girebilirsiniz."
 
 
 # ---------------------------------------------------------------------------

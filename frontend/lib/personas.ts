@@ -10,24 +10,11 @@ export function personaColor(name: string): string {
   return index === undefined ? "hsl(var(--muted-foreground))" : `hsl(var(--persona-${(index % 12) + 1}))`;
 }
 
-/** Human-friendly Turkish label for the ASCII persona names used in data files. */
-const DISPLAY: Record<string, string> = {
-  "Fiyat Hassas Alici": "Fiyat Hassas Alıcı",
-  "Trend Takipcisi": "Trend Takipçisi",
-  "Kalite Odakli Alici": "Kalite Odaklı Alıcı",
-  "Detayci Arastirmaci": "Detaycı Araştırmacı",
-  "Durtusel Alici": "Dürtüsel Alıcı",
-  "Marka Sadigi": "Marka Sadığı",
-  "Sosyal Onay Arayan": "Sosyal Onay Arayan",
-  "Pratik Cozum Arayan": "Pratik Çözüm Arayan",
-  "Premium Alici": "Premium Alıcı",
-  "Kararsiz Sepet Bekletici": "Kararsız Sepet Bekletici",
-  "Problem Cozum Odakli Kullanici": "Problem Çözüm Odaklı Kullanıcı",
-  "Detayci Uyum Kontrolcusu": "Detaycı Uyum Kontrolcüsü",
-};
+// `name` is the stable ASCII id (chat keys, URLs, API); `displayName` is the Turkish label.
+const DISPLAY = new Map(personasData.personaTypes.map((p) => [p.name, p.displayName]));
 
 export function personaLabel(name: string): string {
-  return DISPLAY[name] ?? name;
+  return DISPLAY.get(name) ?? name;
 }
 
 export function personaSlug(name: string): string {
