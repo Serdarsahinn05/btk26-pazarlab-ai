@@ -146,7 +146,8 @@ function DashboardContent() {
   const hasResult = state === "result" && result !== null;
 
   return (
-    <div className="space-y-8">
+    // gap, not space-y: Tailwind 4's space-y adds margin before a trailing `hidden` child; gap skips display:none.
+    <div className="flex flex-col gap-8">
       {view === "personas" && <PersonaLab />}
 
       {view !== "personas" && hasResult && result && <ResultDashboard data={result} view={view} productName={productName} request={lastRequest} onReset={reset} />}
@@ -158,7 +159,7 @@ function DashboardContent() {
       )}
 
       {/* The form stays mounted (only hidden) so switching tabs, a failed run or a cancelled warning keeps the typed input. */}
-      <div hidden={view !== "analysis" || hasResult} className="space-y-8">
+      <div hidden={view !== "analysis" || hasResult} className="flex flex-col gap-8">
         <header className="space-y-2">
           <h1 className="text-[clamp(32px,5vw,52px)] font-extrabold leading-[1.02] tracking-tight">Ürününü test et</h1>
           <p className="text-foreground-2">

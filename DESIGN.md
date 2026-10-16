@@ -23,7 +23,7 @@ eğri kenarlı yuvarlak şekiller, "sticker" gölgeler, el yazısı küçük not
 ## 2. Token'lar
 
 `frontend/app/globals.css` içinde shadcn HSL formatında (`--x: H S% L%`) tanımlanır,
-`tailwind.config.ts` içinde `hsl(var(--x))` olarak eşlenir. Bileşenlerde ham hex, `rgba()`,
+aynı dosyadaki `@theme inline` bloğunda `hsl(var(--x))` olarak Tailwind'e eşlenir (Tailwind 4; ayrı config dosyası yok). Bileşenlerde ham hex, `rgba()`,
 `text-white`, `bg-zinc-*`, `violet-*` vb. **kullanılmaz**.
 
 ### 2.1 Yüzey ve metin
@@ -93,7 +93,7 @@ Persona kartı zemini: kendi renginin %7'si kart rengine karışır. Etiket (chi
 | Rakam (skor, KPI, yüzde) | **Bricolage Grotesque** | skor 46px/800, KPI 32px/800, `-0.03em` |
 | El yazısı not | **Caveat** | 22px/500–700, ±8° dönük, `--foreground-2` |
 
-- Fontlar `next/font/google` ile yüklenir: `--font-display`, `--font-sans`, `--font-hand`. Tailwind sınıfları `font-display`, `font-sans`, `font-hand`. Mono font kullanılmaz.
+- Fontlar `next/font/google` ile yüklenir: `--font-bricolage`, `--font-nunito`, `--font-caveat` (`<body>` üzerinde). `@theme inline` bunları `font-display`, `font-sans`, `font-hand` sınıflarına bağlar. Mono font kullanılmaz.
 - Minimum metin boyutu 12px. Arayüz metni Türkçe karakterlerle yazılır.
 
 ## 4. Bileşen kalıpları
@@ -137,6 +137,8 @@ Persona kartı zemini: kendi renginin %7'si kart rengine karışır. Etiket (chi
 
 - Tailwind yardımcıları: `rounded-wobble`, `rounded-wobble-lg`, `rounded-blob`, `shadow-sticker`, `shadow-sticker-ink`, `font-display`, `font-hand`; renkler `buy`, `watch`, `skip` (+ `-text`), `persona-1..12`.
 - Paylaşılan parçalar: `components/ui/ring.tsx` (halka + segmentli halka), `components/ui/section-title.tsx` (dalgalı başlık).
+- **Dikey aralık:** Çocuklarından biri `hidden`, `sr-only`, inline (`<span>`, `<label>`) olabilecek ya da Radix Select gibi gizli bir eleman ekleyen kapsayıcılarda `space-y-*` yerine `flex flex-col gap-*` kullanılır. Tailwind 4'te `space-y` son çocuk dışındakilere `margin-bottom` veriyor; gizli son çocukta fazladan boşluk kalıyor, inline çocukta margin hiç uygulanmıyor.
+- `text-sm`/`text-xs` v4'te birimsiz satır yüksekliği veriyor ve içteki daha büyük font'a oranlı aktarılıyor. Form alanını saran etiketlerde sabit `leading-5`/`leading-6` kullanılır.
 
 ## 9. Yerleşim
 

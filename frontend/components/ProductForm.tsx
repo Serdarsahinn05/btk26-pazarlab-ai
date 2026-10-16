@@ -624,8 +624,8 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
             />
           </FieldLabel>
 
-          <div className="space-y-2">
-            <span className="text-sm font-bold text-foreground-2">Görseller <span className="font-semibold text-muted-foreground">(en fazla {MAX_IMAGES})</span></span>
+          <div className="flex flex-col gap-2">
+            <span className="text-sm leading-6 font-bold text-foreground-2">Görseller <span className="font-semibold text-muted-foreground">(en fazla {MAX_IMAGES})</span></span>
             <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
               {images.map((url, idx) => (
                 <div key={idx} className="group relative aspect-square overflow-hidden rounded-wobble border-2 border-border bg-card">
@@ -646,7 +646,7 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
                   onDragOver={onDragOver}
                   onDragLeave={onDragLeave}
                   onDrop={onDrop}
-                  className={`flex aspect-square cursor-pointer flex-col items-center justify-center gap-1 rounded-wobble border-2 border-dashed text-sm font-bold text-muted-foreground transition-colors focus-within:outline focus-within:outline-2 focus-within:outline-ring ${
+                  className={`flex aspect-square cursor-pointer flex-col items-center justify-center gap-1 rounded-wobble border-2 border-dashed text-sm font-bold text-muted-foreground transition-colors focus-within:outline-solid focus-within:outline-2 focus-within:outline-ring ${
                     isDragging ? "border-accent bg-accent/10" : "border-border bg-card hover:bg-secondary"
                   }`}
                 >
@@ -786,7 +786,8 @@ function Step({ n, title, hint, children }: { n: number; title: string; hint?: s
   return (
     <fieldset className="card-paper space-y-4">
       <legend className="sr-only">{title}</legend>
-      <div className="flex items-center gap-3">
+      {/* mt-4: the sr-only legend is the first child, so space-y leaves no gap above the title in Tailwind 4. */}
+      <div className="mt-4 flex items-center gap-3">
         <span className="num-badge" aria-hidden>{n}</span>
         <h2 className="text-[19px] font-bold">{title}</h2>
         {hint && <span className="text-sm text-muted-foreground">{hint}</span>}
@@ -810,8 +811,9 @@ function FieldLabel({
   children: React.ReactNode;
 }) {
   return (
-    <div className="space-y-1.5">
-      <label htmlFor={htmlFor} className="text-sm font-bold text-foreground-2">
+    // gap, not space-y: Radix Select appends a hidden native <select> as the last child.
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={htmlFor} className="text-sm leading-6 font-bold text-foreground-2">
         {label} {required && <span className="text-skip-text" aria-hidden>*</span>}
       </label>
       {children}

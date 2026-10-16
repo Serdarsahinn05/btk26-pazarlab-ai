@@ -25,10 +25,10 @@ export default function TopBar() {
   const hrefFor = (view: string) => `/dashboard?view=${view}${resultId ? `&r=${encodeURIComponent(resultId)}` : ""}`;
 
   return (
-    <header className="no-print sticky top-0 z-40 border-b-2 border-dashed border-border bg-background/95 backdrop-blur-sm">
+    <header className="no-print sticky top-0 z-40 border-b-2 border-dashed border-border bg-background/95 backdrop-blur-xs">
       <div className="mx-auto flex min-h-[66px] max-w-page flex-wrap items-center gap-x-5 gap-y-2 px-4 py-2 md:px-6">
         <PazarLabBrand />
-        <nav aria-label="Görünümler" className="order-3 -mx-1 flex w-full gap-1.5 overflow-x-auto px-1 pb-1 sm:order-none sm:w-auto sm:pb-0">
+        <nav aria-label="Görünümler" className="order-3 -mx-1 flex w-full gap-1.5 overflow-x-auto px-1 pb-1 sm:order-0 sm:w-auto sm:pb-0">
           {DASHBOARD_VIEWS.map((view) => {
             const active = current === view.id;
             return (

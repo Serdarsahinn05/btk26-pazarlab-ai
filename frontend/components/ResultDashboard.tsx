@@ -219,7 +219,7 @@ function KpiRow({ data }: { data: SimulationResponse }) {
   return (
     <section aria-label="Temel göstergeler" className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-5">
       {kpis.map((kpi) => (
-        <div key={kpi.label} className={cn("card-paper grid content-start gap-2.5 border-t-[5px] !p-4 md:!p-5", kpi.stripe)}>
+        <div key={kpi.label} className={cn("card-paper grid content-start gap-2.5 border-t-[5px] p-4! md:p-5!", kpi.stripe)}>
           <span className="text-sm font-bold text-foreground-2">{kpi.label}</span>
           <span className="font-display text-[32px] font-extrabold leading-none tracking-tight">
             {kpi.display ?? kpi.value}
@@ -270,7 +270,7 @@ function PersonaGrid({ personas, resultId }: { personas: Persona[]; resultId?: s
 
 function ListCard({ title, items, note, empty, chips }: { title: string; items: string[]; note?: string; empty: string; chips?: boolean }) {
   return (
-    <section className="card-paper overflow-hidden !p-0">
+    <section className="card-paper overflow-hidden p-0!">
       <div
         className="bg-secondary px-5 pb-5 pt-4 md:px-6"
         style={{ clipPath: "polygon(0 0,100% 0,100% 82%,92% 92%,80% 84%,66% 94%,52% 85%,38% 95%,24% 85%,10% 94%,0 84%)" }}
@@ -363,7 +363,7 @@ function ImprovedDescription({ text, images }: { text: string; images?: string[]
     <section className="card-paper space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="squiggle text-[21px] font-bold">İyileştirilmiş açıklama</h2>
-        <button type="button" onClick={copy} className="btn-sticker no-print !py-1.5">
+        <button type="button" onClick={copy} className="btn-sticker no-print py-1.5!">
           {copied ? <Check className="h-4 w-4" aria-hidden /> : <Copy className="h-4 w-4" aria-hidden />}
           {copied ? "Kopyalandı" : "Kopyala"}
         </button>

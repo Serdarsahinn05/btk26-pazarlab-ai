@@ -142,7 +142,7 @@ function RevenueBars({ points, best, current }: { points: SweepPoint[]; best: nu
         {points.map((p) => (
           <div key={p.price} className="group relative flex h-full flex-1 flex-col justify-end" title={`${tl(p.price)}: ${tl(p.revenue)}`}>
             <div
-              className={cn("rounded-t-[4px]", p.price === best ? "bg-accent" : "bg-accent/45", Math.abs(p.price - current) < 0.01 && "outline outline-2 outline-offset-1 outline-foreground-2")}
+              className={cn("rounded-t-[4px]", p.price === best ? "bg-accent" : "bg-accent/45", Math.abs(p.price - current) < 0.01 && "outline-solid outline-2 outline-offset-1 outline-foreground-2")}
               style={{ height: `${(p.revenue / max) * 100}%` }}
             />
           </div>
@@ -222,20 +222,20 @@ function AbCompare({ request }: { request: SimulationRequest }) {
       <p className="text-sm text-muted-foreground">Varyant B için değiştirmek istediklerinizi düzenleyin.</p>
       <form onSubmit={run} className="space-y-3">
         <div className="grid gap-3 sm:grid-cols-[1fr_8rem_7rem]">
-          <label className="space-y-1 text-sm font-bold text-foreground-2">
+          <label className="space-y-1 text-sm leading-5 font-bold text-foreground-2">
             Ürün adı
             <input value={name} onChange={(e) => setName(e.target.value)} minLength={4} maxLength={120} required className="field" />
           </label>
-          <label className="space-y-1 text-sm font-bold text-foreground-2">
+          <label className="space-y-1 text-sm leading-5 font-bold text-foreground-2">
             Fiyat (TL)
             <input value={price} onChange={(e) => setPrice(e.target.value)} type="number" min="1" max="10000000" step="0.01" required className="field" />
           </label>
-          <label className="space-y-1 text-sm font-bold text-foreground-2">
+          <label className="space-y-1 text-sm leading-5 font-bold text-foreground-2">
             Kargo (gün)
             <input value={shippingDays} onChange={(e) => setShippingDays(e.target.value)} type="number" min="0" max="60" className="field" />
           </label>
         </div>
-        <label className="block space-y-1 text-sm font-bold text-foreground-2">
+        <label className="block space-y-1 text-sm leading-5 font-bold text-foreground-2">
           Açıklama
           <textarea value={description} onChange={(e) => setDescription(e.target.value)} minLength={40} maxLength={4000} rows={3} required className="field resize-y" />
         </label>

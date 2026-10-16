@@ -37,11 +37,11 @@ export default function RecentSimulations() {
         <h2 className="squiggle text-[19px] font-bold">Son simülasyonlar</h2>
         <div className="flex gap-2">
           {entries.length > 0 && (
-            <button type="button" onClick={exportHistory} className="btn-sticker !px-3 !py-1 text-xs">
+            <button type="button" onClick={exportHistory} className="btn-sticker px-3! py-1! text-xs">
               <Download className="h-3.5 w-3.5" aria-hidden /> Yedek indir
             </button>
           )}
-          <button type="button" onClick={() => fileRef.current?.click()} className="btn-sticker !px-3 !py-1 text-xs">
+          <button type="button" onClick={() => fileRef.current?.click()} className="btn-sticker px-3! py-1! text-xs">
             <Upload className="h-3.5 w-3.5" aria-hidden /> Yedekten yükle
           </button>
           <input

@@ -18,6 +18,7 @@
 | 5c | `feat/persona-chat-sse` | Persona sohbeti, canlı ilerleme | 1,5 gün | ✅ |
 | 5d | `ci/pipeline` | CI, bağımlılık taraması | 0,5 gün | ✅ |
 | 6 | `chore/next16-upgrade` | Next 14 → 16 (S14) | 0,5–1 gün | ✅ |
+| 7 | `chore/tailwind4` | Tailwind 3 → 4 (S15) | 0,5 gün | ✅ |
 
 Sıralamanın gerekçesi: Önce güvenlik geliyor, çünkü açık CORS ve SSRF ile kota ve iç ağ riski demo sırasında bile var. Sonra B1 geliyor; AI katmanı çalışmıyorsa tasarımın gösterecek içeriği olmaz. Tasarım bunların üzerine kurulur.
 
@@ -141,6 +142,21 @@ Kabul kriteri: DESIGN.md'deki tüm kalıplar uygulanmış; bileşenlerde ham ren
 - [x] CI'daki `continue-on-error` kaldırıldı; `npm audit --omit=dev` bloklayıcı.
 - Doğrulama: lint, `tsc`, `next build` (standalone) temiz. `npm audit --omit=dev`: **0 açık**. Puppeteer + gerçek Gemini ile production build'de 10/10: landing, tema değişimi, halka ofsetleri, fiyat eğrisi, tartışmanın adım adım açılması ve "Tümünü göster", reduced-motion'da tek seferde, "Son simülasyonlar" kartı, 375 px taşma yok, konsolda hata/hydration uyarısı yok.
 - Yapılmadı: Docker imajı build edilmedi (`node:20-slim` Next 16'nın istediği ≥ 20.9'u karşılıyor). Dev araçlarındaki açıklar: S15.
+
+## Faz 7: Tailwind 4 ✅
+- [x] `@tailwindcss/upgrade` ile geçiş: `tailwind.config.ts` silindi, token eşlemesi `globals.css` içinde `@theme`, PostCSS `@tailwindcss/postcss` (autoprefixer gereksiz), 14 bileşende sınıf yeniden adlandırmaları (`!px-3` → `px-3!`, `outline-none` → `outline-hidden`, `backdrop-blur-sm` → `-xs`, `w-[15rem]` → `w-60`…).
+- [x] Aracın bıraktığı/kaçırdığı sorunlar elle düzeltildi:
+  - Eklentiler taşınmamıştı: `@plugin "@tailwindcss/typography"`; `tailwindcss-animate` yerine `tw-animate-css` (Select açılış animasyonları).
+  - `--font-sans: var(--font-sans)` döngüsü ve `@theme` değişkenlerinin `:root`'ta çözülmesi yüzünden **tüm fontlar yedek fonta düşüyordu**. next/font değişkenleri `--font-nunito/-bricolage/-caveat` oldu, blok `@theme inline` (değişken, kullanıldığı elementte çözülüyor; v3 davranışı).
+  - Aracın eklediği `gray-200` kenarlık uyumluluk bloğu kaldırıldı (`* { border-border }` zaten var).
+  - `space-y` davranış değişikliği (margin-top → son çocuk hariç margin-bottom): dashboard'un gizli formu ve Radix Select'in gizli `<select>`'i fazladan 32/6 px boşluk açıyordu; `sr-only` legend'lı kartlarda başlık üstü 16 px kayboluyordu; inline etiketlerde aralık hiç uygulanmıyordu. `flex flex-col gap-*`, `mt-4` ve `leading-6` ile v3 görünümü korundu.
+  - `text-sm` birimsiz satır yüksekliği A/B formundaki textarea'yı 4 px uzatıyordu: etiketlere `leading-5`.
+  - `components.json` artık config dosyası göstermiyor. DESIGN.md §2, §3 ve §8 güncellendi (yeni kural: gizli/inline çocuk varsa `gap`).
+- Doğrulama: Ana daldaki Tailwind 3 build'i ayrı bir worktree'de 3001 portunda, yeni build 3000'de çalıştırıldı. 6 ekran × açık/koyu × 1280/375 = 24 tam sayfa görüntü; aynı build'in iki çekimi 0,00% fark (gürültü yok). Element bazında konum/stil karşılaştırması (`getBoundingClientRect` + computed style).
+  - Landing, benchmark, tartışma, personalar: **piksel piksel aynı** (0,00%).
+  - Form: tek fark açıklama textarea'sının altı 7 px daha sıkı (v3'te inline-block taban çizgisi boşluğuydu). Analiz: "Tablo olarak göster" 3 px aşağıda; fiyat grafiğinde "şu an" çubuğunun çerçevesi artık görünüyor (kod bunu istiyordu, v3'te çizilmiyordu).
+  - Select menüsü iki sürümde aynı konum/boyutta, tam opak açılıyor. `animate-in`, `fade-in-0`, `zoom-in-95`, `prose-invert` CSS'te var.
+  - lint, `tsc`, build temiz; Puppeteer uçtan uca 10/10; `npm audit --omit=dev` 0, tam audit 11 → 7 (S15).
 
 ## Riskler
 - **Gemini model adları sık değişiyor.** B1'de model env'den okunacak; varsayılan seçilirken o günkü güncel model listesi kontrol edilecek.

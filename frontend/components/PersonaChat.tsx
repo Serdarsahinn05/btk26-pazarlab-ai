@@ -95,7 +95,7 @@ export default function PersonaChat({ simulationId, personas }: { simulationId?:
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 id="persona-chat-title" className="squiggle text-[19px] font-bold">Personaya sor</h3>
         <Select value={persona} onValueChange={switchPersona}>
-          <SelectTrigger className="field h-10 w-[15rem]" aria-label="Persona seçin">
+          <SelectTrigger className="field h-10 w-60" aria-label="Persona seçin">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
