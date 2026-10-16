@@ -5,8 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PurchaseMotivation, SimulationRequest } from "@/types";
-import { readProductLink } from "@/lib/api";
+import { Category, PurchaseMotivation, SimulationRequest } from "@/types";
+import { apiErrorMessage, readProductLink } from "@/lib/api";
 import { Image as ImageIcon, Link2, Loader2, Plus, Shirt, Smartphone, Sparkles, Trash2, Upload } from "lucide-react";
 import { motion, type Variants } from "framer-motion";
 
@@ -343,7 +343,7 @@ function getString(formData: FormData, key: string): string | undefined {
 
 export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
-  const [category, setCategory] = useState<string>("tisort");
+  const [category, setCategory] = useState<Category>("tisort");
   const [motivation, setMotivation] = useState<PurchaseMotivation>("stil_begeni");
   const [linkStatus, setLinkStatus] = useState<string>("");
   const [isReadingLink, setIsReadingLink] = useState(false);
@@ -352,11 +352,11 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const activeCategory = useMemo(() => categoryConfig[category] || categoryConfig.tisort, [category]);
 
-  const handleCategoryChange = (value: string) => {
-    const nextCategory = value || "tisort";
+  const handleCategoryChange = (value: string | null) => {
+    // Values can come from the link reader, so only accept categories the API knows.
+    const nextCategory = (value && value in categoryConfig ? value : "tisort") as Category;
     setCategory(nextCategory);
-    const nextConfig = categoryConfig[nextCategory] || categoryConfig.tisort;
-    setMotivation(nextConfig.defaultMotivation);
+    setMotivation(categoryConfig[nextCategory].defaultMotivation);
   };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -438,13 +438,16 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
 
   const setFormValue = (name: string, value?: string | number | null) => {
     if (value === undefined || value === null || value === "") return;
-    
+    // Mirror backend limits (SimulationRequest) so scraped text never causes a 422.
+    const limit = name === "description" ? 4000 : name === "productName" ? 120 : 200;
+    const text = String(value).slice(0, limit);
+
     const trySet = (attempt = 0) => {
       if (!formRef.current || attempt > 20) return; // 2 saniye boyunca dene
-      
+
       const field = formRef.current.elements.namedItem(name) as HTMLInputElement | HTMLTextAreaElement | null;
       if (field) {
-        field.value = String(value);
+        field.value = text;
         if (name === "description") adjustHeight(field);
       } else {
         // Eleman henüz render olmamis olabilir, biraz bekle tekrar dene
@@ -479,9 +482,9 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
         setFormValue("description", result.description);
         setFormValue("brand", result.brand);
         
-        // Fiyat null degilse virgullu formatta set et
+        // type="number" alanlar yalnizca noktali ondalik kabul eder; virgullu deger alani bos birakir.
         if (result.price) {
-          setFormValue("price", result.price.toString().replace(".", ","));
+          setFormValue("price", String(result.price));
         }
         
         // Dinamik ozellikleri doldur
@@ -504,9 +507,7 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
       }
       setLinkStatus(result.warnings[0] || "Linkten tum bilgiler, kategori ve teknik detaylar okundu.");
     } catch (err: unknown) {
-      const apiError = err as { response?: { data?: { detail?: string } } };
-      const errorMsg = apiError.response?.data?.detail || "Link okunamadı. Site erişimi engelliyor olabilir.";
-      setLinkStatus(errorMsg);
+      setLinkStatus(apiErrorMessage(err));
     } finally {
       setIsReadingLink(false);
     }
@@ -694,18 +695,18 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
             {/* 3. ADIM: TEMEL BILGILER */}
             <motion.div variants={itemVariants} className="space-y-6">
               <div className="flex items-center gap-3 border-b border-border/40 pb-3 mb-6">
-                <div className="w-1.5 h-6 bg-primary rounded-full shadow-[0_0_10px_rgba(var(--primary),0.5)]" />
+                <div className="w-1.5 h-6 bg-primary rounded-full shadow-[0_0_10px_hsl(var(--primary)/0.5)]" />
                 <h3 className="text-xl font-bold tracking-tight">Temel Bilgiler</h3>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div className="md:col-span-3 space-y-2 group">
                   <Label htmlFor="productName" className="font-semibold text-foreground/90">Urun Adi <span className="text-red-500">*</span></Label>
-                  <Input id="productName" name="productName" placeholder={activeCategory.exampleName} minLength={4} required className="h-12 focus:ring-primary/50 focus:border-primary transition-all" />
+                  <Input id="productName" name="productName" placeholder={activeCategory.exampleName} minLength={4} maxLength={120} required className="h-12 focus:ring-primary/50 focus:border-primary transition-all" />
                 </div>
                 <div className="space-y-2 group">
                   <Label htmlFor="price" className="font-semibold text-foreground/90">Fiyat (TL) <span className="text-red-500">*</span></Label>
-                  <Input id="price" name="price" type="number" min="1" placeholder="1200" required className="h-12 focus:ring-primary/50 focus:border-primary transition-all" />
+                  <Input id="price" name="price" type="number" min="1" max="10000000" step="0.01" placeholder="1200" required className="h-12 focus:ring-primary/50 focus:border-primary transition-all" />
                 </div>
               </div>
 
@@ -715,6 +716,7 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
                   id="description"
                   name="description"
                   minLength={40}
+                  maxLength={4000}
                   className="flex min-h-[140px] w-full rounded-xl border border-input bg-background/50 px-4 py-3 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50 transition-all resize-none shadow-inner"
                   placeholder={activeCategory.descriptionPlaceholder}
                   required
@@ -726,7 +728,7 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
             {/* 4. ADIM: HEDEF & OPERASYON */}
             <motion.div variants={itemVariants} className="space-y-6 pt-4">
               <div className="flex items-center gap-3 border-b border-border/40 pb-3 mb-6">
-                <div className="w-1.5 h-6 bg-primary rounded-full shadow-[0_0_10px_rgba(var(--primary),0.5)]" />
+                <div className="w-1.5 h-6 bg-primary rounded-full shadow-[0_0_10px_hsl(var(--primary)/0.5)]" />
                 <h3 className="text-xl font-bold tracking-tight">Hedef & Operasyon</h3>
               </div>
               
@@ -791,7 +793,7 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
             {/* 5. ADIM: DINAMIK OZELLIKLER */}
             <motion.div variants={itemVariants} className="space-y-6 pt-4">
               <div className="flex items-center gap-3 border-b border-border/40 pb-3 mb-6">
-                <div className="w-1.5 h-6 bg-primary rounded-full shadow-[0_0_10px_rgba(var(--primary),0.5)]" />
+                <div className="w-1.5 h-6 bg-primary rounded-full shadow-[0_0_10px_hsl(var(--primary)/0.5)]" />
                 <h3 className="text-xl font-bold tracking-tight">{activeCategory.shortLabel} Teknik Detaylari</h3>
               </div>
 

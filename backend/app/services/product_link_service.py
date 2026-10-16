@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 
 import requests
 
-from app.services.prompt_safety import UNTRUSTED_DATA_RULE
+from app.services import llm_client
 from app.services.safe_http import UnsafeURLError, get_following_redirects, validate_url
 
 try:
@@ -39,9 +39,6 @@ class ScraperConfig:
     ai_html_max_bytes: int = 300_000
     request_timeout: float = 10.0
     total_fetch_budget: float = 15.0
-    gemini_timeout: float = 20.0
-    gemini_max_output_tokens: int = 2048
-    max_ai_models: int = 2
     user_agent_bot: str = (
         "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
     )
@@ -49,8 +46,6 @@ class ScraperConfig:
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
         "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
     )
-    default_gemini_model: str = field(default_factory=lambda: os.getenv("GEMINI_MODEL", "gemini-1.5-flash"))
-    gemini_api_key: Optional[str] = field(default_factory=lambda: os.getenv("GEMINI_API_KEY"))
     domain_currency_hints: Dict[str, str] = field(default_factory=lambda: {
         ".tr": "TRY", ".com.tr": "TRY", ".de": "EUR", ".fr": "EUR",
         ".co.uk": "GBP", ".uk": "GBP", ".com": "USD", ".jp": "JPY",
@@ -111,10 +106,6 @@ class URLValidationError(ScrapingError):
 
 
 class BotProtectionError(ScrapingError):
-    pass
-
-
-class AIQuotaError(ScrapingError):
     pass
 
 
@@ -923,117 +914,14 @@ class GeminiAIExtractor:
 
     def __init__(self, config: ScraperConfig):
         self.config = config
-        self._available_models: Optional[List[str]] = None
 
     def extract(self, html: str) -> Dict[str, Any]:
-        if not self.config.gemini_api_key:
+        if not llm_client.is_configured():
             return {}
-
         cleaned_html = HTMLCleaner.clean(html, self.config.ai_html_max_bytes)
-        models = self._get_models()[: self.config.max_ai_models]
-
-        last_error: Optional[Exception] = None
-        quota_errors_count = 0
-        
-        for model_name in models:
-            try:
-                return self._call_model(model_name, cleaned_html)
-            except urllib.error.HTTPError as e:
-                if e.code == 429:
-                    quota_errors_count += 1
-                    last_error = AIQuotaError(f"Quota exceeded for {model_name}")
-                    logger.warning(f"Model {model_name} quota exceeded (429). [Hata Sayısı: {quota_errors_count}]")
-                    
-                    if quota_errors_count == 3:
-                        logger.info("Birden fazla modelde kota hatası alındı, denemeye devam ediliyor...")
-                    continue
-                raise AIQuotaError(f"AI Service Error ({e.code}): {e.reason}") from e
-            except Exception as e:
-                logger.warning(f"Model {model_name} failed: {e}. Trying next...")
-                last_error = e
-                continue
-
-        if last_error:
-            raise last_error
-        return {}
-
-    def _get_models(self) -> List[str]:
-        if self._available_models is not None:
-            return self._available_models
-
-        default = self.config.default_gemini_model
-        try:
-            req = urllib.request.Request(
-                "https://generativelanguage.googleapis.com/v1beta/models",
-                headers={"x-goog-api-key": self.config.gemini_api_key or ""},
-            )
-            with urllib.request.urlopen(req, timeout=5) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-
-            models = []
-            for m in data.get("models", []):
-                name = m.get("name", "").split("/")[-1]
-                if "generateContent" in m.get("supportedGenerationMethods", []) and "gemini" in name:
-                    # Filter out experimental/specialized models unless they are the default
-                    is_experimental = any(x in name for x in ["preview", "tts", "image", "robotics", "computer-use"])
-                    if is_experimental and name != default:
-                        continue
-                    models.append(name)
-
-            def priority(m: str) -> int:
-                if m == default: return 0
-                if "flash-lite" in m: return 1  # Favor lite models as they often have more quota
-                if m == "gemini-1.5-flash": return 2
-                if m == "gemini-1.5-pro": return 3
-                if "flash" in m: return 4
-                if "pro" in m: return 5
-                return 6
-
-            self._available_models = sorted(models, key=priority)
-            logger.info(f"Discovered Gemini models: {self._available_models}")
-            return self._available_models
-        except Exception as e:
-            logger.warning(f"Failed to list models: {e}. Using defaults.")
-            self._available_models = [default, "gemini-1.5-flash", "gemini-1.5-pro"]
-            return self._available_models
-
-    def _call_model(self, model_name: str, cleaned_html: str) -> Dict[str, Any]:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent"
-
-        body = {
-            "systemInstruction": {"parts": [{"text": self.SYSTEM_PROMPT + UNTRUSTED_DATA_RULE}]},
-            "contents": [{
-                "role": "user",
-                "parts": [{"text": f"<data>\n{cleaned_html}\n</data>"}]
-            }],
-            "generationConfig": {
-                "responseMimeType": "application/json",
-                "temperature": 0.1,
-                "maxOutputTokens": self.config.gemini_max_output_tokens,
-            },
-        }
-
-        req = urllib.request.Request(
-            url,
-            data=json.dumps(body).encode("utf-8"),
-            headers={"Content-Type": "application/json", "x-goog-api-key": self.config.gemini_api_key or ""},
-            method="POST",
-        )
-
-        with urllib.request.urlopen(req, timeout=self.config.gemini_timeout) as resp:
-            raw = resp.read().decode("utf-8")
-
-        data = json.loads(raw)
-        if "candidates" not in data or not data["candidates"]:
-            raise ValueError(f"Model {model_name} returned no candidates.")
-
-        content = data["candidates"][0]["content"]["parts"][0]["text"]
-        result = json.loads(content)
-
+        result = llm_client.generate_json(self.SYSTEM_PROMPT, cleaned_html, temperature=0.1)
         if not isinstance(result, dict):
             raise ValueError("AI response is not a JSON object.")
-            
-        logger.info(f"Successfully extracted data using model: {model_name}")
         return self._normalize_ai_response(result)
 
     @staticmethod

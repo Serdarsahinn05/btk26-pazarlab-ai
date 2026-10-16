@@ -157,7 +157,7 @@ npm run dev
 |---|---|---|
 | `GEMINI_API_KEY` | Evet | Google Gemini API anahtari. Yoksa AI yorumlari sablon metne duser. |
 | `SERPER_API_KEY` | Hayir | Rakip/pazar aramasi (google.serper.dev). Yoksa benchmark adimi atlanir. |
-| `GEMINI_MODEL` | Hayir | Kullanilacak model adi. Bos birakilirsa eski bir varsayilan kullaniliyor; guncel bir model girilmesi onerilir (bkz. [B1](docs/IMPROVEMENTS.md)). |
+| `GEMINI_MODEL` | Hayir | Sabit model (orn. `gemini-2.5-flash`). Bos ise anahtarin erisebildigi en uygun model otomatik secilir. Yogun saatlerde en yeni modeller 503 donebildigi icin kararli bir model sabitlemek onerilir. |
 
 `frontend/.env.local`
 

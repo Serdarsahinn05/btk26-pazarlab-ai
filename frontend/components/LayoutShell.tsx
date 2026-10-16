@@ -37,17 +37,25 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
         )}
 
         {/* Sidebar Wrapper */}
-        <div className={cn(
-          "fixed inset-y-0 left-0 z-[70] lg:relative transition-all duration-300 ease-in-out",
-          isSidebarCollapsed ? "w-20" : "w-64",
-          isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-        )}>
+        <div
+          className={cn(
+            "fixed inset-y-0 left-0 z-[70] lg:relative transition-all duration-300 ease-in-out",
+            isSidebarCollapsed ? "w-20" : "w-64",
+            isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+          )}
+          // Close the mobile drawer once a navigation link inside it is chosen.
+          onClick={(e) => {
+            if ((e.target as HTMLElement).closest("a")) setIsMobileMenuOpen(false);
+          }}
+        >
           <Suspense fallback={<div className="w-full h-full bg-card/30" />}>
             <Sidebar isCollapsed={isSidebarCollapsed} />
           </Suspense>
           
           {/* Collapse Toggle Button (Desktop) */}
           <button
+            type="button"
+            aria-label={isSidebarCollapsed ? "Menüyü genişlet" : "Menüyü daralt"}
             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
             className="hidden lg:flex absolute -right-3 top-10 w-6 h-6 bg-primary rounded-full items-center justify-center text-white shadow-lg shadow-primary/20 hover:scale-110 transition-transform z-[80]"
           >
@@ -65,7 +73,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
                 </div>
                 <span className="text-lg font-black tracking-tighter text-gradient">PAZARLAB</span>
              </div>
-             <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(true)}>
+             <Button variant="ghost" size="icon" aria-label="Menüyü aç" onClick={() => setIsMobileMenuOpen(true)}>
                 <Menu className="w-6 h-6" />
              </Button>
           </header>

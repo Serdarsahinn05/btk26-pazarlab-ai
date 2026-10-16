@@ -47,7 +47,7 @@ export default function OverallScoreCard({ data }: OverallScoreCardProps) {
   };
 
   const getGlowColor = (score: number) => {
-    if (score >= 75) return "rgba(var(--primary), 0.5)";
+    if (score >= 75) return "hsl(var(--primary) / 0.5)";
     if (score >= 50) return "rgba(245, 158, 11, 0.5)";
     return "rgba(239, 68, 68, 0.5)";
   };
