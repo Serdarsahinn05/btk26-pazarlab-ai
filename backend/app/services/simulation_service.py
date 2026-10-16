@@ -4,12 +4,13 @@ import logging
 from collections import defaultdict
 from functools import lru_cache
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
+from app.models.input_analysis import InputAnalysisResponse
 from app.models.product import PurchaseMotivation, SimulationRequest
 from app.models.simulation import DecisionDistribution, NormalizedProduct, PersonaResult, SimulationResponse
 from app.services.ai_insight_service import generate_insights
-from app.services.input_analysis_service import analyze_input
+from app.services.input_analysis_service import analyze_input, deterministic_analysis
 from app.services.normalization_service import (
     get_category_rule,
     get_motivation_modifier,
@@ -29,13 +30,77 @@ def load_persona_data() -> dict[str, Any]:
         return json.load(file)
 
 
+def _seed_payload(request: SimulationRequest) -> dict[str, Any]:
+    # Price is left out on purpose: the same synthetic crowd sees every price, so
+    # price sweeps and A/B variants differ only by the change being tested.
+    payload = request.model_dump(mode="json", by_alias=True, exclude={"price", "input_analysis", "images"})
+    return payload
+
+
+def simulate_core(request: SimulationRequest, input_analysis: Optional[InputAnalysisResponse] = None) -> dict[str, Any]:
+    """Run the 500-bot simulation without any LLM call (deterministic, ~ms).
+
+    Used by run_simulation and by the what-if endpoints (price sweep, A/B compare).
+    Without an explicit analysis it falls back to the deterministic input checks.
+    """
+    input_analysis = input_analysis or request.input_analysis or deterministic_analysis(request)
+    return _simulate(request, input_analysis)
+
+
 def run_simulation(request: SimulationRequest) -> SimulationResponse:
     logger.info("Simülasyon başlatıldı: %r", request.product_name[:80])
     input_analysis = request.input_analysis or analyze_input(request)
+    core = _simulate(request, input_analysis)
+    normalized = core["normalized"]
+    overall_score = core["overall_score"]
+    market_breadth = core["market_breadth"]
+    intent_conversion = core["intent_conversion"]
+    problem_solution = core["problem_solution"]
+    weakness_signals = core["weakness_signals"]
+    all_personas = core["all_personas"]
+    top_personas = all_personas[:3]
+
+    ai_insights = generate_insights(
+        request=request,
+        normalized_product=normalized,
+        overall_score=overall_score,
+        market_breadth_score=market_breadth,
+        intent_conversion_score=intent_conversion,
+        problem_solution_fit=problem_solution,
+        top_personas=top_personas,
+        all_personas=all_personas,
+        weakness_signals=weakness_signals,
+    )
+
+    feedback_map = {f.name: f.feedback for f in ai_insights.persona_feedback}
+    for p in all_personas:
+        if p.name in feedback_map:
+            p.ai_comment = feedback_map[p.name]
+
+    return SimulationResponse(
+        overallScore=overall_score,
+        marketBreadthScore=market_breadth,
+        intentConversionScore=intent_conversion,
+        problemSolutionFit=problem_solution,
+        simulatedConsumers=core["simulated_consumers"],
+        estimatedBuyers=core["estimated_buyers"],
+        decisionDistribution=DecisionDistribution(**core["decision_counts"]),
+        topPersonas=top_personas,
+        allPersonas=all_personas,
+        weaknesses=core["weaknesses"],
+        weaknessSignals=weakness_signals,
+        normalizedProduct=normalized,
+        images=request.images,
+        inputAnalysis=input_analysis,
+        aiInsights=ai_insights,
+    )
+
+
+def _simulate(request: SimulationRequest, input_analysis: InputAnalysisResponse) -> dict[str, Any]:
     normalized = normalize_product(request, input_analysis.signals)
     persona_data = load_persona_data()
     config = persona_data["simulationConfig"]
-    seed = stable_seed(request.model_dump(mode="json", by_alias=True), config["seedSalt"])
+    seed = stable_seed(_seed_payload(request), config["seedSalt"])
     rng = random.Random(seed)
     market_breadth = _market_breadth_score(request)
     market_relevance_factor = _market_relevance_factor(market_breadth)
@@ -82,44 +147,20 @@ def run_simulation(request: SimulationRequest) -> SimulationResponse:
     weakness_signals = _weakness_signals(request, normalized, input_analysis)
     weaknesses = [_weakness_message(signal) for signal in weakness_signals]
     all_personas = _ranked_personas(persona_stats, normalized, weakness_signals, persona_data)
-    top_personas = all_personas[:3]
 
-    ai_insights = generate_insights(
-        request=request,
-        normalized_product=normalized,
-        overall_score=overall_score,
-        market_breadth_score=market_breadth,
-        intent_conversion_score=intent_conversion,
-        problem_solution_fit=problem_solution,
-        top_personas=top_personas,
-        all_personas=all_personas,
-        weakness_signals=weakness_signals,
-    )
-    
-    # Map AI persona comments back to persona results
-    logger.info("AI persona yorumları sonuçlara ekleniyor...")
-    feedback_map = {f.name: f.feedback for f in ai_insights.persona_feedback}
-    for p in all_personas:
-        if p.name in feedback_map:
-            p.ai_comment = feedback_map[p.name]
-
-    return SimulationResponse(
-        overallScore=overall_score,
-        marketBreadthScore=market_breadth,
-        intentConversionScore=intent_conversion,
-        problemSolutionFit=problem_solution,
-        simulatedConsumers=simulated_consumers,
-        estimatedBuyers=estimated_buyers,
-        decisionDistribution=DecisionDistribution(**decision_counts),
-        topPersonas=top_personas,
-        allPersonas=all_personas,
-        weaknesses=weaknesses,
-        weaknessSignals=weakness_signals,
-        normalizedProduct=normalized,
-        images=request.images,
-        inputAnalysis=input_analysis,
-        aiInsights=ai_insights,
-    )
+    return {
+        "normalized": normalized,
+        "overall_score": overall_score,
+        "market_breadth": market_breadth,
+        "intent_conversion": intent_conversion,
+        "problem_solution": problem_solution,
+        "weakness_signals": weakness_signals,
+        "weaknesses": weaknesses,
+        "all_personas": all_personas,
+        "simulated_consumers": simulated_consumers,
+        "estimated_buyers": estimated_buyers,
+        "decision_counts": decision_counts,
+    }
 
 
 def _generate_bot(persona_type: dict[str, Any], rng: random.Random) -> dict[str, float]:

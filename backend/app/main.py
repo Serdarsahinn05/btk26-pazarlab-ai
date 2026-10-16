@@ -13,6 +13,7 @@ from app.api.analyze import router as analyze_router
 from app.api.health import router as health_router
 from app.api.product_link import router as product_link_router
 from app.api.simulate import router as simulate_router
+from app.api.whatif import router as whatif_router
 
 logging.basicConfig(
     level=os.getenv("LOG_LEVEL", "INFO"),
@@ -50,6 +51,7 @@ def create_app() -> FastAPI:
     app.include_router(analyze_router)
     app.include_router(product_link_router)
     app.include_router(simulate_router)
+    app.include_router(whatif_router)
     return app
 
 

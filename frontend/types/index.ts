@@ -208,6 +208,42 @@ export interface StoredSimulation {
   productName: string;
   category: string;
   response: SimulationResponse;
+  request?: SimulationRequest | null; // images stripped; null for rows saved before v2
+}
+
+/** POST /api/price-sweep */
+export interface SweepPoint {
+  factor: number;
+  price: number;
+  estimatedBuyers: number;
+  buyRate: number;
+  overallScore: number;
+  revenue: number;
+}
+
+export interface PriceSweepResponse {
+  points: SweepPoint[];
+  bestRevenue: SweepPoint;
+  bestBuyers: SweepPoint;
+}
+
+/** POST /api/compare */
+export interface CoreMetrics {
+  price: number;
+  overallScore: number;
+  estimatedBuyers: number;
+  simulatedConsumers: number;
+  decisionDistribution: DecisionDistribution;
+  marketBreadthScore: number;
+  intentConversionScore: number;
+  problemSolutionFit: number;
+  topPersona?: string | null;
+  weaknesses: string[];
+}
+
+export interface CompareResponse {
+  base: CoreMetrics;
+  variant: CoreMetrics;
 }
 
 export interface HealthStatus {

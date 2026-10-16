@@ -1,4 +1,4 @@
-import { SimulationResponse } from "@/types";
+import { SimulationRequest, SimulationResponse } from "@/types";
 
 /**
  * Per-browser simulation history (DESIGN.md / IMPROVEMENTS 5a).
@@ -12,6 +12,13 @@ export interface HistoryEntry {
   category: string;
   overallScore: number;
   response: SimulationResponse;
+  /** Original input (images stripped) for the what-if tools; missing on old entries. */
+  request?: SimulationRequest | null;
+}
+
+/** Drop uploaded images before caching a request: they can be megabytes each. */
+export function storableRequest(request: SimulationRequest): SimulationRequest {
+  return { ...request, images: [] };
 }
 
 const KEY = "pazarlab-history-v1";

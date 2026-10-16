@@ -79,7 +79,7 @@ IMPORTANT_FIELDS = {
 
 
 def analyze_input(request: SimulationRequest) -> InputAnalysisResponse:
-    deterministic = _fallback_analysis(request)
+    deterministic = deterministic_analysis(request)
     try:
         model_json = llm_client.generate_json(INPUT_ANALYSIS_PROMPT, _payload(request), temperature=0.2)
         return _merge_ai_with_deterministic_guard(_parse_ai_response(model_json), deterministic)
@@ -172,7 +172,8 @@ def _merge_ai_with_deterministic_guard(
     )
 
 
-def _fallback_analysis(request: SimulationRequest) -> InputAnalysisResponse:
+def deterministic_analysis(request: SimulationRequest) -> InputAnalysisResponse:
+    """Rule-based input checks only (no LLM); also the fallback when Gemini is unavailable."""
     features = request.features
     raw_features = features.model_dump(exclude_none=True)
     text = " ".join(

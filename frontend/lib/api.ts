@@ -1,6 +1,8 @@
 import axios from "axios";
 import {
+  CompareResponse,
   HealthStatus,
+  PriceSweepResponse,
   InputAnalysisResponse,
   ProductLinkReadResponse,
   SimulationRequest,
@@ -53,6 +55,16 @@ export const analyzeProductInput = async (data: SimulationRequest): Promise<Inpu
 
 export const readProductLink = async (url: string): Promise<ProductLinkReadResponse> => {
   const response = await client.post("/api/read-product-link", { url }, { timeout: 60_000 });
+  return response.data;
+};
+
+export const priceSweep = async (data: SimulationRequest): Promise<PriceSweepResponse> => {
+  const response = await client.post("/api/price-sweep", data, { timeout: 20_000 });
+  return response.data;
+};
+
+export const compareVariants = async (base: SimulationRequest, variant: SimulationRequest): Promise<CompareResponse> => {
+  const response = await client.post("/api/compare", { base, variant }, { timeout: 20_000 });
   return response.data;
 };
 

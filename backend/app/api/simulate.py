@@ -28,7 +28,7 @@ def simulate_product(request: SimulationRequest) -> SimulationResponse:
     response = run_agentic_simulation(request)
     if _history_enabled():
         try:
-            response.simulation_id = history_store.save(request.product_name, request.category, response)
+            response.simulation_id = history_store.save(request, response)
         except Exception:
             # A full disk or read-only volume must not cost the user their result.
             logger.exception("Could not save simulation history")
