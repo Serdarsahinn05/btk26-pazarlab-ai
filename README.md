@@ -183,6 +183,7 @@ npm run dev
 | [Yol Haritasi](docs/ROADMAP.md) | Fazlar, kabul kriterleri, durum |
 | [Guvenlik Denetimi](docs/SECURITY_AUDIT.md) | Bulgular ve duzeltmeler |
 | [Dagitim](docs/deployment.md) | nginx arkasinda SSE, gercek istemci IP'si, uretim ayarlari |
+| [Claude connector](docs/mcp-connector.md) | PazarLab'i MCP ile kendi Claude'una ekleme |
 | [Iyilestirmeler](docs/IMPROVEMENTS.md) | Hatalar, teknik borc ve yeni ozellikler |
 
 ---

@@ -7,3 +7,4 @@ requests==2.34.2
 cloudscraper==1.2.71
 langgraph==1.2.15
 langchain-core==1.6.11
+mcp==2.3.0

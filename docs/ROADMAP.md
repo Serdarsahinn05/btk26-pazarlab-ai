@@ -28,7 +28,7 @@
 | 9 | `feat/llm-providers` | B.12: Gemini + Claude + GPT, yedekli zincir | 1 gün | ⏸ API anahtarı yok, bekliyor |
 | 10a | `feat/ai-budget` | AI önbelleği, IP başına günlük AI kotası | 0,5 gün | ✅ |
 | 10b | `feat/offline-persona-chat` | AI'sız (kural tabanlı) persona sohbeti | 0,5 gün | ✅ |
-| 11 | `feat/mcp-connector` | PazarLab MCP sunucusu (Claude connector) | 1–1,5 gün | ⬜ |
+| 11 | `feat/mcp-connector` | PazarLab MCP sunucusu (Claude connector) | 1–1,5 gün | ✅ (Claude.ai denemesi bekliyor) |
 | 11b | `spike/claude-artifact` | Claude-powered artifact araştırması | 0,5 gün | ⬜ |
 | 12 | `feat/engine-v2-town` | Motor v2 + AI kasabası + Big Five | 3–4 gün | ⬜ |
 | 13 | `feat/product-entry-v2` | Ürün ekleme ekranı: link öncelikli akış + yeni yerleşim | 2 gün | ⬜ |
@@ -211,8 +211,8 @@ Kabul kriteri: DESIGN.md'deki tüm kalıplar uygulanmış; bileşenlerde ham ren
 
 ## Şu an neredeyiz
 
-- **Son tamamlanan:** Faz 10b (AI'sız persona sohbeti). Tüm dallar `main`'e merge edildi ve `origin`'e push'landı.
-- **Sıradaki:** Faz 11 (MCP connector) → 11b → 12 … (sıra aşağıdaki tabloda). Her faz kendi dalında, bitince bu bölüm güncellenir.
+- **Son tamamlanan:** Faz 11 (MCP connector; kod ve testler bitti, Claude.ai'de gerçek deneme kullanıcıyla yapılacak). Tüm dallar `main`'e merge edildi ve `origin`'e push'landı.
+- **Sıradaki:** Faz 11 için Claude.ai denemesi (tünel + `MCP_ALLOWED_HOSTS`, bkz. docs/mcp-connector.md) → 11b → 12 … (sıra aşağıdaki tabloda). Her faz kendi dalında, bitince bu bölüm güncellenir.
 - **Bekleyen kararlar:** kategori genişletme (hangi aileler) Faz 13'e gelince konuşulacak; Faz 9 için API anahtarı yok.
 - **Ortam notları:** `backend/venv` bozuk (eski bir kullanıcı yolunu gösteriyor). Testler geçici bir venv ile koşuyor. Gemini sık sık 429 veriyor; arayüz testlerinde AI kapalı ya da sahte SSE kullanılıyor. `gh`, nginx ve Docker daemon yok.
 
@@ -242,11 +242,15 @@ Kabul kriteri: DESIGN.md'deki tüm kalıplar uygulanmış; bileşenlerde ham ren
 - Yazım notları: persona `reason` metinleri üçüncü şahıs ("bu persona için…") olduğundan birinci şahıs cevapta kullanılmadı; yerine `values` alanı. "En büyük korku" yalnızca güven ihtiyacı yüksek personalarda (`brandTrustNeed` orta değeri ≥ 0,7) gösteriliyor, yoksa konuyla ilgisiz düşüyordu.
 - Doğrulama: `tests/test_offline_chat.py` (17 test, toplam 130): AI yokken ve kota dolunca kural tabanlı cevap + neden, yarım AI cevabına şablon eklenmemesi, 9 konu tespiti vakası, fiyat karşılaştırması (pahalı/uygun/ucuz), ürün verisinin cevaba yansıması, korkunun yalnızca güvene duyarlı personada çıkması. Eski "AI yoksa hata olayı" testi kaldırıldı (davranış bilerek değişti). Puppeteer (gerçek backend, AI kapalı, sahte yanıt yok) 5/5: cevap geliyor, etiketli, hata notu yok, yenilemede kalıyor; genel test 10/10. Örnek cevaplar elle okundu.
 
-### Faz 11: MCP connector
-- [ ] Backend'e uzak MCP sunucusu (Streamable HTTP): `simulate`, `price_sweep`, `compare_ab`, `read_product_link`, `list_personas`, `get_simulation`. Araçlar deterministik çekirdeği kullanır; sunucu tarafında LLM çağrılmaz.
-- [ ] Kötüye kullanım koruması: rate limit, gövde sınırı, SSRF korumasının link aracında da geçerli olması; gerekirse OAuth / erişim anahtarı.
-- [ ] Dokümantasyon: Claude.ai'de "+" → "Add custom connector" ile kurulum; örnek konuşmalar.
-- Kabul: MCP protokol testleri; kullanıcının Claude aboneliğiyle uçtan uca elle deneme (sunucunun internetten erişilebilir olması gerekir: geçici tünel veya dağıtım).
+### Faz 11: MCP connector ✅ (Claude.ai denemesi bekliyor)
+- [x] `app/mcp_server.py`, `mcp==2.3.0` (2 Ekim 2026; 2.x'te `FastMCP` → `MCPServer` olmuş, API kaynak koddan doğrulandı). 7 araç: `list_categories`, `list_personas`, `read_product_link`, `simulate_product`, `price_sweep`, `compare_variants`, `get_simulation`. Türkçe başlık/açıklamalar, okuma/yazma ipuçları (`ToolAnnotations`), Claude için kullanım talimatı.
+- [x] **Sunucu tarafında AI yok:** `llm_client.without_ai()` (ContextVar). İçinde bütün AI çağrıları "anahtar yok" gibi davranıyor ve kural tabanlı yollar çalışıyor; kontrol önbellekten önce yapılıyor, yani eski bir AI cevabı da dönmüyor. Gemini anahtarı tanımlıyken gerçek HTTP denemesinde sıfır Gemini çağrısı.
+- [x] Ürün girdisi için MCP'ye özel `ProductInput` şeması (görsel ve iç analiz alanları yok, alanlar açıklamalı). `simulate_product` sonucu kaydediyor ve `PUBLIC_SITE_URL` varsa sitede açılacak linki dönüyor; persona adları Türkçe.
+- [x] FastAPI'ye `/` altında en son mount (API rotaları önce eşleşiyor; MCP yalnızca `/mcp`'ye cevap veriyor). Starlette mount edilen uygulamanın lifespan'ini çalıştırmadığı için oturum yöneticisi `main.py`'deki lifespan'de başlatılıyor. Durumsuz, JSON yanıtlı; hem 2026-07-28 protokolü hem eski `initialize` akışı çalışıyor.
+- [x] Koruma: `MCP_ALLOWED_HOSTS` (Host allowlist, aksi 421), isteğe bağlı `MCP_ACCESS_KEY` (`?key=`, sabit zamanlı karşılaştırma, aksi 401), tek ortak `MCP_RATE_LIMIT_PER_MIN` (Claude'un istekleri Anthropic IP'lerinden geldiği için IP başına limit anlamsız). Beklenen hatalar `ToolError` ile modele okunur mesaj olarak dönüyor; beklenmeyenlerin ayrıntısı SDK tarafından gizleniyor. `read_product_link` SSRF korumasını kullanıyor.
+- [x] Dokümantasyon: [mcp-connector.md](mcp-connector.md) (araçlar, ayarlar, tünel ile yerel deneme, Claude'a ekleme, örnek istekler, güvenlik). `deployment.md`'deki nginx örneğine `location = /mcp` eklendi; önceki örnek `/mcp`'yi frontend'e gönderirdi.
+- Doğrulama: `tests/test_mcp.py` (9 test, toplam 139): araç listesi ve şema, kategori/persona araçları, sunucu AI'ı çağrılırsa test düşecek şekilde simülasyon + kayıt + `get_simulation`, fiyat eğrisi ve karşılaştırma, hatalı girdi / bilinmeyen kimlik / iç IP'nin araç hatası olması, ortak rate limit, HTTP'de API ile yan yana çalışma, erişim anahtarı ve bilinmeyen Host. Resmî `mcp` istemcisiyle gerçek uvicorn üzerinden uçtan uca deneme (anahtarlı/anahtarsız). `pip check` ve `pip-audit` temiz.
+- **Bekleyen:** Claude.ai'de kullanıcının aboneliğiyle gerçek deneme (tünel + `MCP_ALLOWED_HOSTS`). Belirsiz nokta: Claude'un connector URL'sindeki `?key=` sorgu dizesini koruyup korumadığı; korumuyorsa geçici olarak anahtarsız denenir, uzun vadede OAuth.
 
 ### Faz 11b: Claude-powered artifact (araştırma)
 - [ ] Artifact'ın dış API'ye (PazarLab backend'i) erişip erişemediği kontrol edilir.

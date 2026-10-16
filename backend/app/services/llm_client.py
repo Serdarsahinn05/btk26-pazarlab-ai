@@ -10,6 +10,8 @@
   client IP gets a daily number of real model calls. Cache hits cost no quota.
 """
 
+import contextlib
+import contextvars
 import copy
 import hashlib
 import json
@@ -137,8 +139,22 @@ def _api_key() -> str:
     return os.getenv("GEMINI_API_KEY", "").strip()
 
 
+# Set by callers that must not spend server-side AI, e.g. MCP tools where the user's own Claude does the reasoning.
+_ai_disabled: contextvars.ContextVar[bool] = contextvars.ContextVar("ai_disabled", default=False)
+
+
+@contextlib.contextmanager
+def without_ai() -> Iterator[None]:
+    """Inside this block every AI call behaves as if no key were set, so all rule-based fallbacks apply."""
+    token = _ai_disabled.set(True)
+    try:
+        yield
+    finally:
+        _ai_disabled.reset(token)
+
+
 def is_configured() -> bool:
-    return bool(_api_key())
+    return bool(_api_key()) and not _ai_disabled.get()
 
 
 def _model_rank(name: str) -> tuple:
@@ -374,6 +390,8 @@ def stream_chat(
 
 def _cached(kind: str, instructions: str, data: Any, temperature: float, max_tokens: int, produce: Callable[[], Any]) -> Any:
     """Same prompt + data + settings → same answer for AI_CACHE_TTL_SECONDS. Only successful results are stored."""
+    if not is_configured():  # checked before the cache, so `without_ai()` never returns an earlier AI answer
+        raise LLMUnavailable("AI disabled or GEMINI_API_KEY not set")
     material = json.dumps([kind, instructions, data, temperature, max_tokens], ensure_ascii=False, sort_keys=True, default=str)
     key = hashlib.sha256(material.encode("utf-8")).hexdigest()
     hit = _cache.get(key)

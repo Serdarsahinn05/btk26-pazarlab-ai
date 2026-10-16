@@ -22,6 +22,7 @@ Bu belge PazarLab AI'ı herkese açık bir sunucuda, nginx ters proxy'si arkası
 | `GEMINI_API_KEY`, `SERPER_API_KEY` | gerçek anahtarlar | |
 | `GEMINI_MODEL` | sabit bir model | Otomatik seçim yoğun saatlerde 503 veren en yeni modele düşebilir. |
 | `FORWARDED_ALLOW_IPS` | nginx'in backend'e göründüğü IP | Bkz. [§3](#3-gerçek-istemci-ipsi). |
+| `MCP_ALLOWED_HOSTS`, `MCP_ACCESS_KEY`, `PUBLIC_SITE_URL` | alan adı, uzun rastgele değer, site adresi | MCP connector için; bkz. [mcp-connector.md](mcp-connector.md). |
 | `LOG_FORMAT` | `json` | Her satır tek JSON nesnesi (`ts`, `level`, `logger`, `requestId`, `message` + erişim satırında `method`, `path`, `status`, `durationMs`). Bir hatayı kullanıcının gördüğü `X-Request-ID` ile aramak için. uvicorn'un kendi başlangıç satırları düz metin kalır. |
 
 Frontend için `NEXT_PUBLIC_API_URL` **build sırasında** JavaScript'e gömülür. Çalışma anında değiştirmek etkisizdir; değer değişirse imaj yeniden build edilmelidir. Aynı alan adı kullanıldığında sitenin kendi adresi verilir:
@@ -73,6 +74,12 @@ server {
         gzip off;
         proxy_set_header Connection "";
         proxy_read_timeout 300s;
+    }
+
+    # MCP connector (docs/mcp-connector.md): served by the backend, not the frontend.
+    location = /mcp {
+        proxy_pass http://pazarlab_backend;
+        proxy_read_timeout 60s;
     }
 
     location /api/ {
