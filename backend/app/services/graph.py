@@ -8,6 +8,7 @@ from app.models.product import SimulationRequest
 from app.models.simulation import SimulationResponse
 from app.services import llm_client
 from app.services.prompt_safety import clip
+from app.utils.text_utils import fold_text
 from app.services.simulation_service import run_simulation
 
 logger = logging.getLogger("graph_service")
@@ -139,18 +140,22 @@ def _extract_prefixed_persona(text: str, valid_names: Set[str]) -> tuple[Optiona
     return None, clean_text
 
 
+# str.lower() is not Turkish-aware ("KARARSIZ" -> "kararsiz"), so phrases are spelled out.
+DECISION_PHRASES = {"ALDI": "alırım", "KARARSIZ": "kararsızım", "ALMADI": "almam"}
+
+
 def _fallback_debate_logs(personas: List[Any]) -> List[Dict[str, str]]:
     if not personas:
-        return [{"name": "Sistem", "text": "Persona tartismasi icin yeterli veri olusmadi."}]
+        return [{"name": "Sistem", "text": "Persona tartışması için yeterli veri oluşmadı."}]
 
     logs: List[Dict[str, str]] = []
     for persona in personas[:3]:
-        decision = getattr(persona, "decision_label", "") or "KARARSIZ"
+        decision = DECISION_PHRASES.get(getattr(persona, "decision_label", ""), "kararsızım")
         reason = getattr(persona, "micro_feedback", "") or getattr(persona, "reason", "")
         probability = int(round(float(getattr(persona, "purchase_probability", 0) or 0) * 100))
         logs.append({
             "name": persona.name,
-            "text": f"Benim kararim {decision.lower()}; egilim skorum %{probability}. {reason}",
+            "text": f"Kararım: {decision}; eğilim skorum %{probability}. {reason}",
         })
     return logs
 
@@ -160,6 +165,8 @@ def _sanitize_debate_logs(raw_logs: Any, personas: List[Any]) -> List[Dict[str, 
         return []
 
     valid_names = {persona.name for persona in personas}
+    # The model may write a name with Turkish letters ("Trend Takipçisi"); map it back to the id.
+    by_folded = {fold_text(name): name for name in valid_names}
     sanitized: List[Dict[str, str]] = []
 
     for index, log in enumerate(raw_logs[:8]):
@@ -169,7 +176,7 @@ def _sanitize_debate_logs(raw_logs: Any, personas: List[Any]) -> List[Dict[str, 
         raw_name = str(log.get("name", "") or "").strip()
         raw_text = str(log.get("text", "") or "").strip()
         prefixed_name, text = _extract_prefixed_persona(raw_text, valid_names)
-        name = prefixed_name or raw_name
+        name = prefixed_name or by_folded.get(fold_text(raw_name), raw_name)
 
         if name not in valid_names:
             if _is_generic_debate_name(name) or not name:
@@ -187,7 +194,7 @@ def debate_node_v2(state: GraphState) -> Dict[str, Any]:
     logger.info("Generating persona-only A2A debate...")
 
     if not state.get("simulation_response"):
-        return {"debate_logs": [{"name": "Sistem", "text": "Simulasyon verisi yok."}]}
+        return {"debate_logs": [{"name": "Sistem", "text": "Simülasyon verisi yok."}]}
 
     response = state["simulation_response"]
     all_personas = response.all_personas
@@ -197,17 +204,18 @@ def debate_node_v2(state: GraphState) -> Dict[str, Any]:
     personas = [all_personas[0], all_personas[len(all_personas) // 2], all_personas[-1]] if len(all_personas) >= 3 else all_personas
     allowed_names = ", ".join([p.name for p in personas])
     instructions = f"""
-    Gorev: Verideki 3 persona kendi aralarinda urunu tartissin. Satici, musteri temsilcisi,
-    moderator, buyer/seller veya assistant rolu yazma.
+    Görev: Verideki 3 persona kendi aralarında ürünü tartışsın. Satıcı, müşteri temsilcisi,
+    moderatör, buyer/seller veya assistant rolü yazma.
 
     Kurallar:
-    - 6-8 mesaj uret.
-    - name alani SADECE su isimlerden biri olabilir: {allowed_names}
-    - Her persona kendi karar ihtimaline ve karakterine gore konussun; hepsi ayni fikirde olmasin.
-    - Mesajlar kisa, dogal ve somut olsun: fiyat, guven, ozellik, aciklama veya kanal riskine deginsin.
-    - "Ben bir asistan olarak", "assistant 1", "alici", "satici" gibi ifadeler yasak.
-    - Son mesaj mutlaka bir personanin saticiya net bir iyilestirme onerisiyle bitsin.
-    - Cevabi SADECE JSON array olarak dondur.
+    - 6-8 mesaj üret.
+    - name alanı SADECE şu isimlerden biri olabilir, aynen yazılmalı: {allowed_names}
+    - text alanını doğal Türkçeyle ve Türkçe karakterlerle (ç, ğ, ı, İ, ö, ş, ü) yaz.
+    - Her persona kendi karar ihtimaline ve karakterine göre konuşsun; hepsi aynı fikirde olmasın.
+    - Mesajlar kısa, doğal ve somut olsun: fiyat, güven, özellik, açıklama veya kanal riskine değinsin.
+    - "Ben bir asistan olarak", "assistant 1", "alıcı", "satıcı" gibi ifadeler yasak.
+    - Son mesaj mutlaka bir personanın satıcıya net bir iyileştirme önerisiyle bitsin.
+    - Cevabı SADECE JSON array olarak döndür.
 
     Format: [{{"name":"{personas[0].name}","text":"..."}}]
     """

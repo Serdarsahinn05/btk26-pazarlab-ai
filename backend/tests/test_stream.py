@@ -57,7 +57,7 @@ def test_persona_chat_streams_answer_with_server_side_context(client, stored_id,
     events = parse_sse(res.text)
     assert "".join(d["text"] for k, d in events if k == "delta") == "Fiyat bana biraz yüksek geldi."
     assert events[-1][0] == "done"
-    assert "Fiyat Hassas Alici" in seen["instructions"]
+    assert "Fiyat Hassas Alıcı" in seen["instructions"]  # displayName, not the ASCII id
     assert "Basic Pamuklu Tisort" in seen["instructions"]  # product comes from the stored request
     assert seen["turns"] == [{"role": "user", "text": "Neden almadın?"}]
 

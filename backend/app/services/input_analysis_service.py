@@ -13,31 +13,32 @@ logger = logging.getLogger("input_analysis")
 
 
 INPUT_ANALYSIS_PROMPT = """
-Sen PazarLab AI icin agentic input denetim ekibisin. Tek cevapta 4 rolu birlikte calistir:
-1) Veri gardiyani: rastgele, tekrarli, anlamsiz, cok genel veya kategoriyle alakasiz inputu yakalar.
-2) Kategori hakemi: secilen kategori ile urun adi/aciklama/ozellik uyumunu puanlar.
-3) Guven analisti: marka/model netligi, garanti/fatura, teknik detay ve aciklama guvenini yorumlar.
-4) Sinyal normalizatoru: sonucu 0-1 arasinda, simule edilebilir skorlara donusturur.
+Sen PazarLab AI için ajan tabanlı bir girdi denetim ekibisin. Tek cevapta 4 rolü birlikte çalıştır:
+1) Veri gardiyanı: rastgele, tekrarlı, anlamsız, çok genel veya kategoriyle alakasız girdiyi yakalar.
+2) Kategori hakemi: seçilen kategori ile ürün adı/açıklama/özellik uyumunu puanlar.
+3) Güven analisti: marka/model netliği, garanti/fatura, teknik detay ve açıklama güvenini yorumlar.
+4) Sinyal normalizatörü: sonucu 0-1 arasında, simüle edilebilir skorlara dönüştürür.
 
 Kurallar:
-- Marka guvenini kullanicinin "marka bilinirligi" secmesine gore degil; marka/model netligi,
-  garanti/fatura, teknik detay tutarliligi ve aciklamadaki guven sinyallerine gore tahmin et.
-- Internette arama yapma. Bilmedigin marka icin kesin hukum verme; sadece input kalitesine gore puanla.
-- Sacma, tekrar eden, kategoriyle alakasiz, sadece pazarlama lafi iceren veya tek kelimelik bilgi varsa shouldWarn true yap.
-- Urun adi/aciklama "aaaa", "asdf", "super urun cok guzel", tekrar eden kelimeler veya teknik detaydan yoksun genel ifadelerden olusuyorsa plausibility <= 0.35 ver.
-- Kategori uyumsuzsa categoryFit <= 0.40 ver ve suspectedCategory alanini doldur.
-- Kategori/urun uyumsuzsa suspectedCategory veya correctedProductName ile kisa oneride bulun.
-- Emin degilsen uyari vermeyi tercih et; satici onaylayarak devam edebilir.
-- Cevabi sadece JSON dondur.
+- warnings ve suggestions metinlerini doğal Türkçeyle ve Türkçe karakterlerle (ç, ğ, ı, İ, ö, ş, ü) yaz.
+- Marka güvenini kullanıcının "marka bilinirliği" seçimine göre değil; marka/model netliği,
+  garanti/fatura, teknik detay tutarlılığı ve açıklamadaki güven sinyallerine göre tahmin et.
+- İnternette arama yapma. Bilmediğin marka için kesin hüküm verme; yalnızca girdi kalitesine göre puanla.
+- Saçma, tekrar eden, kategoriyle alakasız, yalnızca pazarlama lafı içeren veya tek kelimelik bilgi varsa shouldWarn true yap.
+- Ürün adı/açıklama "aaaa", "asdf", "süper ürün çok güzel", tekrar eden kelimeler veya teknik detaydan yoksun genel ifadelerden oluşuyorsa plausibility <= 0.35 ver.
+- Kategori uyumsuzsa categoryFit <= 0.40 ver ve suspectedCategory alanını doldur.
+- Kategori/ürün uyumsuzsa suspectedCategory veya correctedProductName ile kısa öneride bulun.
+- Emin değilsen uyarı vermeyi tercih et; satıcı onaylayarak devam edebilir.
+- Cevabı sadece JSON döndür.
 
 JSON semasi:
 {
   "shouldWarn": true,
   "confidence": 0.0,
-  "warnings": ["kisa uyari"],
-  "suggestions": ["kisa oneri"],
+  "warnings": ["kısa uyarı"],
+  "suggestions": ["kısa öneri"],
   "suspectedCategory": "telefon veya null",
-  "correctedProductName": "olasi net urun adi veya null",
+  "correctedProductName": "olası net ürün adı veya null",
   "signals": {
     "plausibility": 0.0,
     "categoryFit": 0.0,
@@ -205,28 +206,28 @@ def deterministic_analysis(request: SimulationRequest) -> InputAnalysisResponse:
     warnings = []
     suggestions = []
     noise_reasons = [
-        *_noise_reasons(request.product_name, "Urun adi"),
-        *_noise_reasons(request.description, "Aciklama"),
+        *_noise_reasons(request.product_name, "Ürün adı"),
+        *_noise_reasons(request.description, "Açıklama"),
     ]
     if noise_reasons:
-        warnings.append("Girdiler rastgele, tekrarli veya anlamsiz gorunuyor.")
-        suggestions.append("Urun adini ve aciklamayi gercek urun bilgileriyle tekrar yaz.")
+        warnings.append("Girdiler rastgele, tekrarlı veya anlamsız görünüyor.")
+        suggestions.append("Ürün adını ve açıklamayı gerçek ürün bilgileriyle tekrar yaz.")
         plausibility = min(plausibility, 0.25)
         description_quality = min(description_quality, 0.30)
     elif _looks_like_generic_marketing(request.description):
-        warnings.append("Aciklama cok genel; karar vermek icin urun detayi icermiyor.")
-        suggestions.append("Somut ozellik, kullanim amaci, malzeme/teknik detay ve garanti bilgisini ekle.")
+        warnings.append("Açıklama çok genel; karar vermek için ürün detayı içermiyor.")
+        suggestions.append("Somut özellik, kullanım amacı, malzeme/teknik detay ve garanti bilgisini ekle.")
         plausibility = min(plausibility, 0.42)
         description_quality = min(description_quality, 0.40)
     if category_fit < 0.40:
-        warnings.append("Urun bilgileri secilen kategoriyle tam uyusmuyor olabilir.")
-        suggestions.append("Kategori ve alt urunu tekrar kontrol et.")
+        warnings.append("Ürün bilgileri seçilen kategoriyle tam uyuşmuyor olabilir.")
+        suggestions.append("Kategoriyi ve alt ürünü tekrar kontrol et.")
     if request.category in {"telefon", "laptop", "tablet", "akilli_saat", "kozmetik"} and not features.brand:
-        warnings.append("Marka/model bilgisi net degil.")
-        suggestions.append("Marka ve modeli yazarsan guven ve teknik uyum daha dogru hesaplanir.")
+        warnings.append("Marka/model bilgisi net değil.")
+        suggestions.append("Marka ve modeli yazarsan güven ve teknik uyum daha doğru hesaplanır.")
     if description_quality < 0.45:
-        warnings.append("Aciklama karar vermek icin zayif.")
-        suggestions.append("Kullanim amaci, teknik detay ve ayirt edici faydayi ekle.")
+        warnings.append("Açıklama karar vermek için zayıf.")
+        suggestions.append("Kullanım amacını, teknik detayı ve ayırt edici faydayı ekle.")
 
     should_warn = bool(warnings) or plausibility < 0.45 or category_fit < 0.45
 
@@ -380,18 +381,18 @@ def _noise_reasons(text: str, label: str) -> list[str]:
     words = [word for word in re.split(r"\s+", fold_text(text).strip()) if word]
     reasons = []
     if len(cleaned) < 8:
-        reasons.append(f"{label} cok kisa".strip())
+        reasons.append(f"{label} çok kısa".strip())
     if len(set(cleaned)) <= 3:
-        reasons.append(f"{label} tekrarli karakterlerden olusuyor".strip())
+        reasons.append(f"{label} tekrarlı karakterlerden oluşuyor".strip())
     if re.fullmatch(r"(.)\1{5,}", cleaned or ""):
-        reasons.append(f"{label} tek karakter tekrarindan olusuyor".strip())
+        reasons.append(f"{label} tek karakter tekrarından oluşuyor".strip())
     if re.fullmatch(r"(asdf|qwer|test|demo|abc|123|urun|product)+", cleaned or ""):
-        reasons.append(f"{label} test/rastgele ifade gibi gorunuyor".strip())
+        reasons.append(f"{label} test/rastgele ifade gibi görünüyor".strip())
     if len(words) >= 6 and len(set(words)) / len(words) < 0.38:
         reasons.append(f"{label} fazla tekrar ediyor".strip())
     alpha_count = sum(1 for char in cleaned if char.isalpha())
     if alpha_count < max(len(cleaned) * 0.45, 4):
-        reasons.append(f"{label} anlamli metin orani dusuk".strip())
+        reasons.append(f"{label} anlamlı metin oranı düşük".strip())
     return reasons
 
 

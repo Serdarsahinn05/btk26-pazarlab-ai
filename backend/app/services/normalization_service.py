@@ -20,6 +20,12 @@ def load_category_rules() -> dict[str, Any]:
         return json.load(file)
 
 
+@lru_cache(maxsize=1)
+def load_persona_data() -> dict[str, Any]:
+    with (DATA_DIR / "personas.json").open(encoding="utf-8") as file:
+        return json.load(file)
+
+
 def get_category_rule(category: str) -> dict[str, Any]:
     rules = load_category_rules()["categories"]
     return rules.get(category, rules["tisort"])
