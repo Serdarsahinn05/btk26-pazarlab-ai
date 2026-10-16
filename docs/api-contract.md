@@ -11,7 +11,7 @@
 | GET | `/api/health` | – | `{ status, ai: { configured, model, lastSuccessAt, lastErrorAt, lastError, cache: { entries, hits, misses }, dailyCallsPerIp }, research: { configured } }` (ağa çıkmaz; `model`, ilk AI çağrısına kadar `null` olabilir; `last*` bu process'teki son AI çağrısı, UTC ISO zaman; `lastError` yalnızca tür veya `HTTP 429` gibi durum kodu) |
 | POST | `/api/analyze-input` | `SimulationRequest` | `InputAnalysisResponse` |
 | POST | `/api/read-product-link` | `{ "url": string }` (8–2048 karakter) | `ProductLinkReadResponse` |
-| POST | `/api/simulate` | `SimulationRequest` | `SimulationResponse` (+ `simulationId`) |
+| POST | `/api/simulate` | `SimulationRequest` | `SimulationResponse` (+ `simulationId`, `engineVersion` = 2, `buyersRange { low, high, runs }` = alıcı sayısının 30 Monte Carlo turundaki %10–%90 aralığı; v1 motoruyla kaydedilmiş sonuçlarda bu iki alan yok). `normalizedProduct.priceRisk` = kasabada fiyatı ödeme isteğinin üstünde kalan sakinlerin oranı, `priceFit` = 1 − priceRisk |
 | POST | `/api/price-sweep` | `SimulationRequest` | `{ points: SweepPoint[9], bestRevenue, bestBuyers }`; SweepPoint = `{ factor, price, estimatedBuyers, buyRate, overallScore, revenue }` |
 | POST | `/api/compare` | `{ base: SimulationRequest, variant: SimulationRequest }` | `{ base: CoreMetrics, variant: CoreMetrics }`; CoreMetrics = `{ price, overallScore, estimatedBuyers, simulatedConsumers, decisionDistribution, marketBreadthScore, intentConversionScore, problemSolutionFit, topPersona, weaknesses }` |
 | POST | `/api/simulate/stream` | `SimulationRequest` | SSE: `event: step` `{ step, label }` (input_analysis, research, benchmark, simulate, debate) … `event: result` `SimulationResponse` |

@@ -212,6 +212,10 @@ export interface SimulationResponse {
   inputAnalysis?: InputAnalysisResponse;
   /** Share id; null when the backend could not save the result. */
   simulationId?: string | null;
+  /** 2 = town + willingness-to-pay engine; missing on results saved by the v1 engine. */
+  engineVersion?: number | null;
+  /** Buyer count spread over the Monte Carlo runs (10th–90th percentile). */
+  buyersRange?: { low: number; high: number; runs: number } | null;
 }
 
 /** GET /api/simulations/{id} */

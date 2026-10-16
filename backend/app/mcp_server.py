@@ -190,6 +190,7 @@ def simulate_product(product: ProductInput) -> dict[str, Any]:
         "siteUrl": _site_url(simulation_id),
         "overallScore": response.overall_score,
         "estimatedBuyers": response.estimated_buyers,
+        "estimatedBuyersRange": response.buyers_range.model_dump() if response.buyers_range else None,
         "simulatedConsumers": response.simulated_consumers,
         "decisionDistribution": response.decision_distribution.model_dump(),
         "marketBreadthScore": response.market_breadth_score,

@@ -1,6 +1,4 @@
-import random
 import logging
-from collections import defaultdict
 from pathlib import Path
 from typing import Any, Optional
 
@@ -16,6 +14,7 @@ from app.services.normalization_service import (
     load_persona_data,
     normalize_product,
 )
+from app.services.engine import ENGINE_VERSION, MONTE_CARLO_RUNS, run_town
 from app.utils.math_utils import clamp, clamp_score, stable_seed
 
 
@@ -86,6 +85,8 @@ def run_simulation(request: SimulationRequest) -> SimulationResponse:
         images=request.images,
         inputAnalysis=input_analysis,
         aiInsights=ai_insights,
+        engineVersion=ENGINE_VERSION,
+        buyersRange=core["buyers_range"],
     )
 
 
@@ -94,40 +95,31 @@ def _simulate(request: SimulationRequest, input_analysis: InputAnalysisResponse)
     persona_data = load_persona_data()
     config = persona_data["simulationConfig"]
     seed = stable_seed(_seed_payload(request), config["seedSalt"])
-    rng = random.Random(seed)
     market_breadth = _market_breadth_score(request)
-    market_relevance_factor = _market_relevance_factor(market_breadth)
     weights = get_normalized_weights(request.category, request.purchase_motivation)
+    preferred = {p["name"]: p.get("preferredMotivations", []) for p in persona_data["personaTypes"]}
 
-    persona_stats: dict[str, dict[str, Any]] = defaultdict(
-        lambda: {"count": 0, "buyers": 0, "prob_sum": 0.0, "reason": "", "advice": ""}
-    )
-    total_probability = 0.0
-    estimated_buyers = 0
-    decision_counts = {"buy": 0, "watch": 0, "skip": 0}
+    town = run_town(request, normalized, weights, preferred, _market_relevance_factor(market_breadth), seed)
+    # Price fit now means "share of the town for whom the price is within what they would pay" (B15):
+    # every later consumer (intent score, weaknesses, advice, UI) sees the asymmetric, town-based value.
+    normalized = normalized.model_copy(update={"price_risk": town["priceRisk"], "price_fit": round(1 - town["priceRisk"], 2)})
 
-    for persona_type in persona_data["personaTypes"]:
-        persona_name = persona_type["name"]
-        persona_stats[persona_name]["reason"] = persona_type["reason"]
-        persona_stats[persona_name]["advice"] = persona_type["advice"]
-        for _ in range(persona_type["count"]):
-            bot = _generate_bot(persona_type, rng)
-            probability = _purchase_probability(normalized, bot, weights)
-            if request.purchase_motivation.value in persona_type.get("preferredMotivations", []):
-                probability = clamp(probability + 0.06)
-            probability = clamp(probability * market_relevance_factor)
-            purchase_roll = rng.random()
-            if purchase_roll < probability:
-                estimated_buyers += 1
-                persona_stats[persona_name]["buyers"] += 1
-                decision_counts["buy"] += 1
-            else:
-                decision_counts[_non_buyer_decision(probability, purchase_roll)] += 1
-            persona_stats[persona_name]["count"] += 1
-            persona_stats[persona_name]["prob_sum"] += probability
-            total_probability += probability
+    persona_stats: dict[str, dict[str, Any]] = {
+        p["name"]: {"count": 0, "buyers": 0.0, "prob_sum": 0.0, "reason": p["reason"], "advice": p["advice"]}
+        for p in persona_data["personaTypes"]
+    }
+    for resident, probability, buy_share in zip(town["residents"], town["probability"], town["buyShare"]):
+        stats = persona_stats[resident["persona"]]
+        stats["count"] += 1
+        stats["prob_sum"] += probability
+        stats["buyers"] += buy_share
+    for stats in persona_stats.values():
+        stats["buyers"] = round(stats["buyers"])
+    decision_counts = town["decisionCounts"]
+    estimated_buyers = decision_counts["buy"]
+    total_probability = sum(town["probability"])
 
-    simulated_consumers = sum(persona["count"] for persona in persona_data["personaTypes"])
+    simulated_consumers = len(town["residents"])
     overall_score = int(round((total_probability / simulated_consumers) * 100))
     intent_conversion = _intent_conversion_score(request.purchase_motivation, market_breadth, normalized, input_analysis)
     problem_solution = _problem_solution_fit(request.purchase_motivation, normalized)
@@ -153,68 +145,12 @@ def _simulate(request: SimulationRequest, input_analysis: InputAnalysisResponse)
         "simulated_consumers": simulated_consumers,
         "estimated_buyers": estimated_buyers,
         "decision_counts": decision_counts,
+        "buyers_range": {"low": town["buyersLow"], "high": town["buyersHigh"], "runs": MONTE_CARLO_RUNS},
+        "median_wtp": town["medianWtp"],
     }
 
 
-def _generate_bot(persona_type: dict[str, Any], rng: random.Random) -> dict[str, float]:
-    return {
-        key: rng.uniform(value_range[0], value_range[1])
-        for key, value_range in persona_type["ranges"].items()
-    }
 
-
-def _purchase_probability(
-    product: NormalizedProduct,
-    bot: dict[str, float],
-    weights: dict[str, float],
-) -> float:
-    product_values = {
-        "priceFit": product.price_fit,
-        "qualityScore": product.quality_score,
-        "trendFit": product.trend_fit,
-        "brandTrust": product.brand_trust,
-        "descriptionCompleteness": product.description_completeness,
-        "visualAppeal": product.visual_appeal,
-        "seasonFit": product.season_fit,
-        "shippingReturnScore": product.shipping_return_score,
-        "targetAudienceFit": product.target_audience_fit,
-        "differentiationScore": product.differentiation_score,
-    }
-    bot_sensitivities = {
-        "priceFit": 1.0 - bot["priceSensitivity"],
-        "qualityScore": bot["qualityExpectation"],
-        "trendFit": bot["trendSensitivity"],
-        "brandTrust": bot["brandTrustNeed"],
-        "descriptionCompleteness": bot["detailNeed"],
-        "visualAppeal": bot["impulsiveness"],
-        "seasonFit": bot["seasonSensitivity"],
-        "shippingReturnScore": bot["shippingSensitivity"],
-        "targetAudienceFit": bot["targetFitSensitivity"],
-        "differentiationScore": bot["noveltySeeking"],
-    }
-
-    weighted_product_fit = sum(product_values[key] * weights.get(key, 0.0) for key in product_values)
-    weighted_persona_fit = sum(
-        product_values[key] * bot_sensitivities[key] * weights.get(key, 0.0)
-        for key in product_values
-    )
-    price_weight = weights.get("priceFit", 0.12)
-    price_penalty = product.price_risk * bot["priceSensitivity"] * (0.10 + price_weight * 0.35)
-
-    score = 0.18
-    score += weighted_product_fit * 0.52
-    score += weighted_persona_fit * 0.38
-    score -= price_penalty
-    return clamp(score)
-
-
-def _non_buyer_decision(probability: float, purchase_roll: float) -> str:
-    if probability >= 1:
-        return "watch"
-
-    rejection_gap = (purchase_roll - probability) / max(1.0 - probability, 0.01)
-    watch_threshold = clamp(0.25 + probability * 0.55, 0.28, 0.72)
-    return "watch" if rejection_gap <= watch_threshold else "skip"
 
 
 def _market_relevance_factor(market_breadth_score: int) -> float:

@@ -76,6 +76,14 @@ class AiInsights(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
 
+class BuyersRange(BaseModel):
+    """Spread of the buyer count over the Monte Carlo runs (10th–90th percentile)."""
+
+    low: int
+    high: int
+    runs: int
+
+
 class SimulationResponse(BaseModel):
     overall_score: int = Field(alias="overallScore", ge=0, le=100)
     market_breadth_score: int = Field(alias="marketBreadthScore", ge=0, le=100)
@@ -98,5 +106,9 @@ class SimulationResponse(BaseModel):
     input_analysis: Optional[InputAnalysisResponse] = Field(default=None, alias="inputAnalysis")
     # Share id from history_store; None when saving failed or history is disabled.
     simulation_id: Optional[str] = Field(default=None, alias="simulationId")
+
+    # 2 = town + willingness-to-pay engine (Faz 12b). Missing on results saved by the v1 engine.
+    engine_version: Optional[int] = Field(default=None, alias="engineVersion")
+    buyers_range: Optional[BuyersRange] = Field(default=None, alias="buyersRange")
 
     model_config = ConfigDict(populate_by_name=True)

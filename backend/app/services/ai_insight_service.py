@@ -388,12 +388,16 @@ def _build_description_advice(request: SimulationRequest, normalized_product: No
 
 
 def _build_pricing_advice(request: SimulationRequest, normalized_product: NormalizedProduct) -> str:
+    # price_risk = share of the town for whom the price is above what they would pay (engine v2).
+    priced_out = round(normalized_product.price_risk * 100)
     if normalized_product.price_risk >= 0.45:
-        return "Fiyat algısı riskli. Ana fiyatı hemen düşürmek yerine kupon, set indirimi veya ücretsiz kargo varyantı test et."
-    if normalized_product.price_fit >= 0.75:
-        return "Fiyat kategori ortalamasına yakın görünüyor. Premium algı için garanti, kalite kanıtı ve hızlı kargo mesajını fiyatla birlikte göster."
-    return "Fiyat testi için iki varyant yeterli: mevcut fiyat + güven vurgusu ve küçük indirim + aciliyet mesajı."
-
+        return (f"Kasabanın %{priced_out}'i için fiyat, ödemeye razı oldukları tutarın üstünde. Ana fiyatı hemen düşürmek "
+                "yerine kupon, set indirimi veya ücretsiz kargo varyantı test et.")
+    if normalized_product.price_risk <= 0.25:
+        return (f"Kasabanın büyük kısmı bu fiyatı ödemeye razı (yalnızca %{priced_out}'i için pahalı). İndirim yerine garanti, "
+                "kalite kanıtı ve hızlı kargo mesajını fiyatla birlikte göster.")
+    return (f"Kasabanın %{priced_out}'i için fiyat biraz yüksek. İki varyant yeterli: mevcut fiyat + güven vurgusu ve "
+            "küçük indirim + aciliyet mesajı.")
 
 def _build_season_advice(request: SimulationRequest, normalized_product: NormalizedProduct) -> str:
     category = request.category
