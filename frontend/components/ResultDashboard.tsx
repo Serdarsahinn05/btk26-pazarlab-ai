@@ -10,6 +10,7 @@ import { downloadBlob } from "@/lib/history";
 import { simulationToMarkdown } from "@/lib/report";
 import { NormalizedProduct, Persona, SimulationRequest, SimulationResponse } from "@/types";
 import WhatIf from "@/components/WhatIf";
+import PersonaChat from "@/components/PersonaChat";
 import { SegmentRing, Ring } from "@/components/ui/ring";
 import { DebateLogs } from "@/components/DebateLogs";
 import {
@@ -52,6 +53,7 @@ export default function ResultDashboard({ data, view, productName, request, onRe
         ) : (
           <EmptyState text="Bu simülasyon için tartışma kaydı oluşmadı." />
         )}
+        <PersonaChat simulationId={data.simulationId} personas={sortedPersonas(data)} />
       </section>
     );
   }

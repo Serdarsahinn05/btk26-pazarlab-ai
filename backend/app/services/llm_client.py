@@ -16,7 +16,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
-from typing import Any, Optional
+from typing import Any, Iterator, Optional
 
 from app.services.prompt_safety import UNTRUSTED_DATA_RULE, wrap_data
 
@@ -119,9 +119,11 @@ def status() -> dict[str, Any]:
     return {"configured": is_configured(), "model": _pool.cached_model() if is_configured() else None}
 
 
-def _extract_text(response: dict) -> str:
+def _extract_text(response: dict, strip: bool = True) -> str:
     parts = (((response.get("candidates") or [{}])[0].get("content") or {}).get("parts")) or []
-    return "".join(str(p.get("text", "")) for p in parts if isinstance(p, dict)).strip()
+    text = "".join(str(p.get("text", "")) for p in parts if isinstance(p, dict) and not p.get("thought"))
+    # Streamed chunks keep their edge whitespace, otherwise words at chunk borders glue together.
+    return text.strip() if strip else text
 
 
 def _generate(instructions: str, data: Any, *, temperature: float, json_mode: bool, max_tokens: int, timeout: float) -> str:
@@ -172,6 +174,70 @@ def _generate(instructions: str, data: Any, *, temperature: float, json_mode: bo
         except Exception as exc:
             last_error = exc
             logger.warning("Gemini %s failed: %r", model, exc)
+
+    raise LLMUnavailable(f"all Gemini models failed: {last_error!r}")
+
+
+def stream_chat(
+    instructions: str,
+    turns: list[dict[str, str]],
+    *,
+    temperature: float = 0.7,
+    max_tokens: int = 1024,
+    timeout: float = TIMEOUT_SECONDS,
+) -> Iterator[str]:
+    """Stream a multi-turn chat answer as text chunks (Gemini SSE).
+
+    ``turns`` are ``{"role": "user" | "model", "text": ...}``; the system prompt
+    carries the persona and product data. Only the first usable model is tried
+    once streaming has started, so partial answers are never mixed.
+    """
+    if not is_configured():
+        raise LLMUnavailable("GEMINI_API_KEY is not set")
+    models = _pool.candidates()
+    if not models:
+        raise LLMUnavailable("no usable Gemini model")
+
+    body = json.dumps({
+        "systemInstruction": {"parts": [{"text": instructions + UNTRUSTED_DATA_RULE}]},
+        "contents": [{"role": t["role"], "parts": [{"text": t["text"]}]} for t in turns],
+        "generationConfig": {"temperature": temperature, "maxOutputTokens": max_tokens},
+    }).encode("utf-8")
+
+    last_error: Optional[Exception] = None
+    for model in models:
+        req = urllib.request.Request(
+            f"{API_BASE}/models/{model}:streamGenerateContent?alt=sse",
+            data=body,
+            headers={"Content-Type": "application/json", "x-goog-api-key": _api_key()},
+            method="POST",
+        )
+        try:
+            resp = urllib.request.urlopen(req, timeout=timeout)
+        except urllib.error.HTTPError as exc:
+            last_error = exc
+            if exc.code == 429 or exc.code >= 500:
+                _pool.cool_down(model, 120)
+                logger.warning("Gemini %s stream failed with HTTP %s", model, exc.code)
+                continue
+            raise LLMUnavailable(f"Gemini HTTP {exc.code}") from exc
+        except Exception as exc:
+            last_error = exc
+            logger.warning("Gemini %s stream failed: %r", model, exc)
+            break
+
+        with resp:
+            for raw in resp:
+                line = raw.decode("utf-8").strip()
+                if not line.startswith("data:"):
+                    continue
+                try:
+                    chunk = _extract_text(json.loads(line[5:].strip()), strip=False)
+                except json.JSONDecodeError:
+                    continue
+                if chunk:
+                    yield chunk
+        return
 
     raise LLMUnavailable(f"all Gemini models failed: {last_error!r}")
 

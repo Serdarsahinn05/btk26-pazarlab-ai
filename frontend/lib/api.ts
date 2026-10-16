@@ -1,4 +1,5 @@
 import axios from "axios";
+import { SseError, postSse } from "@/lib/sse";
 import {
   CompareResponse,
   HealthStatus,
@@ -20,6 +21,7 @@ const client = axios.create({
 
 /** Turn any API failure into one short Turkish sentence the user can act on. */
 export function apiErrorMessage(error: unknown): string {
+  if (error instanceof SseError) return error.message;
   if (!axios.isAxiosError(error)) return "Beklenmeyen bir hata oluştu.";
   if (error.code === "ECONNABORTED") return "Sunucu zamanında yanıt vermedi. Lütfen tekrar deneyin.";
   if (!error.response) return "Sunucuya ulaşılamıyor. Backend çalışıyor mu?";
@@ -46,6 +48,28 @@ export function apiErrorMessage(error: unknown): string {
 export const simulateProduct = async (data: SimulationRequest): Promise<SimulationResponse> => {
   const response = await client.post("/api/simulate", data);
   return response.data;
+};
+
+/**
+ * Simulation with live progress: onStep(nodeId) fires as each backend step finishes.
+ * Falls back to the plain endpoint if the stream breaks before any progress arrived.
+ */
+export const simulateProductStream = async (data: SimulationRequest, onStep: (step: string) => void): Promise<SimulationResponse> => {
+  let result: SimulationResponse | null = null;
+  let sawEvent = false;
+  try {
+    await postSse("/api/simulate/stream", data, (event, payload) => {
+      sawEvent = true;
+      if (event === "step") onStep((payload as { step: string }).step);
+      if (event === "result") result = payload as SimulationResponse;
+    });
+  } catch (err) {
+    if (err instanceof SseError && err.status) throw err; // a real 4xx/5xx: same answer from the plain endpoint
+    if (sawEvent) throw err;
+    return simulateProduct(data);
+  }
+  if (!result) throw new SseError("Simülasyon sonucu alınamadı.");
+  return result;
 };
 
 export const analyzeProductInput = async (data: SimulationRequest): Promise<InputAnalysisResponse> => {

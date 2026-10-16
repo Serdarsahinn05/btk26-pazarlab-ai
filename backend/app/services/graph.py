@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import Any, Dict, List, Optional, Set, TypedDict
+from typing import Any, Dict, Iterator, List, Optional, Set, TypedDict
 
 from langgraph.graph import StateGraph, END
 
@@ -268,38 +268,61 @@ def create_simulation_graph():
 
 _GRAPH = create_simulation_graph()
 
+# Node name -> Turkish label shown in the live progress view.
+STEP_LABELS = {
+    "input_analysis": "Girdi kalitesi kontrol edildi",
+    "research": "Rakipler arandı",
+    "benchmark": "Pazar karşılaştırması yazıldı",
+    "simulate": "500 sentetik tüketici karar verdi",
+    "debate": "Personalar ürünü tartıştı",
+}
 
-def run_agentic_simulation(request: SimulationRequest) -> SimulationResponse:
-    graph = _GRAPH
 
-    initial_state = {
+def iter_agentic_simulation(request: SimulationRequest) -> Iterator[tuple[str, Any]]:
+    """Run the graph node by node.
+
+    Yields ("step", node_name) after every finished node and finally
+    ("result", SimulationResponse). Falls back to the plain simulation on error.
+    """
+    state: Dict[str, Any] = {
         "request": request,
         "product_name": request.product_name,
         "category": request.category,
         "competitors": [],
         "benchmark_analysis": "",
         "debate_logs": [],
-        "simulation_response": None
+        "simulation_response": None,
     }
-    
+
     try:
-        final_state = graph.invoke(initial_state)
-        
-        response = final_state.get("simulation_response")
+        for update in _GRAPH.stream(state, stream_mode="updates"):
+            for node, delta in update.items():
+                if delta:
+                    state.update(delta)
+                yield "step", node
+
+        response = state.get("simulation_response")
         if not response:
             raise ValueError("Simülasyon sonuç üretemedi.")
-
         # debate_node_v2 already sanitized the logs and filled in a fallback.
-        response.debate_logs = final_state.get("debate_logs") or [{"name": "Sistem", "text": "Tartışma kurgulanamadı."}]
-        response.benchmark_analysis = final_state.get("benchmark_analysis", "")
-             
-        return response
-        
+        response.debate_logs = state.get("debate_logs") or [{"name": "Sistem", "text": "Tartışma kurgulanamadı."}]
+        response.benchmark_analysis = state.get("benchmark_analysis", "")
+        yield "result", response
+
     except Exception:
         logger.exception("Agentic simulation failed")
         fallback_response = run_simulation(request)
         fallback_response.debate_logs = [
             {"name": "Sistem", "text": "AI ajanlarına şu anda ulaşılamadı."},
-            {"name": "Sistem", "text": "Standart simülasyon sonuçları hazırlandı."}
+            {"name": "Sistem", "text": "Standart simülasyon sonuçları hazırlandı."},
         ]
-        return fallback_response
+        yield "result", fallback_response
+
+
+def run_agentic_simulation(request: SimulationRequest) -> SimulationResponse:
+    result: Optional[SimulationResponse] = None
+    for kind, value in iter_agentic_simulation(request):
+        if kind == "result":
+            result = value
+    assert result is not None
+    return result
