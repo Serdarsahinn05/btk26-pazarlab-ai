@@ -12,7 +12,7 @@
 | 1 | `chore/docs-roadmap` | Dokümanlar, repo temizliği | 0,5 gün | ✅ |
 | 2 | `fix/security-hardening` | S1–S13 | 1–1,5 gün | ✅ |
 | 3 | `fix/core-bugs` | B1–B7, F1–F7, temel testler | 1 gün | ✅ |
-| 4 | `feat/editorial-redesign` | DESIGN.md uygulaması, F8–F10 | 2–3 gün | ⬜ |
+| 4 | `feat/redesign-canli-pazar` | DESIGN.md uygulaması ("Canlı pazar yeri"), F8–F14 | 2–3 gün | ✅ |
 | 5a | `feat/history-share` | Geçmiş, paylaşım, export | 1 gün | ⬜ |
 | 5b | `feat/price-sweep-ab` | Fiyat eğrisi, A/B karşılaştırma | 1 gün | ⬜ |
 | 5c | `feat/persona-chat-sse` | Persona sohbeti, canlı ilerleme | 1,5 gün | ⬜ |
@@ -77,18 +77,29 @@ Sonuç: Gerçek anahtarla yapılan denemede `aiInsights.aiGenerated=true`, `inpu
 - [x] **B7** `tests/test_core.py`: deterministiklik, toplamlar, fiyat monotonluğu, fallback işareti, model sıralaması, 429'da yedek modele geçiş, health'in ağa çıkmaması, mock'lu graph akışı ve kategori sözleşmesi. Toplam 42 test.
 - [x] `prefers-reduced-motion`: animasyonlar kısalıyor, confetti çalışmıyor.
 
-## Faz 4: Editoryal yeniden tasarım
+## Faz 4: Yeniden tasarım — "Canlı pazar yeri" ✅
 Kabul kriteri: DESIGN.md'deki tüm kalıplar uygulanmış; bileşenlerde ham renk sınıfı kalmamış (`rg "zinc-|violet-|text-white|rgba\(" frontend/components frontend/app` boş döner, `ui/` hariç); her iki tema ve 375 px genişlik kontrol edilmiş; `impeccable audit` ardından `ponytail-review` çalıştırılmış.
 
-0. [ ] **Yerleşim:** DESIGN.md §9'daki yeni dashboard düzeni (rapor akışı, yan panel kaldırılır, tek kaydırma alanı, iki sütunlu form). Detaylar IMPROVEMENTS.md F11'de.
-1. [ ] **Token'lar:** `globals.css` (`:root` + `.dark`), `tailwind.config.ts` (renkler, `fontFamily`), `layout.tsx` (Fraunces, `defaultTheme="system"`), defter zemini. Neon, glass ve glow sınıfları silinir.
-2. [ ] **Kabuk:** `LayoutShell`, `Sidebar` ve `StatusBar` sade bir üst bara dönüşür: marka, sekmeli nav, tema düğmesi, gerçek API durumu. Mobilde sekmeler yatay kaydırılabilir.
-3. [ ] **Skor bileşenleri:** `RingChart` ve `SegmentRing` (saf SVG, ek kütüphane yok). `OverallScoreCard` ile `DecisionDistributionChart` birleşir. Persona halka kartları tıklanınca tartışmaya gider (flash efekti). Normalize skorlar ince barlarla gösterilir.
-4. [ ] **İçerik kartları:** Kanal önerileri, zayıflıklar ve benchmark renkli başlıklı karta; tartışma mesajları sol kenarlı satır kalıbına; `AnalysisWarning` not kutusuna veya erişilebilir dialog'a geçer.
-5. [ ] **Form:** `ProductForm` input stilleri, Türkçe etiketler, `aria`, klavyeyle erişilebilir yükleme alanı.
-6. [ ] **Landing:** Fraunces hero ve italik alt satır, mono sayaçlar (500 · 12 · 10), örnek segmentli halka, numaralı adımlar.
-7. [ ] **Hareket ve erişilebilirlik:** reduced-motion, odak halkaları, kontrast kontrolü.
-8. [ ] **Temizlik (F9–F10):** kullanılmayan bileşen ve bağımlılıklar silinir, `output: 'standalone'`.
+0. [x] **Yerleşim:** DESIGN.md §9'daki yeni dashboard düzeni (rapor akışı, yan panel kaldırılır, tek kaydırma alanı, iki sütunlu form). Detaylar IMPROVEMENTS.md F11'de.
+1. [x] **Token'lar:** `globals.css` (`:root` + `.dark`), `tailwind.config.ts` (renkler, `fontFamily`), `layout.tsx` (Fraunces, `defaultTheme="system"`), defter zemini. Neon, glass ve glow sınıfları silinir.
+2. [x] **Kabuk:** `LayoutShell`, `Sidebar` ve `StatusBar` sade bir üst bara dönüşür: marka, sekmeli nav, tema düğmesi, gerçek API durumu. Mobilde sekmeler yatay kaydırılabilir.
+3. [x] **Skor bileşenleri:** `RingChart` ve `SegmentRing` (saf SVG, ek kütüphane yok). `OverallScoreCard` ile `DecisionDistributionChart` birleşir. Persona halka kartları tıklanınca tartışmaya gider (flash efekti). Normalize skorlar ince barlarla gösterilir.
+4. [x] **İçerik kartları:** Kanal önerileri, zayıflıklar ve benchmark renkli başlıklı karta; tartışma mesajları sol kenarlı satır kalıbına; `AnalysisWarning` not kutusuna veya erişilebilir dialog'a geçer.
+5. [x] **Form:** `ProductForm` input stilleri, Türkçe etiketler, `aria`, klavyeyle erişilebilir yükleme alanı.
+6. [x] **Landing:** Fraunces hero ve italik alt satır, mono sayaçlar (500 · 12 · 10), örnek segmentli halka, numaralı adımlar.
+7. [x] **Hareket ve erişilebilirlik:** reduced-motion, odak halkaları, kontrast kontrolü.
+8. [x] **Temizlik (F9–F10):** kullanılmayan bileşen ve bağımlılıklar silinir, `output: 'standalone'`.
+
+**Faz 4 sonucu**
+- Stil, karşılaştırma sayfasında 6 yön arasından kullanıcı tarafından seçildi: **E. Canlı pazar yeri**. Renk iterasyonları DESIGN.md §10'da. Token'lar DESIGN.md §2'de ve `globals.css`'te.
+- Fontlar: Bricolage Grotesque (başlık, rakam), Nunito (gövde), Caveat (el yazısı not); `next/font` ile.
+- Kabuk: Sidebar ve StatusBar kaldırıldı. Yerlerine sekmeli `TopBar`, gerçek `/api/health` gösteren `ApiStatusDot` ve `ThemeToggle` geldi. İçerik 1180 px okuma sütununda, tek sayfa kaydırması.
+- Sonuç ekranı (§9.3): karar kartı (`SegmentRing` + el yazısı not), "Ne yapmalı?" (özet, 3 aksiyon, kritik risk, yazdır/PDF), 4 KPI, 12 persona halka kartı (tıklanınca tartışmada o persona), tırtıklı başlıklı zayıflık ve kanal kartları, 11 parametre barı, kopyalanabilir iyileştirilmiş açıklama (Markdown).
+- Form (§9.2): 4 numaralı adım, iki sütun, yapışkan gönder çubuğu, klavyeyle erişilebilir yükleme, Türkçe etiketler.
+- Erişilebilirlik: uyarı penceresi gerçek dialog (Esc, odak tuzağı, odak geri dönüşü); ikon düğmelerinde `aria-label`; küçük renkli metinde koyu tonlar; reduced-motion.
+- Silinenler: OverallScoreCard, DecisionDistributionChart, NormalizedScoresPanel, ChannelRecommendation, WeaknessList, TopPersonaCards, ProductTypeInsight, Sidebar, StatusBar.
+- Doğrulama: `tsc` ve `next build` temiz. Kabul taraması (ham palet renkleri, `rgba`, `zinc/violet/text-white`) boş; tek istisna confetti'nin canvas renkleri. Headless Chrome ile açık/koyu landing, form, sonuç ve personalar görüntülendi. 375 px'de landing, form ve sonuç için yatay taşma 0.
+- Yapılmadı: `impeccable audit` → `ponytail-review` denetimi (ayrı bir oturumda önerilir). Gerçek cihazda ekran okuyucu testi yapılmadı.
 
 ## Faz 5: Yeni özellikler
 - [ ] **5a** Geçmiş: önce localStorage ve JSON dışa/içe aktarma, sonra SQLite ve `/r/{id}` paylaşım linki. Markdown/print rapor.

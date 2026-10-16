@@ -1,14 +1,10 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Category, PurchaseMotivation, SimulationRequest } from "@/types";
 import { apiErrorMessage, readProductLink } from "@/lib/api";
-import { Image as ImageIcon, Link2, Loader2, Plus, Shirt, Smartphone, Sparkles, Trash2, Upload } from "lucide-react";
-import { motion, type Variants } from "framer-motion";
+import { Link2, Loader2, Shirt, Smartphone, Sparkles, Trash2, Upload } from "lucide-react";
 
 // Backend accepts at most 6 images of ~1.5 MB each (see SimulationRequest.images).
 const MAX_IMAGES = 6;
@@ -66,148 +62,148 @@ interface CategoryConfig {
 
 const seasonOptions = [
   { value: "summer", label: "Yaz" },
-  { value: "winter", label: "Kis" },
+  { value: "winter", label: "Kış" },
   { value: "spring", label: "Bahar" },
-  { value: "all", label: "Dort mevsim" }
+  { value: "all", label: "Dört mevsim" }
 ];
 
 const categoryConfig: Record<string, CategoryConfig> = {
   tisort: {
     family: "kiyafet",
-    label: "Kiyafet / Tisort",
-    shortLabel: "Tisort",
+    label: "Kıyafet / Tişört",
+    shortLabel: "Tişört",
     defaultMotivation: "stil_begeni",
     audience: "full",
-    exampleName: "Oversize Pamuklu Baskili Tisort",
-    descriptionPlaceholder: "Kumas, kalip, yaka tipi, baski kalitesi, beden araligi ve kombin/kullanim senaryosunu yazin.",
+    exampleName: "Oversize Pamuklu Baskılı Tişört",
+    descriptionPlaceholder: "Kumaş, kalıp, yaka tipi, baskı kalitesi, beden aralığı ve kombin/kullanım senaryosunu yazın.",
     fields: [
-      { name: "fabric", label: "Kumas icerigi", placeholder: "%100 pamuk, modal, polyester karisim...", required: true },
-      { name: "fit", label: "Kalip", type: "select", options: [
+      { name: "fabric", label: "Kumaş içeriği", placeholder: "%100 pamuk, modal, polyester karışım...", required: true },
+      { name: "fit", label: "Kalıp", type: "select", options: [
         { value: "regular", label: "Regular" },
         { value: "oversize", label: "Oversize" },
         { value: "slim", label: "Slim" }
       ] },
-      { name: "sizeRange", label: "Beden araligi", placeholder: "XS-XXL", required: true },
+      { name: "sizeRange", label: "Beden aralığı", placeholder: "XS-XXL", required: true },
       { name: "collarType", label: "Yaka tipi", type: "select", options: [
         { value: "bisiklet", label: "Bisiklet yaka" },
         { value: "v_yaka", label: "V yaka" },
         { value: "polo", label: "Polo yaka" }
       ] },
       { name: "sleeveLength", label: "Kol tipi", type: "select", options: [
-        { value: "kisa", label: "Kisa kol" },
+        { value: "kisa", label: "Kısa kol" },
         { value: "uzun", label: "Uzun kol" }
       ] },
-      { name: "printType", label: "Baski / desen", placeholder: "Nakis, dijital baski, duz renk..." },
-      { name: "colorsText", label: "Renk secenekleri", placeholder: "Siyah, beyaz, lacivert..." },
+      { name: "printType", label: "Baskı / desen", placeholder: "Nakış, dijital baskı, düz renk..." },
+      { name: "colorsText", label: "Renk seçenekleri", placeholder: "Siyah, beyaz, lacivert..." },
       { name: "season", label: "Sezon", type: "select", options: seasonOptions }
     ]
   },
   pantolon: {
     family: "kiyafet",
-    label: "Kiyafet / Pantolon",
+    label: "Kıyafet / Pantolon",
     shortLabel: "Pantolon",
     defaultMotivation: "ihtiyac",
     audience: "full",
     exampleName: "Regular Fit Keten Pantolon",
-    descriptionPlaceholder: "Kumas, bel tipi, paca formu, esneklik, beden/olcu ve kullanim alanini yazin.",
+    descriptionPlaceholder: "Kumaş, bel tipi, paça formu, esneklik, beden/ölçü ve kullanım alanını yazın.",
     fields: [
-      { name: "fabric", label: "Kumas icerigi", placeholder: "Denim, keten, gabardin...", required: true },
-      { name: "fit", label: "Kalip", type: "select", options: [
+      { name: "fabric", label: "Kumaş içeriği", placeholder: "Denim, keten, gabardin...", required: true },
+      { name: "fit", label: "Kalıp", type: "select", options: [
         { value: "regular", label: "Regular" },
         { value: "slim", label: "Slim" },
         { value: "wide", label: "Wide leg" }
       ] },
       { name: "waistType", label: "Bel tipi", type: "select", options: [
         { value: "normal", label: "Normal bel" },
-        { value: "yuksek", label: "Yuksek bel" },
+        { value: "yuksek", label: "Yüksek bel" },
         { value: "lastikli", label: "Lastikli bel" }
       ] },
-      { name: "legType", label: "Paca tipi", type: "select", options: [
-        { value: "duz", label: "Duz paca" },
-        { value: "dar", label: "Dar paca" },
-        { value: "bol", label: "Bol paca" }
+      { name: "legType", label: "Paça tipi", type: "select", options: [
+        { value: "duz", label: "Düz paça" },
+        { value: "dar", label: "Dar paça" },
+        { value: "bol", label: "Bol paça" }
       ] },
       { name: "stretch", label: "Esneklik var", type: "checkbox" },
-      { name: "sizeRange", label: "Beden/olcu araligi", placeholder: "30-38 veya S-XL", required: true },
-      { name: "useCase", label: "Kullanim alani", placeholder: "Ofis, gunluk, spor..." },
+      { name: "sizeRange", label: "Beden/ölçü aralığı", placeholder: "30-38 veya S-XL", required: true },
+      { name: "useCase", label: "Kullanım alanı", placeholder: "Ofis, günlük, spor..." },
       { name: "season", label: "Sezon", type: "select", options: seasonOptions }
     ]
   },
   mont: {
     family: "kiyafet",
-    label: "Kiyafet / Mont",
+    label: "Kıyafet / Mont",
     shortLabel: "Mont",
     defaultMotivation: "stil_begeni",
     audience: "full",
-    exampleName: "Su Gecirmez Oversize Kislik Mont",
-    descriptionPlaceholder: "Kumas, ic dolgu, sezon, su/ruzgar korumasi, kapuson, cep ve beden bilgisini yazin.",
+    exampleName: "Su Geçirmez Oversize Kışlık Mont",
+    descriptionPlaceholder: "Kumaş, iç dolgu, sezon, su/rüzgar koruması, kapüşon, cep ve beden bilgisini yazın.",
     fields: [
-      { name: "fabric", label: "Dis kumas", placeholder: "Polyester, softshell...", required: true },
-      { name: "innerFilling", label: "Ic dolgu", placeholder: "Elyaf, kaz tuyu, polar...", required: true },
+      { name: "fabric", label: "Dış kumaş", placeholder: "Polyester, softshell...", required: true },
+      { name: "innerFilling", label: "İç dolgu", placeholder: "Elyaf, kaz tüyü, polar...", required: true },
       { name: "season", label: "Sezon", type: "select", options: seasonOptions },
-      { name: "fit", label: "Kalip", type: "select", options: [
+      { name: "fit", label: "Kalıp", type: "select", options: [
         { value: "regular", label: "Regular" },
         { value: "oversize", label: "Oversize" },
         { value: "slim", label: "Slim" }
       ] },
-      { name: "sizeRange", label: "Beden araligi", placeholder: "S-XXL" },
-      { name: "waterproof", label: "Su gecirmez", type: "checkbox" },
-      { name: "windproof", label: "Ruzgar gecirmez", type: "checkbox" },
-      { name: "hood", label: "Kapuson var", type: "checkbox" },
-      { name: "pocketCount", label: "Cep sayisi", type: "number", placeholder: "4" }
+      { name: "sizeRange", label: "Beden aralığı", placeholder: "S-XXL" },
+      { name: "waterproof", label: "Su geçirmez", type: "checkbox" },
+      { name: "windproof", label: "Rüzgar geçirmez", type: "checkbox" },
+      { name: "hood", label: "Kapüşon var", type: "checkbox" },
+      { name: "pocketCount", label: "Cep sayısı", type: "number", placeholder: "4" }
     ]
   },
   elbise: {
     family: "kiyafet",
-    label: "Kiyafet / Elbise",
+    label: "Kıyafet / Elbise",
     shortLabel: "Elbise",
     defaultMotivation: "stil_begeni",
     audience: "full",
     exampleName: "Midi Boy Keten Elbise",
-    descriptionPlaceholder: "Kumas, kesim, astar, boy, beden araligi, sezon ve hangi ortamda kullanilacagini yazin.",
+    descriptionPlaceholder: "Kumaş, kesim, astar, boy, beden aralığı, sezon ve hangi ortamda kullanılacağını yazın.",
     fields: [
-      { name: "fabric", label: "Kumas icerigi", placeholder: "Keten, viskon, saten...", required: true },
-      { name: "fit", label: "Kesim / kalip", type: "select", options: [
+      { name: "fabric", label: "Kumaş içeriği", placeholder: "Keten, viskon, saten...", required: true },
+      { name: "fit", label: "Kesim / kalıp", type: "select", options: [
         { value: "regular", label: "Regular" },
         { value: "slim", label: "Slim" },
         { value: "oversize", label: "Rahat kesim" }
       ] },
-      { name: "sizeRange", label: "Beden araligi", placeholder: "XS-XL", required: true },
-      { name: "sleeveLength", label: "Kol / askili tipi", type: "select", options: [
-        { value: "askili", label: "Askili" },
-        { value: "kisa", label: "Kisa kol" },
+      { name: "sizeRange", label: "Beden aralığı", placeholder: "XS-XL", required: true },
+      { name: "sleeveLength", label: "Kol / askılı tipi", type: "select", options: [
+        { value: "askili", label: "Askılı" },
+        { value: "kisa", label: "Kısa kol" },
         { value: "uzun", label: "Uzun kol" }
       ] },
-      { name: "legType", label: "Boy / kesim", placeholder: "Mini, midi, maksi, yirtmacli..." },
-      { name: "colorsText", label: "Renk secenekleri", placeholder: "Siyah, yesil, ekru..." },
-      { name: "useCase", label: "Kullanim alani", placeholder: "Gunluk, ofis, davet, tatil..." },
+      { name: "legType", label: "Boy / kesim", placeholder: "Mini, midi, maksi, yırtmaçlı..." },
+      { name: "colorsText", label: "Renk seçenekleri", placeholder: "Siyah, yeşil, ekru..." },
+      { name: "useCase", label: "Kullanım alanı", placeholder: "Günlük, ofis, davet, tatil..." },
       { name: "season", label: "Sezon", type: "select", options: seasonOptions }
     ]
   },
   etek: {
     family: "kiyafet",
-    label: "Kiyafet / Etek",
+    label: "Kıyafet / Etek",
     shortLabel: "Etek",
     defaultMotivation: "stil_begeni",
     audience: "full",
-    exampleName: "Yuksek Bel Midi Etek",
-    descriptionPlaceholder: "Kumas, bel tipi, etek boyu, kalip, beden araligi, kombin ve sezon bilgisini yazin.",
+    exampleName: "Yüksek Bel Midi Etek",
+    descriptionPlaceholder: "Kumaş, bel tipi, etek boyu, kalıp, beden aralığı, kombin ve sezon bilgisini yazın.",
     fields: [
-      { name: "fabric", label: "Kumas icerigi", placeholder: "Denim, keten, saten...", required: true },
+      { name: "fabric", label: "Kumaş içeriği", placeholder: "Denim, keten, saten...", required: true },
       { name: "waistType", label: "Bel tipi", type: "select", options: [
         { value: "normal", label: "Normal bel" },
-        { value: "yuksek", label: "Yuksek bel" },
+        { value: "yuksek", label: "Yüksek bel" },
         { value: "lastikli", label: "Lastikli bel" }
       ] },
       { name: "legType", label: "Boy / kesim", placeholder: "Mini, midi, maksi, kalem, pileli..." },
-      { name: "fit", label: "Kalip", type: "select", options: [
+      { name: "fit", label: "Kalıp", type: "select", options: [
         { value: "regular", label: "Regular" },
         { value: "slim", label: "Dar" },
         { value: "wide", label: "Bol" }
       ] },
-      { name: "sizeRange", label: "Beden araligi", placeholder: "XS-XL", required: true },
-      { name: "colorsText", label: "Renk secenekleri", placeholder: "Siyah, bej, lacivert..." },
-      { name: "useCase", label: "Kullanim alani", placeholder: "Ofis, gunluk, davet..." },
+      { name: "sizeRange", label: "Beden aralığı", placeholder: "XS-XL", required: true },
+      { name: "colorsText", label: "Renk seçenekleri", placeholder: "Siyah, bej, lacivert..." },
+      { name: "useCase", label: "Kullanım alanı", placeholder: "Ofis, günlük, davet..." },
       { name: "season", label: "Sezon", type: "select", options: seasonOptions }
     ]
   },
@@ -217,17 +213,17 @@ const categoryConfig: Record<string, CategoryConfig> = {
     shortLabel: "Telefon",
     defaultMotivation: "ihtiyac",
     audience: "income",
-    exampleName: "128 GB 5G Akilli Telefon",
-    descriptionPlaceholder: "Marka/model, RAM, depolama, kamera, batarya, ekran ve garanti durumunu yazin.",
+    exampleName: "128 GB 5G Akıllı Telefon",
+    descriptionPlaceholder: "Marka/model, RAM, depolama, kamera, batarya, ekran ve garanti durumunu yazın.",
     fields: [
       { name: "brand", label: "Marka / model", placeholder: "Marka ve model", required: true },
       { name: "ram", label: "RAM", placeholder: "8 GB", required: true },
       { name: "storage", label: "Depolama", placeholder: "128 GB", required: true },
-      { name: "processor", label: "Islemci", placeholder: "Snapdragon / A serisi..." },
+      { name: "processor", label: "İşlemci", placeholder: "Snapdragon / A serisi..." },
       { name: "camera", label: "Kamera", placeholder: "50 MP OIS, 4K video..." },
       { name: "battery", label: "Batarya", placeholder: "5000 mAh" },
       { name: "screenSize", label: "Ekran", placeholder: "6.5 inch AMOLED" },
-      { name: "refreshRate", label: "Yenileme hizi", placeholder: "120 Hz" }
+      { name: "refreshRate", label: "Yenileme hızı", placeholder: "120 Hz" }
     ]
   },
   laptop: {
@@ -236,41 +232,41 @@ const categoryConfig: Record<string, CategoryConfig> = {
     shortLabel: "Laptop",
     defaultMotivation: "profesyonel_kullanim",
     audience: "income",
-    exampleName: "16 GB RAM Is Laptopu",
-    descriptionPlaceholder: "Islemci, RAM, depolama, ekran, GPU, batarya, agirlik ve hangi is icin uygun oldugunu yazin.",
+    exampleName: "16 GB RAM İş Laptopu",
+    descriptionPlaceholder: "İşlemci, RAM, depolama, ekran, GPU, batarya, ağırlık ve hangi iş için uygun olduğunu yazın.",
     fields: [
       { name: "brand", label: "Marka / model", placeholder: "Marka ve model", required: true },
-      { name: "processor", label: "Islemci", placeholder: "i5, Ryzen 7, M serisi...", required: true },
+      { name: "processor", label: "İşlemci", placeholder: "i5, Ryzen 7, M serisi...", required: true },
       { name: "ram", label: "RAM", placeholder: "16 GB", required: true },
       { name: "storage", label: "Depolama", placeholder: "512 GB SSD", required: true },
-      { name: "gpu", label: "Ekran karti", placeholder: "RTX 4050, entegre..." },
+      { name: "gpu", label: "Ekran kartı", placeholder: "RTX 4050, entegre..." },
       { name: "screenSize", label: "Ekran", placeholder: "14 inch IPS, 2K..." },
-      { name: "battery", label: "Batarya / sure", placeholder: "8 saat, 60 Wh..." },
-      { name: "weight", label: "Agirlik", placeholder: "1.4 kg" },
-      { name: "useCase", label: "Kullanim amaci", placeholder: "Ofis, yazilim, oyun, tasarim..." }
+      { name: "battery", label: "Batarya / süre", placeholder: "8 saat, 60 Wh..." },
+      { name: "weight", label: "Ağırlık", placeholder: "1.4 kg" },
+      { name: "useCase", label: "Kullanım amacı", placeholder: "Ofis, yazılım, oyun, tasarım..." }
     ]
   },
   kulaklik: {
     family: "teknoloji",
-    label: "Teknoloji / Kulaklik",
-    shortLabel: "Kulaklik",
+    label: "Teknoloji / Kulaklık",
+    shortLabel: "Kulaklık",
     defaultMotivation: "ihtiyac",
     audience: "income",
-    exampleName: "ANC Bluetooth Kulaklik",
-    descriptionPlaceholder: "Baglanti tipi, pil, ANC, mikrofon, su dayanimi, gecikme ve kullanim alanini yazin.",
+    exampleName: "ANC Bluetooth Kulaklık",
+    descriptionPlaceholder: "Bağlantı tipi, pil, ANC, mikrofon, su dayanımı, gecikme ve kullanım alanını yazın.",
     fields: [
       { name: "brand", label: "Marka / model", placeholder: "Marka ve model" },
-      { name: "connectionType", label: "Baglanti", type: "select", options: [
+      { name: "connectionType", label: "Bağlantı", type: "select", options: [
         { value: "bluetooth", label: "Bluetooth" },
         { value: "kablolu", label: "Kablolu" },
         { value: "dongle", label: "2.4 GHz dongle" }
       ] },
-      { name: "battery", label: "Pil suresi", placeholder: "30 saat" },
-      { name: "noiseCancellation", label: "Aktif gurultu engelleme", type: "checkbox" },
-      { name: "microphone", label: "Mikrofon kalitesi", placeholder: "ENC, cift mikrofon..." },
-      { name: "waterResistance", label: "Su/ter dayanimi", placeholder: "IPX4, IP54..." },
-      { name: "latency", label: "Gecikme", placeholder: "45 ms, dusuk gecikme modu..." },
-      { name: "useCase", label: "Kullanim amaci", placeholder: "Muzik, oyun, toplanti, spor..." }
+      { name: "battery", label: "Pil süresi", placeholder: "30 saat" },
+      { name: "noiseCancellation", label: "Aktif gürültü engelleme", type: "checkbox" },
+      { name: "microphone", label: "Mikrofon kalitesi", placeholder: "ENC, çift mikrofon..." },
+      { name: "waterResistance", label: "Su/ter dayanımı", placeholder: "IPX4, IP54..." },
+      { name: "latency", label: "Gecikme", placeholder: "45 ms, düşük gecikme modu..." },
+      { name: "useCase", label: "Kullanım amacı", placeholder: "Müzik, oyun, toplantı, spor..." }
     ]
   },
   tablet: {
@@ -279,36 +275,36 @@ const categoryConfig: Record<string, CategoryConfig> = {
     shortLabel: "Tablet",
     defaultMotivation: "ihtiyac",
     audience: "income",
-    exampleName: "10.9 Inc Kalem Destekli Tablet",
-    descriptionPlaceholder: "Marka/model, ekran, RAM, depolama, kalem/klavye destegi, batarya ve kullanim amacini yazin.",
+    exampleName: "10.9 inç Kalem Destekli Tablet",
+    descriptionPlaceholder: "Marka/model, ekran, RAM, depolama, kalem/klavye desteği, batarya ve kullanım amacını yazın.",
     fields: [
       { name: "brand", label: "Marka / model", placeholder: "Marka ve model", required: true },
       { name: "screenSize", label: "Ekran", placeholder: "10.9 inch IPS/AMOLED", required: true },
       { name: "ram", label: "RAM", placeholder: "6 GB" },
       { name: "storage", label: "Depolama", placeholder: "128 GB", required: true },
-      { name: "processor", label: "Islemci", placeholder: "A serisi, Snapdragon..." },
+      { name: "processor", label: "İşlemci", placeholder: "A serisi, Snapdragon..." },
       { name: "battery", label: "Batarya", placeholder: "8000 mAh, 10 saat" },
-      { name: "connectivity", label: "Baglanti", placeholder: "Wi-Fi, LTE, 5G, kalem destekli..." },
-      { name: "useCase", label: "Kullanim amaci", placeholder: "Egitim, not alma, cizim, medya..." }
+      { name: "connectivity", label: "Bağlantı", placeholder: "Wi-Fi, LTE, 5G, kalem destekli..." },
+      { name: "useCase", label: "Kullanım amacı", placeholder: "Eğitim, not alma, çizim, medya..." }
     ]
   },
   akilli_saat: {
     family: "teknoloji",
-    label: "Teknoloji / Akilli Saat",
-    shortLabel: "Akilli Saat",
+    label: "Teknoloji / Akıllı Saat",
+    shortLabel: "Akıllı Saat",
     defaultMotivation: "ihtiyac",
     audience: "income",
-    exampleName: "GPS ve AMOLED Ekranli Akilli Saat",
-    descriptionPlaceholder: "Marka/model, pil, ekran, su dayanimi, sensorler, telefon uyumu ve spor/saglik kullanimini yazin.",
+    exampleName: "GPS ve AMOLED Ekranlı Akıllı Saat",
+    descriptionPlaceholder: "Marka/model, pil, ekran, su dayanımı, sensörler, telefon uyumu ve spor/sağlık kullanımını yazın.",
     fields: [
       { name: "brand", label: "Marka / model", placeholder: "Marka ve model", required: true },
       { name: "screenSize", label: "Ekran boyutu", placeholder: "1.43 inch" },
       { name: "displayType", label: "Ekran tipi", placeholder: "AMOLED, Always-on..." },
-      { name: "battery", label: "Pil suresi", placeholder: "7 gun, 14 gun..." },
-      { name: "waterResistance", label: "Su dayanimi", placeholder: "5 ATM, IP68..." },
-      { name: "sensors", label: "Sensorler", placeholder: "Nabiz, SpO2, GPS, uyku takibi..." },
-      { name: "connectivity", label: "Baglanti / uyum", placeholder: "Bluetooth, eSIM, iOS/Android..." },
-      { name: "useCase", label: "Kullanim amaci", placeholder: "Spor, saglik takibi, bildirim..." }
+      { name: "battery", label: "Pil süresi", placeholder: "7 gün, 14 gün..." },
+      { name: "waterResistance", label: "Su dayanımı", placeholder: "5 ATM, IP68..." },
+      { name: "sensors", label: "Sensörler", placeholder: "Nabız, SpO2, GPS, uyku takibi..." },
+      { name: "connectivity", label: "Bağlantı / uyum", placeholder: "Bluetooth, eSIM, iOS/Android..." },
+      { name: "useCase", label: "Kullanım amacı", placeholder: "Spor, sağlık takibi, bildirim..." }
     ]
   }
 };
@@ -316,7 +312,7 @@ const categoryConfig: Record<string, CategoryConfig> = {
 const categoryFamilies = [
   {
     key: "kiyafet",
-    label: "Kiyafet",
+    label: "Kıyafet",
     icon: Shirt,
     items: ["tisort", "pantolon", "mont", "elbise", "etek"]
   },
@@ -331,10 +327,6 @@ const categoryFamilies = [
 
 
 
-const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 10 },
-  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
-};
 
 function getString(formData: FormData, key: string): string | undefined {
   const value = String(formData.get(key) || "").trim();
@@ -462,12 +454,12 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
     const urlField = formRef.current?.elements.namedItem("productUrl") as HTMLInputElement | null;
     const url = urlField?.value.trim();
     if (!url) {
-      setLinkStatus("Once urun linkini girin.");
+      setLinkStatus("Önce ürün linkini girin.");
       return;
     }
 
     setIsReadingLink(true);
-    setLinkStatus("Link okunuyor...");
+    setLinkStatus("Link okunuyor…");
     try {
       const result = await readProductLink(url);
       
@@ -505,7 +497,7 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
       } else {
         setImages([]);
       }
-      setLinkStatus(result.warnings[0] || "Linkten tum bilgiler, kategori ve teknik detaylar okundu.");
+      setLinkStatus(result.warnings[0] || "Linkten bilgiler, kategori ve teknik detaylar okundu.");
     } catch (err: unknown) {
       setLinkStatus(apiErrorMessage(err));
     } finally {
@@ -522,7 +514,7 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
         const result = await downscaleImage(file);
         setImages((prev) => (prev.includes(result) ? prev : [...prev, result].slice(0, MAX_IMAGES)));
       } catch {
-        setLinkStatus("Gorsel okunamadi.");
+        setLinkStatus("Görsel okunamadı.");
       }
     });
   };
@@ -544,332 +536,286 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
   };
 
   return (
-    <div className="bento-card border-primary/20 glow-blue overflow-hidden relative">
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
-
-      <div className="mb-8">
-        <h2 className="text-2xl font-black tracking-tighter flex items-center gap-3">
-          <Sparkles className="w-6 h-6 text-primary" />
-          Ürün Analizi Başlat
-        </h2>
-        <p className="text-muted-foreground text-sm font-medium mt-1">
-          Ürün ailesini seçin; PazarLab pazar uyumunu saniyeler içinde analiz etsin.
+    <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
+      {/* 1 · Link ile doldur */}
+      <Step n={1} title="Linkten doldur" hint="İsteğe bağlı">
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <label htmlFor="productUrl" className="sr-only">Ürün linki</label>
+          <input
+            id="productUrl"
+            name="productUrl"
+            type="url"
+            maxLength={2048}
+            placeholder="Trendyol, Hepsiburada, Amazon, n11 linki yapıştırın…"
+            className="field"
+          />
+          <button type="button" onClick={handleReadLink} disabled={isReadingLink} className="btn-sticker-primary shrink-0 sm:w-44">
+            {isReadingLink ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Link2 className="h-4 w-4" aria-hidden />}
+            {isReadingLink ? "Okunuyor…" : "Linkten oku"}
+          </button>
+        </div>
+        <p className="text-sm text-muted-foreground" aria-live="polite">
+          {linkStatus || "Okunan bilgiler aşağıdaki alanlara otomatik dolar; dilediğiniz gibi düzenleyebilirsiniz."}
         </p>
-      </div>
+      </Step>
 
-      <form ref={formRef} onSubmit={handleSubmit}>
-        <div className="space-y-10">
-            
-            {/* 1. ADIM: HIZLI BASLANGIC (Link & Gorseller) */}
-            <motion.div variants={itemVariants} className="space-y-6 p-6 rounded-2xl bg-primary/5 border border-primary/20 relative overflow-hidden">
-              <div className="absolute -right-10 -top-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
-              <div className="flex items-center gap-2 text-lg font-bold text-primary border-b border-primary/20 pb-3 mb-4">
-                <Link2 className="w-5 h-5" />
-                Hizli Baslangic
-              </div>
-
-              <div className="space-y-2 group">
-                <Label htmlFor="productUrl" className="text-sm font-semibold text-foreground/80">Urun Linki (Opsiyonel)</Label>
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <Input 
-                    id="productUrl" 
-                    name="productUrl" 
-                    type="url" 
-                    placeholder="Trendyol, Amazon, n11 linki yapistirin..." 
-                    className="h-12 bg-background/50 border-primary/20 focus:ring-primary/50 focus:border-primary transition-all text-base" 
-                  />
-                  <Button 
-                    type="button" 
-                    onClick={handleReadLink} 
-                    disabled={isReadingLink} 
-                    className="h-12 sm:w-48 bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20"
-                  >
-                    {isReadingLink ? (
-                      <span className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Okunuyor...</span>
-                    ) : (
-                      <span className="flex items-center gap-2"><Sparkles className="h-4 w-4" /> Linkten Oku</span>
-                    )}
-                  </Button>
-                </div>
-                <p className="text-[11px] text-primary/70 font-medium px-1 uppercase tracking-wider">{linkStatus || "Linkten okunan bilgiler asagidaki alanlara otomatik dolar."}</p>
-              </div>
-
-              {/* Product Images Section */}
-              <div className="space-y-3 pt-2">
-                <Label className="text-sm font-semibold text-foreground/80 flex items-center gap-2">
-                  <ImageIcon className="w-4 h-4 text-primary" />
-                  Urun Gorselleri
-                </Label>
-                
-                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
-                  {/* Upload Area */}
-                  <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => fileInputRef.current?.click()}
-                    className={`aspect-square rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-all ${
-                      isDragging ? "border-primary bg-primary/20" : "border-primary/20 bg-background/40 hover:bg-primary/5 hover:border-primary/40"
-                    }`}
-                    onDragOver={onDragOver}
-                    onDragLeave={onDragLeave}
-                    onDrop={onDrop}
-                  >
-                    <Upload className="w-5 h-5 text-primary/60" />
-                    <span className="text-[9px] font-bold text-primary/60 uppercase text-center px-1">Yukle</span>
-                    <input 
-                      type="file" multiple accept="image/*" className="hidden" 
-                      ref={fileInputRef} onChange={(e) => handleFileUpload(e.target.files)} 
-                    />
-                  </motion.div>
-
-                  {images.map((url, idx) => (
-                    <div key={idx} className="group relative aspect-square rounded-xl overflow-hidden border border-border/40 bg-background shadow-sm">
-                      <img src={url} alt={`Urun ${idx}`} className="w-full h-full object-cover" />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <button type="button" onClick={() => setImages((prev) => prev.filter((_, i) => i !== idx))}
-                          className="bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition-colors">
-                          <Trash2 className="h-3 w-3" />
-                        </button>
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* 2 · Temel bilgiler */}
+        <Step n={2} title="Temel bilgiler">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <FieldLabel htmlFor="category" label="Kategori">
+              <Select value={category} onValueChange={handleCategoryChange}>
+                <SelectTrigger id="category" className="field h-11">
+                  <SelectValue placeholder="Kategori seçin" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categoryFamilies.map((family) => (
+                    <div key={family.key}>
+                      <div className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-muted-foreground">
+                        <family.icon className="h-3.5 w-3.5" aria-hidden /> {family.label}
                       </div>
+                      {family.items.map((itemKey) => (
+                        <SelectItem key={itemKey} value={itemKey}>
+                          {categoryConfig[itemKey].shortLabel}
+                        </SelectItem>
+                      ))}
                     </div>
                   ))}
-                  
-                  {/* URL Add Button (Small) */}
-                  <Button 
-                    type="button" variant="outline" size="icon"
-                    onClick={() => {
-                      const url = prompt("Gorsel URL'si girin:");
-                      if (url && !images.includes(url)) setImages(prev => [...prev, url].slice(0, MAX_IMAGES));
-                    }}
-                    className="aspect-square h-auto rounded-xl border-dashed border-primary/20 bg-background/40"
+                </SelectContent>
+              </Select>
+            </FieldLabel>
+            <FieldLabel htmlFor="motivation" label="Satın alma motivasyonu">
+              <Select name="motivation" value={motivation} onValueChange={(val) => setMotivation((val as PurchaseMotivation) || activeCategory.defaultMotivation)}>
+                <SelectTrigger id="motivation" className="field h-11">
+                  <SelectValue placeholder="Motivasyon seçin" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="stil_begeni">Stil / beğeni</SelectItem>
+                  <SelectItem value="ihtiyac">Günlük ihtiyaç</SelectItem>
+                  <SelectItem value="problem_cozme">Problem çözme</SelectItem>
+                  <SelectItem value="yedek_parca_tamir">Yedek parça / tamir</SelectItem>
+                  <SelectItem value="hediye">Hediye</SelectItem>
+                  <SelectItem value="trend">Trend / sosyal medya</SelectItem>
+                  <SelectItem value="profesyonel_kullanim">Profesyonel kullanım</SelectItem>
+                </SelectContent>
+              </Select>
+            </FieldLabel>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-[1fr_9rem]">
+            <FieldLabel htmlFor="productName" label="Ürün adı" required>
+              <input id="productName" name="productName" placeholder={activeCategory.exampleName} minLength={4} maxLength={120} required className="field" />
+            </FieldLabel>
+            <FieldLabel htmlFor="price" label="Fiyat (TL)" required>
+              <input id="price" name="price" type="number" min="1" max="10000000" step="0.01" placeholder="1200" required className="field" />
+            </FieldLabel>
+          </div>
+
+          <FieldLabel htmlFor="description" label="Ürün açıklaması" required hint="En az 40 karakter. Detay arttıkça simülasyon isabeti artar.">
+            <textarea
+              id="description"
+              name="description"
+              minLength={40}
+              maxLength={4000}
+              rows={6}
+              placeholder={activeCategory.descriptionPlaceholder}
+              required
+              className="field resize-y"
+            />
+          </FieldLabel>
+
+          <div className="space-y-2">
+            <span className="text-sm font-bold text-foreground-2">Görseller <span className="font-semibold text-muted-foreground">(en fazla {MAX_IMAGES})</span></span>
+            <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+              {images.map((url, idx) => (
+                <div key={idx} className="group relative aspect-square overflow-hidden rounded-wobble border-2 border-border bg-card">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- user uploads / scraped URLs */}
+                  <img src={url} alt={`Ürün görseli ${idx + 1}`} className="h-full w-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => setImages((prev) => prev.filter((_, i) => i !== idx))}
+                    aria-label={`Görsel ${idx + 1}'i kaldır`}
+                    className="absolute right-1.5 top-1.5 grid h-7 w-7 place-items-center rounded-full border-2 border-foreground bg-card shadow-sticker-ink"
                   >
-                    <Plus className="h-4 w-4 text-primary/60" />
-                  </Button>
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
                 </div>
-              </div>
-            </motion.div>
-
-            {/* 2. ADIM: KATEGORI VE MOTIVASYON */}
-            <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-              <div className="space-y-2 group">
-                <Label htmlFor="category" className="text-sm font-bold text-primary uppercase tracking-wider">Urun Kategorisi</Label>
-                <Select value={category} onValueChange={handleCategoryChange}>
-                  <SelectTrigger id="category" className="h-12 border-border/60 bg-muted/5 focus:ring-primary transition-all text-base font-medium">
-                    <SelectValue placeholder="Kategori Secin" />
-                  </SelectTrigger>
-                  <SelectContent className="glass border-primary/20">
-                    {categoryFamilies.map((family) => (
-                      <div key={family.key}>
-                        <div className="px-3 py-2 text-[10px] font-black text-primary/50 uppercase tracking-[0.2em] bg-primary/5 flex items-center gap-2">
-                          <family.icon className="w-3 h-3" /> {family.label}
-                        </div>
-                        {family.items.map((itemKey) => (
-                          <SelectItem key={itemKey} value={itemKey} className="py-2.5 cursor-pointer">
-                            {categoryConfig[itemKey].shortLabel}
-                          </SelectItem>
-                        ))}
-                      </div>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2 group">
-                <Label htmlFor="motivation" className="text-sm font-bold text-primary uppercase tracking-wider">Satin Alma Motivasyonu</Label>
-                <Select name="motivation" value={motivation} onValueChange={(val) => setMotivation((val as PurchaseMotivation) || activeCategory.defaultMotivation)}>
-                  <SelectTrigger id="motivation" className="h-12 border-border/60 bg-muted/5 focus:ring-primary transition-all text-base font-medium">
-                    <SelectValue placeholder="Motivasyon secin" />
-                  </SelectTrigger>
-                  <SelectContent className="glass border-primary/20">
-                    <SelectItem value="stil_begeni">Stil / Begeni</SelectItem>
-                    <SelectItem value="ihtiyac">Gunluk Ihtiyac</SelectItem>
-                    <SelectItem value="problem_cozme">Problem Cozme</SelectItem>
-                    <SelectItem value="hediye">Hediye Amacli</SelectItem>
-                    <SelectItem value="trend">Trend / Sosyal Medya</SelectItem>
-                    <SelectItem value="profesyonel_kullanim">Profesyonel Kullanim</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </motion.div>
-
-            {/* 3. ADIM: TEMEL BILGILER */}
-            <motion.div variants={itemVariants} className="space-y-6">
-              <div className="flex items-center gap-3 border-b border-border/40 pb-3 mb-6">
-                <div className="w-1.5 h-6 bg-primary rounded-full shadow-[0_0_10px_hsl(var(--primary)/0.5)]" />
-                <h3 className="text-xl font-bold tracking-tight">Temel Bilgiler</h3>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="md:col-span-3 space-y-2 group">
-                  <Label htmlFor="productName" className="font-semibold text-foreground/90">Urun Adi <span className="text-red-500">*</span></Label>
-                  <Input id="productName" name="productName" placeholder={activeCategory.exampleName} minLength={4} maxLength={120} required className="h-12 focus:ring-primary/50 focus:border-primary transition-all" />
-                </div>
-                <div className="space-y-2 group">
-                  <Label htmlFor="price" className="font-semibold text-foreground/90">Fiyat (TL) <span className="text-red-500">*</span></Label>
-                  <Input id="price" name="price" type="number" min="1" max="10000000" step="0.01" placeholder="1200" required className="h-12 focus:ring-primary/50 focus:border-primary transition-all" />
-                </div>
-              </div>
-
-              <div className="space-y-2 group">
-                <Label htmlFor="description" className="font-semibold text-foreground/90">Urun Aciklamasi <span className="text-red-500">*</span></Label>
-                <textarea
-                  id="description"
-                  name="description"
-                  minLength={40}
-                  maxLength={4000}
-                  className="flex min-h-[140px] w-full rounded-xl border border-input bg-background/50 px-4 py-3 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50 transition-all resize-none shadow-inner"
-                  placeholder={activeCategory.descriptionPlaceholder}
-                  required
-                />
-                <p className="text-[11px] text-muted-foreground italic px-1">En az 40 karakter girilmelidir. Daha detayli aciklama, daha dogru simulasyon demektir.</p>
-              </div>
-            </motion.div>
-
-            {/* 4. ADIM: HEDEF & OPERASYON */}
-            <motion.div variants={itemVariants} className="space-y-6 pt-4">
-              <div className="flex items-center gap-3 border-b border-border/40 pb-3 mb-6">
-                <div className="w-1.5 h-6 bg-primary rounded-full shadow-[0_0_10px_hsl(var(--primary)/0.5)]" />
-                <h3 className="text-xl font-bold tracking-tight">Hedef & Operasyon</h3>
-              </div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
-                {activeCategory.audience === "full" && (
-                  <>
-                    <div className="space-y-2 group">
-                      <Label htmlFor="ageRange" className="text-xs font-bold text-muted-foreground uppercase">Yas Araligi</Label>
-                      <Select name="ageRange" defaultValue="18-30">
-                        <SelectTrigger id="ageRange" className="h-11 focus:ring-primary/50 transition-all"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="13-17">13-17</SelectItem>
-                          <SelectItem value="18-30">18-30</SelectItem>
-                          <SelectItem value="30-45">30-45</SelectItem>
-                          <SelectItem value="45+">45+</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2 group">
-                      <Label htmlFor="gender" className="text-xs font-bold text-muted-foreground uppercase">Cinsiyet</Label>
-                      <Select name="gender" defaultValue="unisex">
-                        <SelectTrigger id="gender" className="h-11 focus:ring-primary/50 transition-all"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="unisex">Unisex</SelectItem>
-                          <SelectItem value="kadin">Kadin</SelectItem>
-                          <SelectItem value="erkek">Erkek</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </>
-                )}
-                <div className="space-y-2 group">
-                  <Label htmlFor="incomeLevel" className="text-xs font-bold text-muted-foreground uppercase">Fiyat Segmenti</Label>
-                  <Select name="incomeLevel" defaultValue="middle">
-                    <SelectTrigger id="incomeLevel" className="h-11 focus:ring-primary/50 transition-all"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="low">Ekonomik</SelectItem>
-                      <SelectItem value="middle">Orta</SelectItem>
-                      <SelectItem value="high">Premium</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2 group">
-                  <Label htmlFor="shippingDays" className="text-xs font-bold text-muted-foreground uppercase">Kargo (Gun)</Label>
-                  <Input id="shippingDays" name="shippingDays" type="number" defaultValue="3" min="0" className="h-11 focus:ring-primary/50 focus:border-primary transition-all" />
-                </div>
-              </div>
-
-              <div className="flex gap-4 p-4 rounded-xl bg-muted/20 border border-border/40">
-                <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
-                  <input name="returnAvailable" type="checkbox" defaultChecked className="h-4 w-4 accent-primary rounded border-primary/20" />
-                  Iade imkani var
+              ))}
+              {images.length < MAX_IMAGES && (
+                <label
+                  onDragOver={onDragOver}
+                  onDragLeave={onDragLeave}
+                  onDrop={onDrop}
+                  className={`flex aspect-square cursor-pointer flex-col items-center justify-center gap-1 rounded-wobble border-2 border-dashed text-sm font-bold text-muted-foreground transition-colors focus-within:outline focus-within:outline-2 focus-within:outline-ring ${
+                    isDragging ? "border-accent bg-accent/10" : "border-border bg-card hover:bg-secondary"
+                  }`}
+                >
+                  <Upload className="h-5 w-5" aria-hidden />
+                  Yükle
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    className="sr-only"
+                    ref={fileInputRef}
+                    onChange={(e) => handleFileUpload(e.target.files)}
+                  />
                 </label>
-                <div className="w-px h-5 bg-border/60 mx-2" />
-                <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
-                  <input name="warranty" type="checkbox" className="h-4 w-4 accent-primary rounded border-primary/20" />
-                  Garanti / Fatura mevcut
-                </label>
-              </div>
-            </motion.div>
-
-            {/* 5. ADIM: DINAMIK OZELLIKLER */}
-            <motion.div variants={itemVariants} className="space-y-6 pt-4">
-              <div className="flex items-center gap-3 border-b border-border/40 pb-3 mb-6">
-                <div className="w-1.5 h-6 bg-primary rounded-full shadow-[0_0_10px_hsl(var(--primary)/0.5)]" />
-                <h3 className="text-xl font-bold tracking-tight">{activeCategory.shortLabel} Teknik Detaylari</h3>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-5 bg-muted/10 p-6 rounded-2xl border border-border/50 shadow-inner">
-
-                {activeCategory.fields.map((field) => {
-                  if (field.type === "checkbox") {
-                    return (
-                      <label key={field.name} className="flex min-h-12 items-center gap-3 rounded-xl border border-border/50 bg-background/40 px-4 text-sm font-medium cursor-pointer hover:border-primary/40 transition-colors shadow-sm">
-                        <input name={field.name} type="checkbox" className="h-4 w-4 accent-primary rounded" />
-                        {field.label}
-                      </label>
-                    );
-                  }
-
-                  if (field.type === "select") {
-                    return (
-                      <div key={field.name} className="space-y-1.5 group">
-                        <Label htmlFor={field.name} className="text-xs font-bold text-muted-foreground/80 uppercase">{field.label}</Label>
-                        <Select name={field.name} defaultValue={field.options?.[0]?.value}>
-                          <SelectTrigger id={field.name} className="h-10 bg-background/50 focus:ring-primary/30 transition-all text-sm"><SelectValue /></SelectTrigger>
-                          <SelectContent className="glass">
-                            {field.options?.map((option) => (
-                              <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    );
-                  }
-
-                  return (
-                    <div key={field.name} className="space-y-1.5 group">
-                      <Label htmlFor={field.name} className="text-xs font-bold text-muted-foreground/80 uppercase">
-                        {field.label} {field.required && <span className="text-red-500">*</span>}
-                      </Label>
-                      <Input
-                        id={field.name}
-                        name={field.name}
-                        type={field.type === "number" ? "number" : "text"}
-                        placeholder={field.placeholder}
-                        required={field.required}
-                        className="h-10 bg-background/50 focus:ring-primary/30 transition-all text-sm"
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            </motion.div>
-        </div>
-
-        <div className="bg-primary/5 border-t border-border/50 p-8 mt-10">
-          <motion.div className="w-full" whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
-            <Button
-              type="submit"
-              size="lg"
-              className="w-full font-black text-xl h-16 bg-primary hover:bg-primary/90 text-primary-foreground glow-blue transition-all rounded-2xl group overflow-hidden relative"
-              disabled={isLoading}
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-              {isLoading ? (
-                <span className="flex items-center gap-3">
-                  <Loader2 className="h-7 w-7 animate-spin" />
-                  SİMÜLASYON HAZIRLANIYOR...
-                </span>
-              ) : (
-                <span className="flex items-center gap-3">
-                  SİMÜLASYONU BAŞLAT <Sparkles className="w-6 h-6 animate-pulse" />
-                </span>
               )}
-            </Button>
-          </motion.div>
+            </div>
+          </div>
+        </Step>
+
+        <div className="space-y-6">
+          {/* 3 · Kategoriye özel özellikler */}
+          <Step n={3} title={`${activeCategory.shortLabel} özellikleri`}>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {activeCategory.fields.map((field) => {
+                if (field.type === "checkbox") {
+                  return (
+                    <label key={field.name} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border-2 border-border bg-card px-3.5 text-sm font-bold hover:bg-secondary">
+                      <input name={field.name} type="checkbox" className="h-4 w-4 accent-[hsl(var(--primary))]" />
+                      {field.label}
+                    </label>
+                  );
+                }
+                if (field.type === "select") {
+                  return (
+                    <FieldLabel key={field.name} htmlFor={field.name} label={field.label}>
+                      <Select name={field.name} defaultValue={field.options?.[0]?.value}>
+                        <SelectTrigger id={field.name} className="field h-11">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {field.options?.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FieldLabel>
+                  );
+                }
+                return (
+                  <FieldLabel key={field.name} htmlFor={field.name} label={field.label} required={field.required}>
+                    <input
+                      id={field.name}
+                      name={field.name}
+                      type={field.type === "number" ? "number" : "text"}
+                      placeholder={field.placeholder}
+                      required={field.required}
+                      maxLength={200}
+                      className="field"
+                    />
+                  </FieldLabel>
+                );
+              })}
+            </div>
+          </Step>
+
+          {/* 4 · Hedef kitle ve satış koşulları */}
+          <Step n={4} title="Hedef kitle ve satış koşulları">
+            <div className="grid gap-4 sm:grid-cols-2">
+              {activeCategory.audience === "full" && (
+                <>
+                  <FieldLabel htmlFor="ageRange" label="Yaş aralığı">
+                    <Select name="ageRange" defaultValue="18-30">
+                      <SelectTrigger id="ageRange" className="field h-11"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="13-17">13-17</SelectItem>
+                        <SelectItem value="18-30">18-30</SelectItem>
+                        <SelectItem value="30-45">30-45</SelectItem>
+                        <SelectItem value="45+">45+</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FieldLabel>
+                  <FieldLabel htmlFor="gender" label="Cinsiyet">
+                    <Select name="gender" defaultValue="unisex">
+                      <SelectTrigger id="gender" className="field h-11"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="unisex">Unisex</SelectItem>
+                        <SelectItem value="kadin">Kadın</SelectItem>
+                        <SelectItem value="erkek">Erkek</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FieldLabel>
+                </>
+              )}
+              <FieldLabel htmlFor="incomeLevel" label="Fiyat segmenti">
+                <Select name="incomeLevel" defaultValue="middle">
+                  <SelectTrigger id="incomeLevel" className="field h-11"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Ekonomik</SelectItem>
+                    <SelectItem value="middle">Orta</SelectItem>
+                    <SelectItem value="high">Premium</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FieldLabel>
+              <FieldLabel htmlFor="shippingDays" label="Kargo süresi (gün)">
+                <input id="shippingDays" name="shippingDays" type="number" defaultValue="3" min="0" max="60" className="field" />
+              </FieldLabel>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <label className="flex cursor-pointer items-center gap-2 rounded-full border-2 border-border bg-card px-3.5 py-2 text-sm font-bold">
+                <input name="returnAvailable" type="checkbox" defaultChecked className="h-4 w-4 accent-[hsl(var(--primary))]" />
+                İade imkânı var
+              </label>
+              <label className="flex cursor-pointer items-center gap-2 rounded-full border-2 border-border bg-card px-3.5 py-2 text-sm font-bold">
+                <input name="warranty" type="checkbox" className="h-4 w-4 accent-[hsl(var(--primary))]" />
+                Garanti / fatura var
+              </label>
+            </div>
+          </Step>
         </div>
+      </div>
 
-      </form>
+      {/* Sticky submit bar: always visible while filling the form (DESIGN.md §9.2) */}
+      <div className="no-print sticky bottom-4 z-30 flex flex-col items-stretch gap-3 rounded-wobble-lg border-2 border-foreground bg-card px-5 py-3.5 shadow-sticker-ink sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-foreground-2">
+          <b className="font-display">{activeCategory.shortLabel}</b> · 500 sentetik tüketici · genelde 30–90 sn
+        </p>
+        <button type="submit" disabled={isLoading} className="btn-sticker-primary px-6 py-2.5 text-base">
+          {isLoading ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <Sparkles className="h-5 w-5" aria-hidden />}
+          {isLoading ? "Hazırlanıyor…" : "Simülasyonu başlat"}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function Step({ n, title, hint, children }: { n: number; title: string; hint?: string; children: React.ReactNode }) {
+  return (
+    <fieldset className="card-paper space-y-4">
+      <legend className="sr-only">{title}</legend>
+      <div className="flex items-center gap-3">
+        <span className="num-badge" aria-hidden>{n}</span>
+        <h2 className="text-[19px] font-bold">{title}</h2>
+        {hint && <span className="text-sm text-muted-foreground">{hint}</span>}
+      </div>
+      {children}
+    </fieldset>
+  );
+}
+
+function FieldLabel({
+  htmlFor,
+  label,
+  required,
+  hint,
+  children,
+}: {
+  htmlFor: string;
+  label: string;
+  required?: boolean;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <label htmlFor={htmlFor} className="text-sm font-bold text-foreground-2">
+        {label} {required && <span className="text-skip-text" aria-hidden>*</span>}
+      </label>
+      {children}
+      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
     </div>
-
   );
 }

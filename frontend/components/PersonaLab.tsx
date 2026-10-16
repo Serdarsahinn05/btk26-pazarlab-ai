@@ -1,78 +1,69 @@
-"use client";
+import personasData from "@/data/personas.json";
+import { personaColor, personaLabel } from "@/lib/personas";
 
-import { motion } from "framer-motion";
-import { Users, Target, Zap, Heart } from "lucide-react";
-import personasData from "../data/personas.json";
-
+/** Catalogue of the 12 personas behind the simulation (Personalar tab). */
 export default function PersonaLab() {
   const personas = personasData.personaTypes;
 
   return (
-    <div className="space-y-8 pb-12">
-      <header>
-        <h2 className="text-3xl font-black tracking-tight flex items-center gap-3">
-          <Users className="text-primary w-8 h-8 glow-blue" />
-          Persona <span className="text-gradient">Lab</span>
-        </h2>
-        <p className="text-muted-foreground mt-2 font-medium">
-          Simülasyon sistemimizde aktif olan {personas.length} farklı tüketici psikolojisi ve satın alma profili.
+    <section className="space-y-6">
+      <header className="space-y-2">
+        <h1 className="text-[clamp(30px,4.5vw,46px)] font-extrabold leading-tight tracking-tight">Personalar</h1>
+        <p className="text-foreground-2">
+          Simülasyondaki {personas.length} tüketici profili. Her biri {Math.round(500 / personas.length)} civarı sentetik tüketiciyle temsil ediliyor.
         </p>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {personas.map((persona, idx) => (
-          <motion.div
-            key={persona.name}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: idx * 0.05 }}
-            className="bento-card border-white/5 hover:border-primary/20 transition-all group overflow-hidden"
-          >
-            <div className="flex items-start justify-between mb-4">
-              <div className="bg-primary/10 p-2.5 rounded-xl border border-primary/20 group-hover:bg-primary/20 transition-colors">
-                <Target className="w-5 h-5 text-primary" />
-              </div>
-              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground bg-white/5 px-3 py-1 rounded-full">
-                {persona.personalityType}
-              </span>
-            </div>
-
-            <h3 className="text-xl font-bold mb-2 group-hover:text-primary transition-colors">{persona.name}</h3>
-            <p className="text-xs text-muted-foreground leading-relaxed mb-6 italic">
-              &quot;{persona.aiRoleplayPrompt}&quot;
-            </p>
-
-            <div className="space-y-4">
-              <div className="p-3 bg-white/5 rounded-xl border border-white/5">
-                <div className="flex items-center gap-2 mb-1">
-                  <Heart className="w-3 h-3 text-red-400" />
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-white/70">Alışveriş Alışkanlığı</span>
+      <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        {personas.map((persona) => {
+          const color = personaColor(persona.name);
+          return (
+            <article
+              key={persona.name}
+              className="card-paper flex flex-col gap-4"
+              style={{ background: `color-mix(in srgb, ${color} 7%, hsl(var(--card)))` }}
+            >
+              <div className="flex items-start gap-3">
+                <span
+                  aria-hidden
+                  className="grid h-11 w-11 shrink-0 place-items-center rounded-blob font-display text-lg font-extrabold text-card"
+                  style={{ background: color }}
+                >
+                  {personaLabel(persona.name).charAt(0)}
+                </span>
+                <div className="min-w-0">
+                  <h2 className="text-lg font-bold leading-tight">{personaLabel(persona.name)}</h2>
+                  <span className="chip mt-1.5 text-foreground-2">{persona.personalityType}</span>
                 </div>
-                <p className="text-[11px] leading-relaxed text-muted-foreground">{persona.personalityTraits.shoppingHabit}</p>
               </div>
 
-              <div className="p-3 bg-white/5 rounded-xl border border-white/5">
-                <div className="flex items-center gap-2 mb-1">
-                  <Zap className="w-3 h-3 text-yellow-400" />
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-white/70">Değerleri</span>
+              <p className="font-hand text-xl leading-snug text-foreground-2">“{persona.aiRoleplayPrompt}”</p>
+
+              <dl className="space-y-3 text-sm">
+                <div>
+                  <dt className="font-bold">Alışveriş alışkanlığı</dt>
+                  <dd className="text-foreground-2">{persona.personalityTraits.shoppingHabit}</dd>
                 </div>
-                <p className="text-[11px] leading-relaxed text-muted-foreground">{persona.personalityTraits.values}</p>
-              </div>
-            </div>
+                <div>
+                  <dt className="font-bold">Değerleri</dt>
+                  <dd className="text-foreground-2">{persona.personalityTraits.values}</dd>
+                </div>
+              </dl>
 
-            <div className="mt-6 pt-6 border-t border-white/5 flex items-center justify-between">
-               <div className="flex flex-col">
-                  <span className="text-[9px] uppercase tracking-tighter text-muted-foreground">Korkusu</span>
-                  <span className="text-[11px] font-bold text-destructive/80">{persona.personalityTraits.biggestFear}</span>
-               </div>
-               <div className="flex flex-col items-end">
-                  <span className="text-[9px] uppercase tracking-tighter text-muted-foreground">Popülasyon</span>
-                  <span className="text-[11px] font-bold text-primary">{persona.count} Ajan</span>
-               </div>
-            </div>
-          </motion.div>
-        ))}
+              <div className="mt-auto flex items-end justify-between gap-3 border-t-2 border-dashed border-border pt-3 text-sm">
+                <div>
+                  <span className="block text-xs font-bold text-muted-foreground">En büyük korkusu</span>
+                  <span className="font-bold text-skip-text">{persona.personalityTraits.biggestFear}</span>
+                </div>
+                <div className="text-right">
+                  <span className="block text-xs font-bold text-muted-foreground">Nüfus</span>
+                  <span className="font-display text-lg font-extrabold">{persona.count}</span>
+                </div>
+              </div>
+            </article>
+          );
+        })}
       </div>
-    </div>
+    </section>
   );
 }

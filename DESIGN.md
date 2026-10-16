@@ -1,152 +1,142 @@
 # PazarLab AI — Tasarım Sistemi
 
-> Bu dosya projenin tasarım otoritesidir. Palet, font ve bileşen kararlarında
-> herhangi bir araç veya öneri bu dosyayla çelişirse bu dosya geçerlidir.
+> Bu dosya projenin tasarım otoritesidir. Palet, font ve bileşen kararlarında herhangi
+> bir araç veya öneri bu dosyayla çelişirse bu dosya geçerlidir.
 
-## 1. Yön: "Editoryal araştırma defteri"
+## 1. Yön: "Canlı pazar yeri"
 
-PazarLab bir pazar araştırması aracıdır; arayüzü de bir araştırmacının defteri gibi
-görünmeli: kâğıt zemin, mürekkep metin, ince çizgiler, verinin kendisinden gelen renk.
-Kaynak ilham: `yaz-plani.html` (kâğıt/mürekkep paleti, Fraunces başlıklar, mono veri
-etiketleri, halka grafikler).
-
-**Bıraktıklarımız:** neon glow, mor/indigo gradyan, `glass` bulanıklığı, nokta grid zemin,
-`font-black` + `tracking-tighter` başlıklar, 8–10 px etiketler.
+Samimi, el yapımı hissi veren ama verisi net okunan bir arayüz: serin nötr kâğıt zemin,
+eğri kenarlı yuvarlak şekiller, "sticker" gölgeler, el yazısı küçük notlar ve az ama
+**canlı** vurgu renkleri. Türk e-ticaret satıcısına yakın, AI aracı soğukluğundan uzak.
 
 **İlkeler**
-1. Renk veri taşır, süs değildir. Renk = karar (al/izle/geç) veya persona kimliği.
-2. Sayılar mono fontla, metin Inter ile, başlıklar Fraunces ile yazılır.
-3. Açık tema varsayılan (sistem tercihine uyar); koyu tema aynı token'larla eşdeğer kalitede.
-4. Her etkileşimli öğe klavyeyle ulaşılabilir ve görünür odak halkasına sahiptir.
+1. **Zemin serin ve nötr, renk vurguda.** Kâğıt ve kenarlar asla şeftali, krem ya da turuncu tonlu olmaz; büyük renkli dolgu yok.
+2. **Renk veri taşır.** Yeşil = aldı/pozitif, sarı = kararsız, mercan = almadı/risk; persona rengi = kimlik.
+3. **Küçük renkli metin her zaman koyu tonla yazılır** (`--buy-text` vb.); canlı tonlar grafik ve dolgu içindir.
+4. **Eğri ama düzenli:** yamuk köşeler ve hafif dönüşler süs düzeyinde kalır, ızgara bozulmaz.
+5. Açık tema varsayılan (sistem tercihine uyar); koyu tema aynı token'larla eşdeğer kalitede.
+6. Her etkileşimli öğe klavyeyle ulaşılabilir ve görünür bir odak halkasına sahiptir.
+
+**Bıraktıklarımız:** neon glow, mor/indigo gradyan, glass bulanıklığı, nokta grid zemin,
+`font-black tracking-tighter` başlıklar, 8–10 px etiketler, sıcak/turuncu kâğıt filtreleri.
 
 ## 2. Token'lar
 
-`frontend/app/globals.css` içinde shadcn HSL formatında tanımlanır (`--x: H S% L%`),
-`tailwind.config.ts` içinde `hsl(var(--x))` olarak eşlenir. Bileşenlerde ham hex,
-`rgba(...)`, `text-white`, `bg-zinc-*`, `violet-*` vb. **kullanılmaz**.
+`frontend/app/globals.css` içinde shadcn HSL formatında (`--x: H S% L%`) tanımlanır,
+`tailwind.config.ts` içinde `hsl(var(--x))` olarak eşlenir. Bileşenlerde ham hex, `rgba()`,
+`text-white`, `bg-zinc-*`, `violet-*` vb. **kullanılmaz**.
 
 ### 2.1 Yüzey ve metin
 
-| Token | Açık (`:root`) | Koyu (`.dark`) | Kullanım |
+| Token | Açık | Koyu | Kullanım |
 |---|---|---|---|
-| `--background` | `#f0ece3` | `#14151a` | Sayfa zemini (kâğıt) |
-| `--background-2` | `#e5e0d4` | `#22242c` | Hover, ray, ilerleme barı zemini |
-| `--card` | `#fbf9f4` | `#1b1d24` | Kart, input, panel |
-| `--foreground` | `#12131a` | `#eceae4` | Ana metin (mürekkep) |
-| `--foreground-2` | `#2a2c38` | `#c8c5bd` | İkincil vurgu metni |
-| `--muted-foreground` | `#6f6a5e` | `#9a968c` | Açıklama, etiket |
-| `--border` | `#c9c2b2` | `#363943` | Çizgi, kart kenarı |
-| `--primary` | = foreground | = foreground | Birincil düğme zemini |
-| `--primary-foreground` | = background | = background | Birincil düğme metni |
-| `--ring` | `#3b6ea5` | `#5b93cc` | Odak halkası |
-| `--grid-op` | `.16` | `.07` | Defter çizgisi opaklığı |
+| `--background` | `#eaeee8` | `#141819` | Sayfa zemini (serin kâğıt) |
+| `--secondary` | `#dfe5de` | `#212729` | Ray, hover, not kutusu zemini |
+| `--card` | `#fafbf8` | `#1c2123` | Kart, input |
+| `--foreground` | `#1b2220` | `#e6ebe8` | Ana metin |
+| `--foreground-2` | `#343f3c` | `#c6cfcb` | İkincil metin |
+| `--muted-foreground` | `#56625d` | `#97a29d` | Açıklama, etiket |
+| `--border` | `#cad3c9` | `#333b3d` | Kenar |
+| `--primary` | `#2f7a4c` | `#6cc490` | Aktif sekme, barlar, marka "AI" |
+| `--primary-foreground` | `#fafbf8` | `#141819` | |
+| `--accent` | `#2f7896` | `#6bb8d6` | Ana düğme, el çizimi dalga, ikinci vurgu |
+| `--accent-foreground` | `#fafbf8` | `#141819` | |
+| `--ring` | `#2f7896` | `#6bb8d6` | Odak halkası |
+| `--shadow-ink` | `#cad3c9` | `#0b0d0e` | Sticker gölge rengi |
 
-### 2.2 Karar renkleri (anlamsal)
+### 2.2 Karar renkleri
 
-| Token | Açık | Koyu | Anlam |
+| Token | Açık (grafik) | Açık (küçük metin) | Koyu (ikisi de) |
 |---|---|---|---|
-| `--buy` | `#2f8f6d` | `#4bb98d` | Aldı / pozitif |
-| `--watch` | `#b5622a` | `#d98546` | Kararsız / dikkat |
-| `--skip` | `#c0392b` | `#e0685a` | Almadı / risk / hata |
-| `--done-bg` | `#eef3ec` | `#1d2a22` | Başarı yüzeyi |
-| `--done-line` | `#b9cdb4` | `#3d5c48` | Başarı kenarı |
+| `--buy` / `--buy-text` | `#3f8a5a` | `#24683f` | `#6cc490` |
+| `--watch` / `--watch-text` | `#c99a1a` | `#7a5a06` | `#e8c14a` |
+| `--skip` / `--skip-text` | `#c4574a` | `#983a31` | `#e88a7c` |
+
+Mercan yalnızca "Almadı" dilimi, risk notunun kenarı ve "kritik" etiketinde kullanılır.
+Sarı yalnızca küçük rozetlerde ve "Kararsız" diliminde kullanılır.
 
 ### 2.3 Persona renkleri
 
-12 persona sabit sırayla (`backend/app/data/personas.json` → `personaTypes` sırası)
-`--persona-1 … --persona-12` alır. İsimle değil **index ile** eşlenir; böylece yeni persona
-eklemek veya isim değiştirmek rengi bozmaz.
+`personas.json` sırasına göre `--persona-1 … --persona-12` atanır (isimle değil index ile):
 
 | # | Açık | Koyu | # | Açık | Koyu |
 |---|---|---|---|---|---|
-| 1 | `#3b6ea5` | `#5b93cc` | 7 | `#1f9ca8` | `#3bc0cc` |
-| 2 | `#c23f5e` | `#e0687f` | 8 | `#6b7a2a` | `#a3b356` |
-| 3 | `#2f8f6d` | `#4bb98d` | 9 | `#9a6b12` | `#d4a03c` |
-| 4 | `#8a4fbd` | `#a877d9` | 10 | `#5a5f73` | `#9aa0b5` |
-| 5 | `#b5622a` | `#d98546` | 11 | `#a8456f` | `#d4779c` |
-| 6 | `#24578a` | `#6fa3d6` | 12 | `#4a7a5c` | `#7fb592` |
+| 1 | `#2f7896` | `#6bb8d6` | 7 | `#6f8f2a` | `#a8c860` |
+| 2 | `#3f8a5a` | `#6cc490` | 8 | `#a0509a` | `#d68ad0` |
+| 3 | `#c99a1a` | `#e8c14a` | 9 | `#2fa070` | `#6cd6a4` |
+| 4 | `#6a55b8` | `#a796e8` | 10 | `#5f7480` | `#a0b2bc` |
+| 5 | `#1a8f84` | `#5cc8bb` | 11 | `#2a90c8` | `#6cc0ec` |
+| 6 | `#3a64c8` | `#7f9cf0` | 12 | `#c4574a` | `#e88a7c` |
 
-Renkli zemin üzerindeki metin her zaman `#fff` (açık) veya `--background` (koyu); kontrast
-≥ 4.5:1 kontrol edilir.
+Persona kartı zemini: kendi renginin %7'si kart rengine karışır. Etiket (chip) zemini: metin renginin %12'si.
 
-### 2.4 Şekil ve gölge
+### 2.4 Şekil, gölge, doku
 
-| Token | Değer |
+| Öğe | Değer |
 |---|---|
-| `--radius` | `14px` (kart), `10px` (satır), `8px` (input/düğme), `4px` (etiket chip) |
-| `--shadow` | `0 1px 0 rgb(18 19 26 / .06), 0 8px 24px -12px rgb(18 19 26 / .25)` |
-| `--hover-shadow` | `0 12px 28px -14px rgb(18 19 26 / .4)` |
-| Kenar | `1.5px solid hsl(var(--border))` — kartların imzası |
-
-Koyu temada gölge opaklıkları `.3 / .7 / .9`'a çıkar.
+| Kart köşesi (`rounded-wobble`) | `18px 22px 16px 24px / 22px 16px 24px 18px` |
+| Büyük çerçeve (`rounded-wobble-lg`) | `26px 30px 24px 32px` |
+| Düğme / chip | `999px`; aktif sekme `16px 20px 15px 22px` |
+| Rozet (`rounded-blob`) | `46% 54% 50% 50% / 52% 48% 52% 48%` |
+| Kenar kalınlığı | `2px` |
+| Sticker gölge | kart `3px 4px 0 var(--shadow-ink)` (`shadow-sticker`); düğme `2px 3px 0 var(--foreground)` (`shadow-sticker-ink`) |
+| Doku | SVG fractal noise, nötr gri; opaklık açıkta `.26`, koyuda `.20` (`body::before`) |
+| El çizimi dalga | kart başlığı altında 74×8 px SVG maske, renk `--accent` |
+| Bar | 9px, tam yuvarlak, 1.5px kenar; dolgu `--primary` çapraz çizgili |
 
 ## 3. Tipografi
 
-| Rol | Font | Boyut / ağırlık | Not |
-|---|---|---|---|
-| Display (h1) | Fraunces | `clamp(34px, 5.2vw, 54px)` / 900, `leading-[.95]`, `-0.02em` | Alt satır `<em>` italik 400, `--muted-foreground`, `.42em` |
-| h2 | Fraunces | 26px / 600 | Bölüm başlığı + altında `.sub` açıklama (13.5px muted) |
-| h3 | Fraunces | 19–24px / 600 | Kart başlığı |
-| Gövde | Inter | 15px / 400, `leading-[1.55]` | |
-| Etiket / sekme | Inter | 13px / 600, uppercase, `tracking-[.03em]` | |
-| Veri / sayı | JetBrains Mono | 12–40px / 600, `tracking-[-.03em]` büyük sayılarda | Yüzdeler, sayaçlar, chip'ler |
+| Rol | Font | Boyut / ağırlık |
+|---|---|---|
+| Başlık (h1–h3, kart başlığı, persona adı) | **Bricolage Grotesque** | h1 `clamp(32px,5vw,52px)`/800; kart başlığı 21px/700, `-0.01em` |
+| Gövde, etiket, form | **Nunito** | 15.5px/400–700, satır yüksekliği 1.55; özet 18px/600 |
+| Rakam (skor, KPI, yüzde) | **Bricolage Grotesque** | skor 46px/800, KPI 32px/800, `-0.03em` |
+| El yazısı not | **Caveat** | 22px/500–700, ±8° dönük, `--foreground-2` |
 
-- Fontlar `next/font/google` ile yüklenir: `--font-display`, `--font-sans`, `--font-mono`;
-  `tailwind.config.ts` → `fontFamily.display/sans/mono`.
-- **Minimum metin boyutu 12px.** Mono chip'ler için tek istisna 10.5px (yalnızca büyük harf kısaltma).
-- Arayüz metni Türkçe karakterlerle yazılır ("Ürün Adı", "Kıyafet").
+- Fontlar `next/font/google` ile yüklenir: `--font-display`, `--font-sans`, `--font-hand`. Tailwind sınıfları `font-display`, `font-sans`, `font-hand`. Mono font kullanılmaz.
+- Minimum metin boyutu 12px. Arayüz metni Türkçe karakterlerle yazılır.
 
-## 4. Zemin
-
-```css
-body::before{
-  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
-  background-image:linear-gradient(hsl(var(--border)) 1px,transparent 1px);
-  background-size:100% 34px;opacity:var(--grid-op);
-}
-```
-
-## 5. Bileşen kalıpları
+## 4. Bileşen kalıpları
 
 | Kalıp | Tanım | PazarLab'da |
 |---|---|---|
-| **Segmentli halka** | SVG, r=52, stroke 9, `stroke-dasharray` ile ardışık dilimler, ortada mono büyük sayı + uppercase küçük etiket | `OverallScoreCard`: al/izle/geç dilimleri + genel skor |
-| **Halka kartı** (`ringbox`) | Kart içinde 112px halka, ad, mono `x / y`; hover'da `-3px` yükselme + sağ üstte `→`; tıklayınca hedef bölüme kaydırıp 1.4s `flash` | Persona kartları → debate'te ilgili personaya gider |
-| **Sekmeli nav** | Alt kenarı 2px mürekkep çizgi; aktif sekme kenarlı, alt kenarı zeminle birleşir | Dashboard görünümleri (Analiz / Benchmark / Tartışma / Personalar) |
-| **İnce ilerleme barı** | 6px yükseklik, `--background-2` ray, mürekkep dolgu, sağda mono yüzde | Normalize skorlar |
-| **Renkli başlıklı kart** (`course`) | Üst şerit anlamsal renk + beyaz Fraunces başlık + sağda mono yüzde | Kanal önerileri, zayıflıklar, benchmark |
-| **Sol kenarlı satır** (`slot`) | `border-left: 4px` persona/karar rengi, mono etiket chip'i, metin | Debate mesajları, tavsiye maddeleri |
-| **Not kutusu** (`note`) | Kart + `border-left: 4px` mürekkep, muted metin, `<b>` mürekkep | Girdi uyarısı (AnalysisWarning), bilgi notları |
-| **Durum toast'u** (`savestat`) | Alt-orta sabit, mono 12px, pill; durumlar `pending / ok / retry / fail`; `fail` içinde "Tekrar dene" düğmesi | API hataları, simülasyon durumu |
-| **Tema düğmesi** | 42px yuvarlak, kenarlı; hover'da `-18deg` dönüş; `◐` / `☀` | Üst bar |
-| **Mono sayaç** | Sol 2px mürekkep çizgi, büyük mono sayı + küçük açıklama | Landing istatistikleri |
+| **Segmentli halka** | SVG r=52, stroke 12, al/izle/geç dilimleri arasında 2px boşluk; ortada Bricolage skor + küçük etiket; yanında el yazısı not | Karar kartı |
+| **Persona halka kartı** | Persona tonu zeminli kart, halka (persona rengi), ad (Bricolage), karar chip'i; tek/çift kartlar ±0.6° dönük, hover'da düzleşip 3px yükselir | Persona ızgarası; tıklanınca Tartışma'da o persona |
+| **KPI kartı** | Üstte 5px renkli şerit (yeşil, mavi, sarı, mor), büyük rakam, çizgili bar, kısa açıklama | 4 KPI |
+| **Sekme (pill)** | Pasif: düz metin; aktif: `--primary` dolgu, yamuk köşe, sticker gölge | Üst bar navigasyonu |
+| **Düğme** | 2px mürekkep kenar, `2px 3px 0` gölge, hover'da 1px kayar; birincil = `--accent` zemin | Tüm düğmeler |
+| **Chip** | Tam yuvarlak, 1.5px kenar, metin renginin %12'si zemin, koyu metin tonu | Karar etiketleri, kanallar |
+| **Not kutusu** | 2px kesikli `--skip` kenar, yamuk köşe, `--secondary` zemin | Kritik risk, girdi uyarısı |
+| **Tırtıklı başlıklı kart** | Başlık şeridi `--secondary`, alt kenarı `clip-path` ile dalgalı | Zayıflıklar, kanal önerileri |
+| **Konuşma satırı** | 6px sol kenar persona rengi, `4px 16px 16px 4px` köşe, sticker gölge | Tartışma mesajları |
+| **Numara rozeti** | Sarı blob, Bricolage 800 | Aksiyon listesi, form adımları |
+| **Durum toast'u** | Alt-orta, tam yuvarlak, sticker gölge; `info` / `error` + "Tekrar dene" | API hataları |
 
-Düğmeler: birincil = mürekkep zemin + kâğıt metin; ikincil = `--card` zemin + kenar, hover'da
-mürekkebe döner. Input: `--card` zemin, 1.5px kenar, odakta `outline: 2px solid` mürekkep.
+## 5. Hareket
 
-## 6. Hareket
+- Geçiş: `opacity` + `translateY(6px)`, 250ms ease.
+- Halka/bar dolumu: 800ms `cubic-bezier(.22,1,.36,1)`.
+- Hover: 160ms; kartlar düzleşip yükselir, düğmeler gölgelerine doğru kayar.
+- `prefers-reduced-motion`: animasyon yok, dönük kartlar sabit, confetti yok.
 
-- Sayfa/sekme geçişi: `opacity 0→1`, `translateY(6px)→0`, 300ms ease.
-- Halka dolumu: `stroke-dasharray`/`dashoffset`, 800–900ms `cubic-bezier(.22,1,.36,1)`.
-- Hover: 160–180ms.
-- `prefers-reduced-motion: reduce` → tüm animasyon/transition 0.01ms; confetti ve sonsuz
-  pulse/float **çalışmaz**.
+## 6. Erişilebilirlik
 
-## 7. Erişilebilirlik kuralları
+- İkon düğmelerinde `aria-label`; odak: `outline 2px solid var(--ring)`, offset 2px.
+- Küçük renkli metin ≥ 4.5:1 (koyu tonlar bunun için var). Sarı grafikler her zaman okunaklı bir metin etiketiyle birlikte gösterilir.
+- Modal: `role="dialog"`, `aria-modal`, Esc, odak tuzağı. Dosya yükleme klavyeyle erişilebilir.
+- 375px genişlikte yatay sayfa kaydırması yok; yan boşluk 16px.
 
-- İkon düğmelerinde `aria-label` zorunlu.
-- Odak: `focus-visible:outline-2 outline-offset-2 outline-[hsl(var(--ring))]`.
-- Modal: `role="dialog"`, `aria-modal`, odak tuzağı, Esc ile kapanma.
-- Dosya yükleme alanı `<label>` + görünmez ama odaklanabilir input.
-- Kontrast: gövde ≥ 4.5:1, büyük metin ≥ 3:1 (her iki tema).
-- 375px genişlikte yatay kaydırma olmaz; yan boşluk 16px.
+## 7. Yasaklar
 
-## 8. Yasaklar
-
+- Turuncu/şeftali/krem kâğıt veya kenar tonları; büyük kırmızı/mercan dolgular.
 - Yeni UI/animasyon kütüphanesi eklemek (mevcut: Tailwind v3, shadcn, framer-motion, lucide).
-- Ham renk değerleri ve Tailwind palet renkleri (`blue-500`, `zinc-900` …) bileşen içinde.
-- Tailwind v4 sözdizimi (`ring-3`, `rounded-4xl`, `size-3!`, `data-horizontal:`) — proje v3.
-- Sahte durum verisi ("CONNECTED 12ms" gibi) göstermek.
+- Bileşen içinde ham renk ve Tailwind palet renkleri; Tailwind v4 sözdizimi.
+- Sahte durum verisi.
+
+## 8. Uygulama notları
+
+- Tailwind yardımcıları: `rounded-wobble`, `rounded-wobble-lg`, `rounded-blob`, `shadow-sticker`, `shadow-sticker-ink`, `font-display`, `font-hand`; renkler `buy`, `watch`, `skip` (+ `-text`), `persona-1..12`.
+- Paylaşılan parçalar: `components/ui/ring.tsx` (halka + segmentli halka), `components/ui/section-title.tsx` (dalgalı başlık).
 
 ## 9. Yerleşim
 
@@ -183,7 +173,7 @@ Mevcut düzenin sorunları IMPROVEMENTS.md F11'de. Hedef: **bir rapor gibi yukar
 └──────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-- Masaüstünde iki sütun (`lg:grid-cols-[1fr_1fr]`), mobilde tek sütun. Bölümler numaralı mono rozetle (`1 ·`) başlar.
+- Masaüstünde iki sütun (`lg:grid-cols-[1fr_1fr]`), mobilde tek sütun. Bölümler sarı, eğri kenarlı numara rozetiyle başlar.
 - Gönderme düğmesi `position: sticky; bottom: 0` olan bir çubukta; her zaman görünür.
 - "Neden simülasyon?" bilgi kartı formun üstünde tek satırlık bir `.note` kutusuna dönüşür.
 - Yükleme sırasında form yerinde kalır, üstte ilerleme adımları görünür (input analizi → araştırma → benchmark → simülasyon → tartışma).
@@ -192,7 +182,7 @@ Mevcut düzenin sorunları IMPROVEMENTS.md F11'de. Hedef: **bir rapor gibi yukar
 
 ```
 ┌─ KARAR ──────────────────────────────┬─ NE YAPMALI? ────────────────────────────────┐
-│   ◯ segmentli halka                  │ Özet (aiInsights.summary, Fraunces 20px)       │
+│   ◯ segmentli halka                  │ Özet (aiInsights.summary, Nunito 18px)         │
 │     57  GENEL SKOR                   │ 1  ilk aksiyon                                 │
 │   ■ Aldı 306  ■ Kararsız 96  ■ 98    │ 2  ikinci aksiyon                              │
 │                                      │ 3  üçüncü aksiyon                              │
@@ -220,19 +210,21 @@ Kurallar:
 - Mobil: her satır tek sütuna iner; KPI'lar 2×2; persona halkaları yatay kaydırılır.
 - Benchmark ve Tartışma sekmeleri aynı 1180 px okuma düzenini kullanır. Tartışma: solda konuşan persona halkası, sağda mesaj (`slot` kalıbı).
 
-## 10. Değerlendirilen alternatif stiller
+## 10. Stil seçimi geçmişi
 
-Seçilen yön editoryal defter (§1). Karşılaştırma için değerlendirilen diğer yönler:
+Altı yön bir karşılaştırma sayfasında denendi: [PazarLab Stil Karşılaştırma](https://claude.ai/artifact/LhXnSfYCZFTo1JLWRUBhLZ) (özel link). Seçilen: **E. Canlı pazar yeri**.
 
-| Yön | Kısaca | Artısı | Eksisi |
-|---|---|---|---|
-| **A. Editoryal defter** (seçili) | Kâğıt/mürekkep, Fraunces, halka grafikler | Ayırt edici; "araştırma raporu" hissi verisine güven katar; açık/koyu tema dengeli | Serif başlıklar teknik kitleye ilk anda alışılmadık gelebilir |
-| B. İsviçre veri tasarımı | Beyaz zemin, siyah ızgara, büyük grotesk rakamlar (Inter Tight), tek vurgu rengi | Çok okunaklı, yoğun veriyi en iyi taşır, yazdırılabilir rapora çok uygun | Soğuk ve kurumsal; markayı daha az hatırlatır |
-| C. Terminal / Bloomberg | Koyu zemin, mono ağırlıklı, amber/yeşil veri renkleri, yoğun tablolar | Mevcut koyu temadan en az geçiş eforu; "güç kullanıcısı" hissi | Yeni başlayan satıcıyı korkutur; mevcut neon görünümün sorunlarını tekrarlama riski |
-| D. Yumuşak SaaS (Linear/Vercel çizgisi) | Nötr griler, ince kenarlar, tek marka rengi, bol boşluk | Tanıdık, güvenli, shadcn ile en hızlı uygulanır | Sıradan; PazarLab'ı diğer AI araçlarından ayırmaz |
-| E. Sıcak pazar yeri | Toprak tonları, el çizimi ikonlar, hafif doku | Türk e-ticaret satıcısına samimi, akılda kalıcı | İllüstrasyon üretimi gerekir; veri yoğun ekranlarda dağınık görünebilir. İlk prototipte kırmızı ağırlığı fazla bulundu |
-| F. Defter × Pazar | A'nın düzeni + E'nin sıcaklığı: kâğıt/mürekkep, Fraunces; kâğıt dokusu, başlık altı el çizimi dalga, tek kenar notu; terracotta yalnızca dalgada | Ayırt edici ama sakin; uzun okumada yormaz | El yazısı detayları dozunda tutulmazsa dağınık görünebilir |
+| Yön | Kısaca | Sonuç |
+|---|---|---|
+| A. Editoryal defter | Kâğıt/mürekkep, Fraunces, halka grafikler | İlk öneriydi; seçilmedi |
+| B. İsviçre veri tasarımı | Beyaz, siyah ızgara, büyük grotesk rakamlar | Seçilmedi; ızgara disiplini rapor/print çıktısında kullanılabilir |
+| C. Terminal / Bloomberg | Koyu, mono, amber/yeşil | Seçilmedi |
+| D. Yumuşak SaaS | Nötr griler, tek marka rengi | Seçilmedi |
+| **E. Canlı pazar yeri** | Eğri kenarlı yuvarlak şekiller, sticker gölgeler, el yazısı notlar, serin kâğıt + canlı vurgular | **Seçildi** |
+| F. Defter × Pazar | A'nın düzeni + E'nin dokusu | Seçilmedi |
 
-Karşılaştırma sayfası (6 stil, açık/koyu, 375 px): [PazarLab Stil Karşılaştırma](https://claude.ai/artifact/LhXnSfYCZFTo1JLWRUBhLZ) (özel link). F stilinin token değerleri kullanıcı onaylarsa §2'ye taşınır.
-
-**Öneri:** A ile devam. Benchmark ve rapor dışa aktarımı (Faz 5a) için B'nin ızgara ve rakam disiplini A'nın içine alınabilir (yazdırma CSS'i). C ve D yalnızca kullanıcı testinde A beğenilmezse yeniden değerlendirilir.
+E'nin renk iterasyonları (geri dönülmemesi gerekenler):
+1. İlk sürüm kırmızı/kiremit ağırlıklıydı → "çok kırmızı".
+2. Kırmızı kaldırıldı ama şeftali/krem kâğıt kaldı → "çok turuncu, çok sıcak".
+3. Serin gri-yeşil zemin, soluk vurgular → "çok soluk".
+4. **Serin nötr kâğıt + canlı yeşil/okyanus vurgular** → onaylandı.
