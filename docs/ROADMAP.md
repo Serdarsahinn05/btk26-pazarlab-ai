@@ -21,7 +21,7 @@
 | 7 | `chore/tailwind4` | Tailwind 3 → 4 (S15) | 0,5 gün | ✅ |
 | 8a | `feat/persona-chat-history` | F19: sohbet geçmişi | 0,25 gün | ✅ |
 | 8b | `docs/deployment` | F20: dağıtım dokümanı | 0,25 gün | ✅ |
-| 8c | `feat/observability` | B.8: JSON log, sağlık bilgisi | 0,25 gün | ⬜ |
+| 8c | `feat/observability` | B.8: JSON log, sağlık bilgisi | 0,25 gün | ✅ |
 | 8d | `feat/categories-more` | B.9: ayakkabı, çanta, kozmetik | 0,5 gün | ⬜ |
 | 8e | `chore/language-cleanup` | B.10: dil tutarlılığı | 0,25 gün | ⬜ |
 | 9 | `feat/llm-providers` | B.12: Gemini + Claude + GPT, yedekli zincir | 1 gün | ⬜ |
@@ -173,6 +173,12 @@ Kabul kriteri: DESIGN.md'deki tüm kalıplar uygulanmış; bileşenlerde ham ren
 - [x] **8b** F20, dağıtım dokümanı (`docs/deployment.md`): nginx örneği (SSE yollarında `proxy_buffering off`, `gzip off`, 300 sn okuma süresi; 10 MB gövde), aynı alan adından frontend + API, `NEXT_PUBLIC_API_URL`'in build anında gömülmesi, `FORWARDED_ALLOW_IPS` ile gerçek istemci IP'si, tek worker kısıtı, kontrol listesi.
   - Bulunan risk: proxy arkasında `FORWARDED_ALLOW_IPS` doğru verilmezse bütün kullanıcılar tek rate limit kotasını paylaşıyor. Dokümana eklendi.
   - Doğrulama: uvicorn `--proxy-headers` ile güvenilen proxy'den gelen `X-Forwarded-For` istemci başına sayıldı (aynı IP 3. istekte 429, başka IP 404). Güvenilmeyen kaynaktan gelen başlık yok sayıldı, yani sahte başlıkla limit aşılamıyor. nginx config'i çalıştırılarak doğrulanmadı (bu makinede nginx yok, Docker daemon kapalı).
+- [x] **8c** B.8, gözlemlenebilirlik (`feat/observability`):
+  - `app/observability.py` (stdlib): request id bir `ContextVar`'da; log kaydı oluşturulurken her satıra ekleniyor. Threadpool'daki handler'lar ve LLM uyarıları da isteğin kimliğini taşıyor (ör. `[c26475e56b0b] Gemini … HTTP 429`).
+  - `LOG_FORMAT=json`: satır başına bir JSON nesnesi. Metin formatına da `[requestId]` eklendi.
+  - İstek başına tek erişim satırı: yöntem, yol (sorgu dizesi hariç), durum, süre (ms). 411/413 erken redleri ve 500'ler dahil. SSE'de süre, ilk byte'a kadar geçen zaman. Başarılı `/api/health` DEBUG'da (Docker healthcheck gürültüsü). Dockerfile'da uvicorn'un kendi erişim logu kapatıldı (`--no-access-log`), satırlar çift olmuyor.
+  - `/api/health` → `ai.lastSuccessAt`, `ai.lastErrorAt`, `ai.lastError` (yalnızca tür / `HTTP 429`; mesaj gövdesi yok). Kota sorunu log okumadan görülüyor.
+  - Doğrulama: `tests/test_observability.py` (5 test, toplam 72): erişim satırı ve kimlik eşleşmesi, sorgu dizesinin loglanmaması, 413 satırı, threadpool'da kimliğin taşınması, JSON formatı, sağlıkta son 429. JSON çıktısı gerçek uvicorn ile görüldü. ruff temiz.
 
 ## Riskler
 - **Gemini model adları sık değişiyor.** B1'de model env'den okunacak; varsayılan seçilirken o günkü güncel model listesi kontrol edilecek.

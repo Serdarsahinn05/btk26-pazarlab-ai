@@ -15,6 +15,8 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
+from app.observability import log_access, request_id_var
+
 logger = logging.getLogger("security")
 
 MAX_BODY_BYTES = int(os.getenv("MAX_BODY_BYTES", str(10 * 1024 * 1024)))
@@ -25,16 +27,27 @@ def install(app: FastAPI) -> None:
     async def request_guard(request: Request, call_next):
         request_id = uuid.uuid4().hex[:12]
         request.state.request_id = request_id
+        request_id_var.set(request_id)
+        started = time.perf_counter()
+        method, path = request.method, request.url.path
 
-        if request.method in {"POST", "PUT", "PATCH"}:
+        if method in {"POST", "PUT", "PATCH"}:
             length = request.headers.get("content-length")
             if length is None:
+                log_access(method, path, 411, started)
                 return _error(411, "Content-Length gerekli.", request_id)
             if not length.isdigit() or int(length) > MAX_BODY_BYTES:
+                log_access(method, path, 413, started)
                 return _error(413, "Istek govdesi cok buyuk.", request_id)
 
-        response = await call_next(request)
+        try:
+            response = await call_next(request)
+        except Exception:
+            log_access(method, path, 500, started)
+            raise
         response.headers["X-Request-ID"] = request_id
+        # For SSE this is time to first byte, not the length of the stream.
+        log_access(method, path, response.status_code, started)
         return response
 
     @app.exception_handler(RequestValidationError)

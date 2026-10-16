@@ -64,7 +64,7 @@ Bu dosya iki bölümden oluşuyor: (A) mevcut koddaki hatalar ve borçlar, (B) y
    - pytest: aynı girdinin aynı skoru verdiği deterministiklik testleri, Pydantic sınır testleri, SSRF testleri, LLM mock'u ile graph testi.
    - Vitest ve Testing Library: `lib/api` hata yolları, halka bileşeni.
    - GitHub Actions: `ruff`, `pytest`, `npm run lint`, `npm run build`, `pip-audit`, `npm audit --omit=dev`. Dependabot.
-8. **Gözlemlenebilirlik:** JSON log, `X-Request-ID`. `/api/health` yanıtına `{model, aiAvailable, serperAvailable}` eklenir.
+8. ✅ (Faz 8c) **Gözlemlenebilirlik:** JSON log, `X-Request-ID`. `/api/health` yanıtına `{model, aiAvailable, serperAvailable}` eklenir.
 9. **Kategori genişletme:** B3'teki Enum hazır olduktan sonra ayakkabı, çanta ve kozmetik kategorileri `category_rules.json` dosyasına eklenir.
 10. **Dil tutarlılığı:** "TASK INTELLIGENCE" gibi İngilizce başlıklar ve ASCII'ye çevrilmiş Türkçe metinler temizlenir. Persona adları `personas.json` içinde Türkçe karakterli `displayName` alanıyla tutulur.
 11. ✅ (Faz 7) **Tailwind 4 geçişi:** Dev araçlarındaki açıkları (S15) kapatır. CSS tabanlı config (`@theme`), `tailwindcss-animate` yerine `tw-animate-css`; DESIGN.md token'ları `globals.css`'e taşınır. Görsel regresyon için Faz 4'teki ekran görüntüleriyle karşılaştırma gerekir.

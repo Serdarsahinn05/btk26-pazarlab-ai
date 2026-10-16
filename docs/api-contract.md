@@ -8,7 +8,7 @@
 
 | Method | Yol | İstek | Yanıt |
 |---|---|---|---|
-| GET | `/api/health` | – | `{ status, ai: { configured, model }, research: { configured } }` (ağa çıkmaz; `model`, ilk AI çağrısına kadar `null` olabilir) |
+| GET | `/api/health` | – | `{ status, ai: { configured, model, lastSuccessAt, lastErrorAt, lastError }, research: { configured } }` (ağa çıkmaz; `model`, ilk AI çağrısına kadar `null` olabilir; `last*` bu process'teki son AI çağrısı, UTC ISO zaman; `lastError` yalnızca tür veya `HTTP 429` gibi durum kodu) |
 | POST | `/api/analyze-input` | `SimulationRequest` | `InputAnalysisResponse` |
 | POST | `/api/read-product-link` | `{ "url": string }` (8–2048 karakter) | `ProductLinkReadResponse` |
 | POST | `/api/simulate` | `SimulationRequest` | `SimulationResponse` (+ `simulationId`) |
