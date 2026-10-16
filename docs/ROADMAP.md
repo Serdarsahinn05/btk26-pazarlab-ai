@@ -2,6 +2,7 @@
 
 - **Repo:** [Serdarsahinn05/btk26-pazarlab-ai](https://github.com/Serdarsahinn05/btk26-pazarlab-ai). `upstream` = OsmanerdemDutar/btk26-pazarlab-ai, salt okunur.
 - **Akış:** Her faz kendi dalında yapılır, PR veya merge ile `main`'e girer.
+- **Sıradaki iş:** bkz. [Şu an neredeyiz](#şu-an-neredeyiz). Her fazdan sonra bu dosya, [IMPROVEMENTS.md](IMPROVEMENTS.md) ve gerekiyorsa [SECURITY_AUDIT.md](SECURITY_AUDIT.md) / [../DESIGN.md](../DESIGN.md) güncellenir.
 - **Kaynaklar:** Ayrıntılar [SECURITY_AUDIT.md](SECURITY_AUDIT.md), [IMPROVEMENTS.md](IMPROVEMENTS.md) ve [../DESIGN.md](../DESIGN.md) dosyalarında.
 
 ## Genel bakış
@@ -24,7 +25,19 @@
 | 8c | `feat/observability` | B.8: JSON log, sağlık bilgisi | 0,25 gün | ✅ |
 | 8d | `feat/categories-more` | B.9: ayakkabı, çanta, kozmetik | 0,5 gün | ✅ |
 | 8e | `chore/language-cleanup` | B.10: dil tutarlılığı | 0,25 gün | ✅ |
-| 9 | `feat/llm-providers` | B.12: Gemini + Claude + GPT, yedekli zincir | 1 gün | ⬜ |
+| 9 | `feat/llm-providers` | B.12: Gemini + Claude + GPT, yedekli zincir | 1 gün | ⏸ API anahtarı yok, bekliyor |
+| 10a | `feat/ai-budget` | AI önbelleği, IP başına günlük AI kotası | 0,5 gün | ⬜ |
+| 10b | `feat/offline-persona-chat` | AI'sız (kural tabanlı) persona sohbeti | 0,5 gün | ⬜ |
+| 11 | `feat/mcp-connector` | PazarLab MCP sunucusu (Claude connector) | 1–1,5 gün | ⬜ |
+| 11b | `spike/claude-artifact` | Claude-powered artifact araştırması | 0,5 gün | ⬜ |
+| 12 | `feat/engine-v2-town` | Motor v2 + AI kasabası + Big Five | 3–4 gün | ⬜ |
+| 13 | `feat/product-entry-v2` | Ürün ekleme ekranı: link öncelikli akış + yeni yerleşim | 2 gün | ⬜ |
+| 14 | `feat/link-reader-v2` | Site okuyucuları, kayıtlı HTML testleri, "HTML ver" ucu | 2 gün | ⬜ |
+| 15 | `feat/layout-pass` | Diğer ekranların yerleşimi (audit → critique → ponytail-review) | 1,5 gün | ⬜ |
+| 16 | `feat/insight-features` | İlan yeniden yazma, rakip kartı, segment grafiği, görsel analizi | 2–3 gün | ⬜ |
+| 17 | `chore/cleanup-e2e` | Ölü kod temizliği, Playwright testleri CI'da | 1 gün | ⬜ |
+| 18 | `feat/browser-extension` | "PazarLab'a gönder" tarayıcı eklentisi | 1–2 gün | ⬜ |
+| 19 | `feat/bring-your-population` | Kendi nüfusunu yükle + kalibrasyon (hesap sistemi, KVKK) | 3+ gün | ⬜ |
 
 Sıralamanın gerekçesi: Önce güvenlik geliyor, çünkü açık CORS ve SSRF ile kota ve iç ağ riski demo sırasında bile var. Sonra B1 geliyor; AI katmanı çalışmıyorsa tasarımın gösterecek içeriği olmaz. Tasarım bunların üzerine kurulur.
 
@@ -195,6 +208,98 @@ Kabul kriteri: DESIGN.md'deki tüm kalıplar uygulanmış; bileşenlerde ham ren
   - Bulunan ve düzeltilen hatalar: **B18** (model Türkçe isim yazınca tartışma mesajı başka personaya gidiyordu), **B19** (Türkçe profillerle hiç eşleşmeyen ASCII anahtar kelimeler; metne sızan ham kimlikler). `"KARARSIZ".lower()` → "kararsiz" sorunu için karar ifadeleri açıkça yazıldı. Persona yükleyici, içe aktarma döngüsünü kırmak için `normalization_service`'e taşındı.
   - Anahtar kelime listeleri bilerek ASCII kaldı (`fold_text` ile eşleşiyorlar, B17).
   - Doğrulama: `tests/test_language.py` (4 test, toplam 106): AI kapalıyken bütün çıktı metinlerinde ASCII Türkçe kelime ve ham kimlik yok; iki persona dosyası aynı ve her `displayName` katlandığında kimliğine eşit; Türkçe yazılmış model isimleri doğru personaya bağlanıyor; API hata mesajı Türkçe. Testteki regex bilerek büyük/küçük harfe duyarlı (`re.IGNORECASE` Unicode'da "ı" ile "i"yi eşit sayıp doğru metni işaretliyordu). Puppeteer 10/10 + kategori 10/10; AI kapalı sonuç ekranı elle kontrol edildi.
+
+## Şu an neredeyiz
+
+- **Son tamamlanan:** Faz 8e (dil tutarlılığı). Tüm dallar `main`'e merge edildi ve `origin`'e push'landı.
+- **Sıradaki:** Faz 10a → 10b → 11 → 11b → 12 … (sıra aşağıdaki tabloda). Her faz kendi dalında, bitince bu bölüm güncellenir.
+- **Bekleyen kararlar:** kategori genişletme (hangi aileler) Faz 13'e gelince konuşulacak; Faz 9 için API anahtarı yok.
+- **Ortam notları:** `backend/venv` bozuk (eski bir kullanıcı yolunu gösteriyor). Testler geçici bir venv ile koşuyor. Gemini sık sık 429 veriyor; arayüz testlerinde AI kapalı ya da sahte SSE kullanılıyor. `gh`, nginx ve Docker daemon yok.
+
+## Yol haritası v2 (2026-10-17'de kararlaştırıldı)
+
+**Verilen kararlar**
+- **Abonelik ile AI:** PazarLab sitesi kullanıcının Claude aboneliğini kullanamaz. Anthropic, abonelik oturum anahtarlarının üçüncü taraf ürünlerde kullanılmasını yasaklıyor (Şubat 2026). Bunun meşru yolları: **MCP connector** (kullanıcı PazarLab'ı kendi Claude'una ekler; yorumlar onun aboneliğinden düşer) ve **Claude-powered artifact** (açan kişinin hesabıyla çalışır). Web sitesi herkes için çalışmaya devam eder: simülasyon AI'sız, yorumlar sunucudaki Gemini anahtarıyla, kota dolunca kural tabanlı.
+- **B15 / fiyat modeli:** "ödeme isteği" (willingness-to-pay) modeline geçilecek (Faz 12). Skorlar değişir; eski kayıtlı sonuçlar yeni motorla birebir karşılaştırılamaz. Bu not sonuç ekranında belirtilecek (motor sürümü kayda yazılır).
+- **Kişilik:** 16Personalities/MBTI doğrudan kullanılmayacak (iki kutuplu tiplerin güvenilirliği düşük, tip adları ve metinleri telifli, "MBTI" tescilli marka). Temel **Big Five (OCEAN)** olacak (kamuya açık IPIP ölçekleri, sürekli değerler). İstenirse arayüzde Big Five'tan hesaplanan, kendi metinlerimizle anlatılan 4 harfli bir "kişilik kodu" gösterilir.
+- **Tarayıcı eklentisi:** en sona (Faz 18). Koşul: Faz 14'te "URL ver" ucunun yanına "HTML ver" ucu eklenecek; eklenti yalnızca sayfayı gönderen ince bir katman olacak.
+- **Gerçek kullanıcı verisi:** kişi bazında ham veri (isim, iletişim, adres) asla alınmaz. Yalnızca anonim veya toplu segmentler kabul edilir; açık rıza ve silme hakkı olmalı (KVKK). Hesap sistemi ön koşul (Faz 19).
+- **Çoklu LLM (Faz 9):** API anahtarı alınana kadar bekliyor; abonelik bu fazın yerine geçmez.
+
+### Faz 10a: AI bütçesi
+- [ ] Aynı ürün girdisi (görseller hariç istek özeti) için AI çıktıları (yorumlar, tartışma, girdi analizi) bellekte / SQLite'ta TTL ile önbelleğe alınır; önbellekten gelen sonuç işaretlenir.
+- [ ] IP başına **günlük** AI kotası (dakikalık rate limit'ten ayrı); kota dolunca simülasyon yine çalışır, AI kısmı kural tabanlıya düşer ve kullanıcıya açık bir mesaj gösterilir ("Bugünkü AI hakkın doldu, kural tabanlı sonuç gösteriliyor").
+- [ ] `/api/health` önbellek isabet oranını ve kota durumunu gösterir.
+- Kabul: aynı istek ikinci kez gelince LLM çağrılmaz (test); kota aşımında yanıt 200, `aiInsights.aiGenerated=false` ve neden alanı dolu.
+
+### Faz 10b: AI'sız persona sohbeti
+- [ ] AI yoksa (`LLMUnavailable` / kota) persona, kendi verisinden (karar, gerekçe, öneri, kişilik özellikleri, ürünün zayıflıkları) kural tabanlı cevap üretir; sorunun konusuna göre (fiyat, kargo, açıklama, garanti, neden almadın) farklı şablon seçer.
+- [ ] Cevap arayüzde "kural tabanlı" olarak işaretlenir; SSE sözleşmesi değişmez (aynı `delta`/`done` olayları).
+- Kabul: AI kapalıyken Puppeteer'da sohbet cevap veriyor; 5 soru tipi için testler.
+
+### Faz 11: MCP connector
+- [ ] Backend'e uzak MCP sunucusu (Streamable HTTP): `simulate`, `price_sweep`, `compare_ab`, `read_product_link`, `list_personas`, `get_simulation`. Araçlar deterministik çekirdeği kullanır; sunucu tarafında LLM çağrılmaz.
+- [ ] Kötüye kullanım koruması: rate limit, gövde sınırı, SSRF korumasının link aracında da geçerli olması; gerekirse OAuth / erişim anahtarı.
+- [ ] Dokümantasyon: Claude.ai'de "+" → "Add custom connector" ile kurulum; örnek konuşmalar.
+- Kabul: MCP protokol testleri; kullanıcının Claude aboneliğiyle uçtan uca elle deneme (sunucunun internetten erişilebilir olması gerekir: geçici tünel veya dağıtım).
+
+### Faz 11b: Claude-powered artifact (araştırma)
+- [ ] Artifact'ın dış API'ye (PazarLab backend'i) erişip erişemediği kontrol edilir.
+- [ ] Erişiyorsa hafif bir demo (form → sonuç → persona sohbeti, AI çağrıları görüntüleyenin hesabından); erişemiyorsa çekirdeğin JS'e taşınması için efor notu.
+- Kabul: karar ve gerekçe bu dosyaya yazılır.
+
+### Faz 12: Motor v2 + AI kasabası
+- [ ] **Ödeme isteği (WTP):** her sakine kategori fiyatı × persona/gelir çarpanıyla log-normal bir üst fiyat. Fiyat düştükçe alma ihtimali artar; "çok ucuz şüphesi" yalnızca kalite odaklı sakinlerde. B15 kapanır.
+- [ ] **Lojistik karar:** `P = 1 / (1 + e^-fayda)`; ağırlıklar ve parametreler tek bir yapılandırma dosyasında, belgelenmiş varsayımlar olarak.
+- [ ] **Kasaba nüfusu (500 sakin):** ad, yaş, meslek, hane, gelir, şehir büyüklüğü, hobiler, alışveriş alışkanlıkları, kısa hikâye. Bir kez üretilir ve JSON olarak saklanır; simülasyon sırasında AI çağrılmaz.
+- [ ] **Üç katman:** hayat hikâyesi + **Big Five** + alışveriş tipi (mevcut 12 persona, artık sakin kümeleri). Sayısal özellikler bu üçünden birlikte türetilir; hikâye ↔ sayı tutarlılığı testle denetlenir.
+- [ ] **Arkadaşlık ağı:** her sakinin birkaç arkadaşı; alan sakinler arkadaşlarının ihtimalini artırır (ağızdan ağıza yayılma, graf algoritması, AI yok). Trend ürünlerde 30 günlük benimseme eğrisi.
+- [ ] **Rakipli seçim (multinomial logit):** ürün, benchmark'tan gelen 1–3 rakip ve "almamak" arasında seçim; "tahmini pazar payı".
+- [ ] **Monte Carlo:** 20–50 tohum, sonuç aralıkla ("%58 ± 4"). Döngü numpy ile vektörleştirilir; sonuçlar istek özetine göre önbelleğe alınır.
+- [ ] **"En etkili iyileştirme":** tek tek değişkenler (kargo, iade, garanti, fiyat −%10, açıklama tamamlama) denenir; alıcı kazancına göre sıralanır.
+- [ ] Sonuç ekranında "kasabadan 5 temsilci" (tek AI çağrısı; AI yoksa şablon). Persona sohbeti belirli bir sakinle de yapılabilir (hikâyesi prompt'a girer).
+- [ ] Klişe ve önyargı denetimi: demografi tek başına tercihi belirlemez; çeşitlilik testleri. Arayüzde sakinlerin sentetik olduğu açıkça yazılır.
+- [ ] Kayda motor sürümü (`engineVersion`) yazılır; eski sonuçlar açılınca "eski motorla hesaplandı" notu.
+- Kabul: fiyat düştükçe fiyat hassas sakinlerde alıcı sayısı artıyor (test); aynı girdi + tohum deterministik; 500 sakin × 30 tohum simülasyonu < 1 sn; mevcut API sözleşmesi geriye uyumlu (yeni alanlar ek).
+
+### Faz 13: Ürün ekleme ekranı v2 (link + form + yerleşim)
+- [ ] Önce `impeccable audit` / `critique` (kural: önce doğruluk ve kalite), sonra tasarım; en sonda `ponytail-review`.
+- [ ] Link öncelikli akış: "Linki yapıştır → doldurduk → kontrol et"; elle giriş ikinci yol.
+- [ ] Adım adım form, canlı kalite göstergesi ("bu alan skora +X katkı veriyor"), eksik alan ipuçları, taslak kaydetme, önceki ürünü kopyalama.
+- [ ] Kategori sistemi veriye dayalı: alanlar, ağırlıklar, anahtar kelimeler ve ortalama fiyat tek bir paylaşılan dosyada; form bu dosyadan üretilir. **Hangi yeni kategori ailelerinin ekleneceği bu fazın başında konuşulacak.**
+- Kabul: DESIGN.md'ye uygun; 375 px'te taşma yok; mevcut uçtan uca testler geçiyor; kullanıcı onayı.
+
+### Faz 14: Link okuma v2
+- [ ] `product_link_service.py` (1.509 satır) site başına okuyuculara bölünür: Trendyol, Hepsiburada, Amazon TR, n11, Çiçeksepeti (+ genel okuyucu). Yapısal veri (JSON-LD, sayfa içi state) öncelikli.
+- [ ] Kayıtlı HTML ile testler (CI'da canlı siteye gidilmez).
+- [ ] **"HTML ver" ucu** (eklenti için; SSRF yüzeyi yok, boyut sınırı var) ve "sayfa metnini yapıştır" yedeği.
+- [ ] Yorum sayısı ve puanın okunması (Faz 12'nin sosyal kanıt girdisi).
+- Not: pazar yerlerini sunucudan taramak çoğu zaman kullanım şartlarına aykırı; uzun vadeli yol eklenti (Faz 18) ve resmî API'ler.
+
+### Faz 15: Diğer ekranların yerleşimi
+- [ ] Sonuç sayfası mobilde ~5.800 px; sabit karar özeti, bölümler arası atlama menüsü, ikincil analizlerin katlanması. Benchmark, tartışma ve personalar ekranları.
+- [ ] Sıra: `impeccable audit` → `critique` → düzeltme → `ponytail-review`.
+
+### Faz 16: Yeni özellikler
+- [ ] İlan yeniden yazma + öncesi/sonrası simülasyonu.
+- [ ] Rakip kartı (benchmark fiyatları, pazar payı).
+- [ ] Segment grafiği (hangi yaş/gelir grubu alıyor).
+- [ ] Görsel analizi (AI, isteğe bağlı), paylaşım görseli.
+
+### Faz 17: Temizlik ve CI testleri
+- [ ] Kullanılmayan `components/ui/` bileşenleri (`button`, `card`, `badge`, `input`), takip edilen `backend/scratch/test_backend.py`.
+- [ ] Tek `personas.json` kaynağı (şu an backend ve frontend'de iki kopya; test eşitliği denetliyor).
+- [ ] LangGraph gerekliliği `ponytail-audit` ile değerlendirilir (5 adımlı düz boru hattı).
+- [ ] Puppeteer betikleri (şu an oturum dışında, geçici klasörde) Playwright testleri olarak repoya ve CI'a.
+- [ ] Docker imaj build'inin doğrulanması.
+
+### Faz 18: Tarayıcı eklentisi
+- [ ] "PazarLab'a gönder": kullanıcının kendi tarayıcısında açık ürün sayfasını Faz 14'teki "HTML ver" ucuna gönderir. Engellemeye takılmaz; sunucudan tarama gerekmez.
+
+### Faz 19: Kendi nüfusunu yükle + kalibrasyon
+- [ ] Satıcı kendi sipariş dökümünden (Trendyol satıcı paneli, Shopify vb.) **anonim/toplu segmentler** yükler (JSON/CSV şeması); kasaba bu dağılımlara göre üretilir.
+- [ ] Gerçek dönüşüm verisiyle motor ağırlıklarının kalibrasyonu ve geriye dönük test.
+- [ ] Ön koşullar: hesap sistemi, satıcı başına ayrı veri, açık rıza, silme. Ham kişisel veri kabul edilmez (KVKK).
 
 ## Riskler
 - **Gemini model adları sık değişiyor.** B1'de model env'den okunacak; varsayılan seçilirken o günkü güncel model listesi kontrol edilecek.
