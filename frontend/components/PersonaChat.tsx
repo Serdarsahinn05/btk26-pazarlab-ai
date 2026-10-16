@@ -4,22 +4,24 @@ import { useEffect, useRef, useState } from "react";
 import { Loader2, Send, Square } from "lucide-react";
 import { postSse } from "@/lib/sse";
 import { apiErrorMessage } from "@/lib/api";
+import { ChatMessage, loadChat, saveChat } from "@/lib/history";
 import { personaColor, personaLabel } from "@/lib/personas";
 import { Persona } from "@/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-interface Message {
-  role: "user" | "persona";
-  text: string;
-}
-
 const MAX_TURNS = 12; // backend limit per request
 const SUGGESTIONS = ["Neden bu kararı verdin?", "Fiyat ne olsa alırdın?", "Açıklamada neyi eksik buldun?"];
 
-/** Ask one simulated persona follow-up questions; answers stream in (POST /api/persona-chat). */
+const canChat = (id?: string | null): id is string => !!id && !id.startsWith("local-");
+
+/**
+ * Ask one simulated persona follow-up questions; answers stream in (POST /api/persona-chat).
+ * Each persona's transcript is kept on the result's history entry, so it survives a reload.
+ */
 export default function PersonaChat({ simulationId, personas }: { simulationId?: string | null; personas: Persona[] }) {
   const [persona, setPersona] = useState(personas[0]?.name ?? "");
-  const [messages, setMessages] = useState<Message[]>([]);
+  // Mounted only on the client after a result loads, so reading localStorage here cannot cause a hydration mismatch.
+  const [messages, setMessages] = useState<ChatMessage[]>(() => (canChat(simulationId) ? loadChat(simulationId, persona) : []));
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -30,8 +32,12 @@ export default function PersonaChat({ simulationId, personas }: { simulationId?:
   useEffect(() => {
     listRef.current?.lastElementChild?.scrollIntoView({ block: "nearest" });
   }, [messages]);
+  // Persist once an answer has finished streaming (not on every chunk).
+  useEffect(() => {
+    if (!busy && canChat(simulationId)) saveChat(simulationId, persona, messages);
+  }, [busy, messages, persona, simulationId]);
 
-  if (!simulationId || simulationId.startsWith("local-")) {
+  if (!canChat(simulationId)) {
     return (
       <p className="rounded-wobble border-2 border-dashed border-border p-5 text-sm text-muted-foreground">
         Persona sohbeti için sonucun sunucuda kayıtlı olması gerekir. Bu sonuç yalnızca bu tarayıcıda saklanıyor.
@@ -39,9 +45,21 @@ export default function PersonaChat({ simulationId, personas }: { simulationId?:
     );
   }
 
-  const switchPersona = (name: string) => {
+  // Cancel a running answer without touching the transcript (see the `finally` in send).
+  const cancelStream = () => {
     abortRef.current?.abort();
+    abortRef.current = null;
+  };
+
+  const switchPersona = (name: string) => {
+    cancelStream();
     setPersona(name);
+    setMessages(loadChat(simulationId, name));
+    setError("");
+  };
+
+  const clear = () => {
+    cancelStream();
     setMessages([]);
     setError("");
   };
@@ -49,7 +67,7 @@ export default function PersonaChat({ simulationId, personas }: { simulationId?:
   const send = async (text: string) => {
     const question = text.trim();
     if (!question || busy) return;
-    const history = [...messages, { role: "user" as const, text: question }];
+    const history: ChatMessage[] = [...messages, { role: "user", text: question }];
     // Keep the last turns within the backend limit and starting with the user.
     let window = history.slice(-MAX_TURNS);
     if (window[0]?.role !== "user") window = window.slice(1);
@@ -61,12 +79,15 @@ export default function PersonaChat({ simulationId, personas }: { simulationId?:
     const controller = new AbortController();
     abortRef.current = controller;
 
-    const appendToAnswer = (chunk: string) =>
+    let answered = false;
+    const appendToAnswer = (chunk: string) => {
+      answered = true;
       setMessages((prev) => {
         const next = [...prev];
         next[next.length - 1] = { role: "persona", text: next[next.length - 1].text + chunk };
         return next;
       });
+    };
 
     try {
       await postSse(
@@ -83,8 +104,13 @@ export default function PersonaChat({ simulationId, personas }: { simulationId?:
       if ((err as Error).name !== "AbortError") setError(apiErrorMessage(err));
     } finally {
       setBusy(false);
-      // Drop an empty answer bubble (error or abort before the first chunk).
-      setMessages((prev) => (prev[prev.length - 1]?.text ? prev : prev.slice(0, -1)));
+      // No answer at all (error or the stop button before the first chunk): drop the question too and give it back
+      // to the input, so an unanswered question is never saved. Skipped if the persona was switched or the chat
+      // cleared meanwhile, because the transcript on screen is then no longer this request's.
+      if (!answered && abortRef.current === controller) {
+        setMessages((prev) => prev.slice(0, -2));
+        setInput(question);
+      }
     }
   };
 
@@ -138,6 +164,12 @@ export default function PersonaChat({ simulationId, personas }: { simulationId?:
       )}
 
       {error && <p className="note-risk" role="alert">{error}</p>}
+
+      {messages.length > 0 && !busy && (
+        <button type="button" onClick={clear} className="text-sm font-bold text-accent underline-offset-4 hover:underline">
+          Sohbeti temizle
+        </button>
+      )}
 
       <form
         onSubmit={(e) => {

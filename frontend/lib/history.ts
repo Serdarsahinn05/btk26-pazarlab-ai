@@ -14,6 +14,13 @@ export interface HistoryEntry {
   response: SimulationResponse;
   /** Original input (images stripped) for the what-if tools; missing on old entries. */
   request?: SimulationRequest | null;
+  /** Persona chat transcripts keyed by persona name (F19). */
+  chats?: Record<string, ChatMessage[]>;
+}
+
+export interface ChatMessage {
+  role: "user" | "persona";
+  text: string;
 }
 
 /** Drop uploaded images before caching a request: they can be megabytes each. */
@@ -58,6 +65,22 @@ export function removeFromHistory(id: string): HistoryEntry[] {
 
 export function findInHistory(id: string): HistoryEntry | undefined {
   return loadHistory().find((e) => e.id === id);
+}
+
+export function loadChat(id: string, persona: string): ChatMessage[] {
+  return findInHistory(id)?.chats?.[persona] ?? [];
+}
+
+/** Store one persona's transcript on its history entry; an empty list removes it. No entry, no-op. */
+export function saveChat(id: string, persona: string, messages: ChatMessage[]): void {
+  const entries = loadHistory();
+  const entry = entries.find((e) => e.id === id);
+  if (!entry) return;
+  const chats = { ...entry.chats };
+  if (messages.length) chats[persona] = messages;
+  else delete chats[persona];
+  entry.chats = chats;
+  saveHistory(entries);
 }
 
 export function exportHistory(): void {

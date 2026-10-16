@@ -53,7 +53,7 @@ export default function ResultDashboard({ data, view, productName, request, onRe
         ) : (
           <EmptyState text="Bu simülasyon için tartışma kaydı oluşmadı." />
         )}
-        <PersonaChat simulationId={data.simulationId} personas={sortedPersonas(data)} />
+        <PersonaChat key={data.simulationId ?? "local"} simulationId={data.simulationId} personas={sortedPersonas(data)} />
       </section>
     );
   }

@@ -19,6 +19,7 @@
 | 5d | `ci/pipeline` | CI, bağımlılık taraması | 0,5 gün | ✅ |
 | 6 | `chore/next16-upgrade` | Next 14 → 16 (S14) | 0,5–1 gün | ✅ |
 | 7 | `chore/tailwind4` | Tailwind 3 → 4 (S15) | 0,5 gün | ✅ |
+| 8a | `feat/persona-chat-history` | F19: sohbet geçmişi | 0,25 gün | ✅ |
 
 Sıralamanın gerekçesi: Önce güvenlik geliyor, çünkü açık CORS ve SSRF ile kota ve iç ağ riski demo sırasında bile var. Sonra B1 geliyor; AI katmanı çalışmıyorsa tasarımın gösterecek içeriği olmaz. Tasarım bunların üzerine kurulur.
 
@@ -157,6 +158,13 @@ Kabul kriteri: DESIGN.md'deki tüm kalıplar uygulanmış; bileşenlerde ham ren
   - Form: tek fark açıklama textarea'sının altı 7 px daha sıkı (v3'te inline-block taban çizgisi boşluğuydu). Analiz: "Tablo olarak göster" 3 px aşağıda; fiyat grafiğinde "şu an" çubuğunun çerçevesi artık görünüyor (kod bunu istiyordu, v3'te çizilmiyordu).
   - Select menüsü iki sürümde aynı konum/boyutta, tam opak açılıyor. `animate-in`, `fade-in-0`, `zoom-in-95`, `prose-invert` CSS'te var.
   - lint, `tsc`, build temiz; Puppeteer uçtan uca 10/10; `npm audit --omit=dev` 0, tam audit 11 → 7 (S15).
+
+## Faz 8: Kalan iyileştirmeler
+- [x] **8a** F19, persona sohbet geçmişi (`feat/persona-chat-history`):
+  - Sohbetler sonucun tarayıcı geçmişi kaydında (`HistoryEntry.chats`, persona adına göre) tutuluyor. Ayrı depo yok; yedek indirme/yükleme, kayıt silme ve kota taşmasında eski kayıtların düşmesi sohbetleri de kapsıyor. Sunucuya sohbet kaydedilmiyor.
+  - Her persona kendi sohbetini koruyor (önceden persona değiştirmek sohbeti siliyordu). Cevap akışı bitince kaydediliyor, her parçada değil. "Sohbeti temizle" düğmesi.
+  - Cevap hiç gelmezse (AI hatası, durdur) soru sohbetten çıkarılıp yazı kutusuna geri konuyor; cevapsız soru kaydedilmiyor. Cevap akarken persona değiştirilir veya temizlenirse yeni sohbete dokunulmuyor.
+  - Doğrulama: `/api/persona-chat` sahte SSE ile Puppeteer 13/13 (akış, yenileme, önceki turların gönderilmesi, persona başına ayrı kayıt, hata yolu, temizleme). Gerçek Gemini o sırada 429 / zaman aşımı veriyordu; arayüz hatayı doğru gösterdi. Genel uçtan uca test 10/10.
 
 ## Riskler
 - **Gemini model adları sık değişiyor.** B1'de model env'den okunacak; varsayılan seçilirken o günkü güncel model listesi kontrol edilecek.
