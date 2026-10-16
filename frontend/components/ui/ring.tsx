@@ -65,16 +65,17 @@ export function SegmentRing({
 }) {
   const total = segments.reduce((sum, s) => sum + s.value, 0) || 1;
   const gap = segments.filter((s) => s.value > 0).length > 1 ? 2 : 0;
-  let offset = 0;
+  // Each segment starts where the previous ones end.
+  const offsets = segments.map((_, i) => segments.slice(0, i).reduce((sum, s) => sum + (s.value / total) * C, 0));
   const label = segments.map((s) => `${s.label} ${s.value}`).join(", ");
 
   return (
     <div className={cn("relative mx-auto aspect-square w-full", className)} style={{ maxWidth: size }}>
       <svg viewBox="0 0 120 120" className="h-full w-full -rotate-90" role="img" aria-label={label}>
         <circle cx="60" cy="60" r={R} fill="none" stroke="hsl(var(--secondary))" strokeWidth={stroke} />
-        {segments.map((s) => {
+        {segments.map((s, i) => {
           const length = Math.max(0, (s.value / total) * C - gap);
-          const el = (
+          return (
             <circle
               key={s.label}
               cx="60"
@@ -84,12 +85,10 @@ export function SegmentRing({
               stroke={s.color}
               strokeWidth={stroke}
               strokeDasharray={`${length} ${C - length}`}
-              strokeDashoffset={-offset}
+              strokeDashoffset={-offsets[i]}
               className="transition-[stroke-dasharray] duration-700 ease-out"
             />
           );
-          offset += (s.value / total) * C;
-          return el;
         })}
       </svg>
       <div className="absolute inset-0 grid place-content-center gap-1 text-center">{children}</div>

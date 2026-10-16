@@ -60,10 +60,11 @@ Bu dosya iki bölümden oluşuyor: (A) mevcut koddaki hatalar ve borçlar, (B) y
 4. ✅ (Faz 5c) **Gerçek persona sohbeti:** Mevcut "AI chat" tek seferlik bir tartışma. `POST /api/persona-chat` ile seçilen personaya takip sorusu sorulur. Yanıtlar SSE ile akar; persona prompt'u yalnızca sunucuda kalır; rate limit uygulanır.
 5. ✅ (Faz 5c) **Canlı ilerleme:** Sahte terminal logu yerine LangGraph adımları (`input_analysis → research → benchmark → simulate → debate`) SSE ile gerçek zamanlı gösterilir.
 6. ✅ (Markdown + yazdır, Faz 5a) **Rapor dışa aktarımı:** Markdown veya PDF rapor: skorlar, persona tablosu, aksiyon planı. Tarayıcının `print` CSS'i ilk sürüm için yeterli.
-7. **Test ve CI**
+7. ✅ (CI: Faz 5d) **Test ve CI**
    - pytest: aynı girdinin aynı skoru verdiği deterministiklik testleri, Pydantic sınır testleri, SSRF testleri, LLM mock'u ile graph testi.
    - Vitest ve Testing Library: `lib/api` hata yolları, halka bileşeni.
    - GitHub Actions: `ruff`, `pytest`, `npm run lint`, `npm run build`, `pip-audit`, `npm audit --omit=dev`. Dependabot.
 8. **Gözlemlenebilirlik:** JSON log, `X-Request-ID`. `/api/health` yanıtına `{model, aiAvailable, serperAvailable}` eklenir.
 9. **Kategori genişletme:** B3'teki Enum hazır olduktan sonra ayakkabı, çanta ve kozmetik kategorileri `category_rules.json` dosyasına eklenir.
 10. **Dil tutarlılığı:** "TASK INTELLIGENCE" gibi İngilizce başlıklar ve ASCII'ye çevrilmiş Türkçe metinler temizlenir. Persona adları `personas.json` içinde Türkçe karakterli `displayName` alanıyla tutulur.
+11. **Tailwind 4 geçişi:** Dev araçlarındaki açıkları (S15) kapatır. CSS tabanlı config (`@theme`), `tailwindcss-animate` yerine `tw-animate-css`; DESIGN.md token'ları `globals.css`'e taşınır. Görsel regresyon için Faz 4'teki ekran görüntüleriyle karşılaştırma gerekir.

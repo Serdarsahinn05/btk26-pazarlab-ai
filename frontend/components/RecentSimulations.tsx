@@ -16,6 +16,8 @@ export default function RecentSimulations() {
   const [message, setMessage] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // localStorage is only readable after hydration; reading it during render would mismatch the server HTML.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setEntries(loadHistory()), []);
 
   const onImport = async (file?: File) => {

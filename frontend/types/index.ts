@@ -274,7 +274,7 @@ export interface ProductLinkReadResponse {
   images: string[];
   brand?: string | null;
   category?: string | null;
-  features: Record<string, any>;
+  features: Record<string, string | number | null>;
   availability?: string | null;
   sku?: string | null;
   mpn?: string | null;

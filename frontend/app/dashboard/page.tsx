@@ -16,6 +16,9 @@ import { analyzeProductInput, apiErrorMessage, getSimulation, simulateProductStr
 import { CATEGORIES, InputAnalysisResponse, SimulationRequest, SimulationResponse } from "@/types";
 
 const PERSONA_COUNT = personasData.personaTypes.length;
+// Only called from event handlers; kept outside the component so the React Compiler doesn't flag it as render-time.
+const now = () => Date.now();
+
 const BOT_COUNT = personasData.personaTypes.reduce((sum, p: { count?: number }) => sum + (p.count || 0), 0);
 
 function DashboardContent() {
@@ -34,11 +37,21 @@ function DashboardContent() {
   const [resultId, setResultId] = useState<string | null>(null);
   const [lastRequest, setLastRequest] = useState<SimulationRequest | null>(null);
 
+  const showResult = (response: SimulationResponse, name: string, id: string, request: SimulationRequest | null) => {
+    setResult(response);
+    setLastRequest(request);
+    setProductName(name);
+    setResultId(id);
+    setState("result");
+  };
+
   // Open a saved/shared result from ?r=<id>: this browser's history first, then the server.
   useEffect(() => {
     if (!resultParam || resultParam === resultId) return;
     const local = findInHistory(resultParam);
     if (local) {
+      // Syncing with the URL (an external source) is what this effect is for.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       showResult(local.response, local.productName, local.id, local.request ?? null);
       return;
     }
@@ -70,14 +83,6 @@ function DashboardContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- react only to the URL parameter
   }, [resultParam]);
 
-  const showResult = (response: SimulationResponse, name: string, id: string, request: SimulationRequest | null) => {
-    setResult(response);
-    setLastRequest(request);
-    setProductName(name);
-    setResultId(id);
-    setState("result");
-  };
-
   const handleSimulate = async (data: SimulationRequest) => {
     setState("loading");
     setResult(null);
@@ -106,12 +111,12 @@ function DashboardContent() {
       const response = await simulateProductStream({ ...data, inputAnalysis }, (step) =>
         setDoneSteps((prev) => (prev.includes(step) ? prev : [...prev, step]))
       );
-      const id = response.simulationId ?? `local-${Date.now()}`;
+      const id = response.simulationId ?? `local-${now()}`;
       const request = storableRequest({ ...data, inputAnalysis: inputAnalysis ?? response.inputAnalysis });
       addToHistory({
         request,
         id,
-        createdAt: Date.now(),
+        createdAt: now(),
         productName: data.productName,
         category: data.category,
         overallScore: response.overallScore,

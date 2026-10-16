@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { useMediaQuery } from "@/lib/hooks";
 import { motion } from "framer-motion";
 import { DebateLog, Persona } from "@/types";
 import { personaColor, personaLabel, personaSlug } from "@/lib/personas";
@@ -71,23 +72,24 @@ export const DebateLogs: React.FC<DebateLogsProps> = ({ logs, personas = [] }) =
   const normalizedLogs = useMemo(() => normalizeLogs(logs, personas), [logs, personas]);
   const focusSlug = useSearchParams().get("persona");
   // Reveal messages one by one like a live chat, unless the user came for a specific persona.
-  const [visibleCount, setVisibleCount] = useState(focusSlug ? normalizedLogs.length : 0);
+  const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
+  const instant = Boolean(focusSlug) || reducedMotion;
+  // The counter is tagged with the logs it counts, so new logs restart from 0 without a reset in the effect.
+  const [reveal, setReveal] = useState({ logs: normalizedLogs, count: 0 });
+  const revealed = reveal.logs === normalizedLogs ? reveal.count : 0;
+  const visibleCount = instant ? normalizedLogs.length : Math.min(revealed, normalizedLogs.length);
 
   useEffect(() => {
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (focusSlug || reducedMotion) {
-      setVisibleCount(normalizedLogs.length);
-      return;
-    }
-    setVisibleCount(0);
+    if (instant) return;
     const timer = window.setInterval(() => {
-      setVisibleCount((count) => {
+      setReveal((prev) => {
+        const count = prev.logs === normalizedLogs ? prev.count : 0;
         if (count >= normalizedLogs.length) window.clearInterval(timer);
-        return Math.min(count + 1, normalizedLogs.length);
+        return { logs: normalizedLogs, count: Math.min(count + 1, normalizedLogs.length) };
       });
     }, 1200);
     return () => window.clearInterval(timer);
-  }, [normalizedLogs, focusSlug]);
+  }, [normalizedLogs, instant]);
 
   useEffect(() => {
     if (!focusSlug) return;
@@ -132,7 +134,7 @@ export const DebateLogs: React.FC<DebateLogsProps> = ({ logs, personas = [] }) =
         })}
       </ol>
       {visibleCount < normalizedLogs.length && (
-        <button type="button" onClick={() => setVisibleCount(normalizedLogs.length)} className="btn-sticker">
+        <button type="button" onClick={() => setReveal({ logs: normalizedLogs, count: normalizedLogs.length })} className="btn-sticker">
           Tümünü göster ({normalizedLogs.length - visibleCount} mesaj daha)
         </button>
       )}

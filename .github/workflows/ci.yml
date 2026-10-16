@@ -46,6 +46,5 @@ jobs:
       - run: npm run lint
       - run: npx tsc --noEmit
       - run: npm run build
-      # Next 14 has open advisories with no 14.x fix; blocking resumes after the Next 16 upgrade (see docs/SECURITY_AUDIT.md S14).
+      # Runtime dependencies only; dev tooling advisories are tracked in docs/SECURITY_AUDIT.md (S15).
       - run: npm audit --omit=dev --audit-level=high
-        continue-on-error: true

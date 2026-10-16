@@ -31,17 +31,18 @@ export default function WhatIf({ request }: { request: SimulationRequest }) {
 /* ------------------------------ price curve ------------------------------ */
 
 function PriceCurve({ request }: { request: SimulationRequest }) {
-  const [data, setData] = useState<PriceSweepResponse | null>(null);
-  const [error, setError] = useState("");
+  // Results are tagged with the request they belong to, so a new request shows the spinner without resetting state.
+  const [sweep, setSweep] = useState<{ for: SimulationRequest; data?: PriceSweepResponse; error?: string } | null>(null);
+  const current = sweep?.for === request ? sweep : null;
+  const data = current?.data ?? null;
+  const error = current?.error ?? "";
   const [showTable, setShowTable] = useState(false);
 
   useEffect(() => {
     let alive = true;
-    setData(null);
-    setError("");
     priceSweep(request)
-      .then((res) => alive && setData(res))
-      .catch((err) => alive && setError(apiErrorMessage(err)));
+      .then((res) => alive && setSweep({ for: request, data: res }))
+      .catch((err) => alive && setSweep({ for: request, error: apiErrorMessage(err) }));
     return () => {
       alive = false;
     };
