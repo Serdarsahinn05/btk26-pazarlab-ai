@@ -1,6 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export interface ToastState {
   tone: "error" | "info";
@@ -8,7 +9,7 @@ export interface ToastState {
   onRetry?: () => void;
 }
 
-/** Bottom-centred status pill (DESIGN.md §5 "Durum toast'u"). */
+/** Bottom-centred sticker pill (DESIGN.md §4 "Durum toast'u"). */
 export default function StatusToast({ toast, onClose }: { toast: ToastState | null; onClose: () => void }) {
   if (!toast) return null;
   const isError = toast.tone === "error";
@@ -16,22 +17,19 @@ export default function StatusToast({ toast, onClose }: { toast: ToastState | nu
   return (
     <div
       role={isError ? "alert" : "status"}
-      className={`fixed bottom-6 left-1/2 z-50 flex max-w-[92vw] -translate-x-1/2 items-center gap-3 rounded-full border px-4 py-2.5 font-mono text-xs shadow-lg ${
-        isError ? "border-destructive/50 bg-destructive/90 text-destructive-foreground" : "border-border bg-card text-foreground"
-      }`}
+      className={cn(
+        "no-print fixed bottom-6 left-1/2 z-50 flex max-w-[92vw] -translate-x-1/2 items-center gap-3 rounded-full border-2 bg-card px-4 py-2.5 text-sm font-semibold shadow-sticker-ink",
+        isError ? "border-skip text-skip-text" : "border-foreground text-foreground"
+      )}
     >
       <span>{toast.message}</span>
       {toast.onRetry && (
-        <button
-          type="button"
-          onClick={toast.onRetry}
-          className="rounded-full bg-background/90 px-3 py-1 font-bold text-foreground hover:bg-background focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-        >
+        <button type="button" onClick={toast.onRetry} className="btn-sticker !px-3 !py-1 text-xs">
           Tekrar dene
         </button>
       )}
-      <button type="button" onClick={onClose} aria-label="Bildirimi kapat" className="opacity-70 hover:opacity-100">
-        <X className="h-3.5 w-3.5" />
+      <button type="button" onClick={onClose} aria-label="Bildirimi kapat" className="rounded-full p-1 text-foreground/70 hover:bg-secondary">
+        <X className="h-4 w-4" />
       </button>
     </div>
   );

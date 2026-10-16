@@ -1,0 +1,54 @@
+"use client";
+
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { cn } from "@/lib/utils";
+import PazarLabBrand from "@/components/PazarLabBrand";
+import ThemeToggle from "@/components/ThemeToggle";
+import ApiStatusDot from "@/components/ApiStatusDot";
+
+export const DASHBOARD_VIEWS = [
+  { id: "analysis", label: "Analiz" },
+  { id: "benchmark", label: "Benchmark" },
+  { id: "debate", label: "Tartışma" },
+  { id: "personas", label: "Personalar" },
+] as const;
+
+export type DashboardView = (typeof DASHBOARD_VIEWS)[number]["id"];
+
+/** Dashboard header: brand, pill tabs (scroll sideways on phones), API status, theme. */
+export default function TopBar() {
+  const current = useSearchParams().get("view") || "analysis";
+
+  return (
+    <header className="no-print sticky top-0 z-40 border-b-2 border-dashed border-border bg-background/95 backdrop-blur-sm">
+      <div className="mx-auto flex min-h-[66px] max-w-page flex-wrap items-center gap-x-5 gap-y-2 px-4 py-2 md:px-6">
+        <PazarLabBrand />
+        <nav aria-label="Görünümler" className="order-3 -mx-1 flex w-full gap-1.5 overflow-x-auto px-1 pb-1 sm:order-none sm:w-auto sm:pb-0">
+          {DASHBOARD_VIEWS.map((view) => {
+            const active = current === view.id;
+            return (
+              <Link
+                key={view.id}
+                href={`/dashboard?view=${view.id}`}
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "whitespace-nowrap border-2 px-3.5 py-1.5 text-sm font-bold transition-colors",
+                  active
+                    ? "rounded-tab border-primary bg-primary text-primary-foreground shadow-sticker-sm"
+                    : "rounded-full border-transparent text-foreground-2 hover:bg-secondary"
+                )}
+              >
+                {view.label}
+              </Link>
+            );
+          })}
+        </nav>
+        <div className="ml-auto flex items-center gap-3">
+          <ApiStatusDot />
+          <ThemeToggle />
+        </div>
+      </div>
+    </header>
+  );
+}

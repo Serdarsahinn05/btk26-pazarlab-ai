@@ -1,53 +1,18 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { MessageSquare, Zap } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { motion } from "framer-motion";
 import { DebateLog, Persona } from "@/types";
-import personasData from "@/data/personas.json";
+import { personaColor, personaLabel, personaSlug } from "@/lib/personas";
+import { cn } from "@/lib/utils";
 
 interface DebateLogsProps {
   logs: DebateLog[];
   personas?: Persona[];
 }
 
-// One colour per persona, keyed by its position in personas.json (same order as the
-// backend), so every one of the 12 personas gets its own colour and renames don't break it.
-// Phase 4 swaps these classes for the --persona-1..12 design tokens.
-const PERSONA_PALETTE = [
-  "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/20",
-  "bg-pink-500/10 text-pink-600 dark:text-pink-400 border-pink-500/20",
-  "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
-  "bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20",
-  "bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20",
-  "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20",
-  "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20",
-  "bg-lime-500/10 text-lime-700 dark:text-lime-400 border-lime-500/20",
-  "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20",
-  "bg-slate-500/10 text-slate-600 dark:text-slate-300 border-slate-500/20",
-  "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20",
-  "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20",
-];
-const SYSTEM_COLOR = "bg-muted/50 text-muted-foreground border-border/50";
-const personaOrder = new Map(personasData.personaTypes.map((p, index) => [p.name, index]));
-
-function personaColor(name: string) {
-  const index = personaOrder.get(name);
-  return index === undefined ? SYSTEM_COLOR : PERSONA_PALETTE[index % PERSONA_PALETTE.length];
-}
-
 const genericSpeakerPattern = /^(assistant|asistan|agent|ajan|persona|bot|buyer|seller|alici|alıcı|satici|satıcı|user|system)\s*\d*$/i;
-
-function iconForName(name: string) {
-  if (name === "Sistem") return 0;
-
-  let hash = 0;
-  for (let index = 0; index < name.length; index += 1) {
-    hash = (hash * 31 + name.charCodeAt(index)) | 0;
-  }
-
-  return (Math.abs(hash) % 10) + 1;
-}
 
 function stripPersonaPrefix(text: string, personaNames: string[]) {
   const cleanText = String(text || "").trim();
@@ -104,92 +69,73 @@ function normalizeLogs(logs: DebateLog[], personas: Persona[] = []) {
 
 export const DebateLogs: React.FC<DebateLogsProps> = ({ logs, personas = [] }) => {
   const normalizedLogs = useMemo(() => normalizeLogs(logs, personas), [logs, personas]);
-  const [visibleLogs, setVisibleLogs] = useState<DebateLog[]>([]);
-
-  const personaIconsMap = useMemo(() => {
-    const map: Record<string, number> = {};
-    normalizedLogs.forEach((log) => {
-      if (log.name && map[log.name] === undefined) {
-        map[log.name] = iconForName(log.name);
-      }
-    });
-    return map;
-  }, [normalizedLogs]);
+  const focusSlug = useSearchParams().get("persona");
+  // Reveal messages one by one like a live chat, unless the user came for a specific persona.
+  const [visibleCount, setVisibleCount] = useState(focusSlug ? normalizedLogs.length : 0);
 
   useEffect(() => {
-    setVisibleLogs([]);
-    if (!normalizedLogs || normalizedLogs.length === 0) return;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (focusSlug || reducedMotion) {
+      setVisibleCount(normalizedLogs.length);
+      return;
+    }
+    setVisibleCount(0);
+    const timer = window.setInterval(() => {
+      setVisibleCount((count) => {
+        if (count >= normalizedLogs.length) window.clearInterval(timer);
+        return Math.min(count + 1, normalizedLogs.length);
+      });
+    }, 1200);
+    return () => window.clearInterval(timer);
+  }, [normalizedLogs, focusSlug]);
 
-    let index = 0;
-    const interval = window.setInterval(() => {
-      if (index < normalizedLogs.length) {
-        const nextLog = normalizedLogs[index];
-        if (nextLog) {
-          setVisibleLogs((prev) => [...prev, nextLog]);
-        }
-        index += 1;
-      } else {
-        window.clearInterval(interval);
-      }
-    }, 1500);
+  useEffect(() => {
+    if (!focusSlug) return;
+    document.querySelector(`[data-persona="${focusSlug}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [focusSlug, visibleCount]);
 
-    return () => window.clearInterval(interval);
-  }, [normalizedLogs]);
-
-  if (!normalizedLogs || normalizedLogs.length === 0) return null;
+  if (normalizedLogs.length === 0) return null;
 
   return (
-    <div className="space-y-4 max-h-[500px] overflow-y-auto p-4 custom-scrollbar rounded-xl bg-white/40 dark:bg-black/40 border border-border/50 dark:border-white/10 backdrop-blur-md shadow-xl dark:shadow-2xl">
-      <div className="flex items-center gap-2 mb-4 border-b border-border/50 dark:border-white/10 pb-2">
-        <MessageSquare className="w-5 h-5 text-indigo-500 dark:text-indigo-400" />
-        <h3 className="text-sm font-semibold text-foreground dark:text-white uppercase tracking-wider">Persona Tartismasi (A2A)</h3>
-      </div>
-
-      <div className="space-y-3">
-        <AnimatePresence>
-          {visibleLogs.map((log, index) => {
-            if (!log || !log.name) return null;
-
-            const iconId = personaIconsMap[log.name];
-            const isSystem = log.name === "Sistem";
-
-            return (
-              <motion.div
-                key={`${log.name}-${index}`}
-                initial={{ opacity: 0, x: -10, y: 10 }}
-                animate={{ opacity: 1, x: 0, y: 0 }}
-                transition={{ duration: 0.4 }}
-                className={`flex flex-col gap-1 p-3 rounded-2xl border ${
-                  personaColor(log.name)
-                }`}
+    <div className="space-y-4">
+      <ol className="space-y-3.5">
+        {normalizedLogs.slice(0, visibleCount).map((log, index) => {
+          const color = personaColor(log.name);
+          const slug = personaSlug(log.name);
+          const focused = focusSlug === slug;
+          return (
+            <motion.li
+              key={`${log.name}-${index}`}
+              data-persona={slug}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className={cn(
+                "flex gap-3 rounded-[4px_16px_16px_4px] border-2 border-l-[6px] bg-card p-4 shadow-sticker",
+                focused && "ring-2 ring-ring ring-offset-2 ring-offset-background"
+              )}
+              style={{ borderLeftColor: color, borderTopColor: "hsl(var(--border))", borderRightColor: "hsl(var(--border))", borderBottomColor: "hsl(var(--border))" }}
+            >
+              <span
+                aria-hidden
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-blob font-display text-sm font-extrabold text-card"
+                style={{ background: color }}
               >
-                <div className="flex items-center gap-2 mb-1">
-                  <div className="w-8 h-8 rounded-full overflow-hidden border border-border/50 dark:border-white/20 bg-white/10 flex items-center justify-center shrink-0">
-                    {isSystem ? (
-                      <Zap className="w-4 h-4 text-yellow-500" />
-                    ) : (
-                      <img
-                        src={`/pp_icons/${iconId}.jpeg`}
-                        alt={log.name}
-                        className="w-full h-full object-cover"
-                        onError={(event) => {
-                          const target = event.target as HTMLImageElement;
-                          target.src = "";
-                          target.style.display = "none";
-                        }}
-                      />
-                    )}
-                  </div>
-                  <span className="text-[10px] font-bold uppercase tracking-tight opacity-70 text-foreground dark:text-white">{log.name}</span>
-                </div>
-                <p className="text-sm leading-relaxed font-medium pl-10 -mt-2 text-foreground/90 dark:text-white/90">
-                  {String(log.text)}
-                </p>
-              </motion.div>
-            );
-          })}
-        </AnimatePresence>
-      </div>
+                {personaLabel(log.name).charAt(0)}
+              </span>
+              <div className="min-w-0">
+                <b className="font-display text-sm font-bold">{personaLabel(log.name)}</b>
+                <p className="mt-0.5 text-foreground-2">{log.text}</p>
+              </div>
+            </motion.li>
+          );
+        })}
+      </ol>
+      {visibleCount < normalizedLogs.length && (
+        <button type="button" onClick={() => setVisibleCount(normalizedLogs.length)} className="btn-sticker">
+          Tümünü göster ({normalizedLogs.length - visibleCount} mesaj daha)
+        </button>
+      )}
     </div>
   );
 };

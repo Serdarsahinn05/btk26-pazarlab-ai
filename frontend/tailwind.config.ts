@@ -1,99 +1,67 @@
 import type { Config } from "tailwindcss";
 
-const config = {
+const hsl = (name: string) => `hsl(var(--${name}) / <alpha-value>)`;
+const personas = Object.fromEntries(
+  Array.from({ length: 12 }, (_, i) => [`persona-${i + 1}`, hsl(`persona-${i + 1}`)])
+);
 
+// Tokens live in app/globals.css; DESIGN.md is the source of truth.
+const config = {
   darkMode: ["class"],
-  content: [
-    './pages/**/*.{ts,tsx}',
-    './components/**/*.{ts,tsx}',
-    './app/**/*.{ts,tsx}',
-    './src/**/*.{ts,tsx}',
-  ],
+  // lib/ holds class maps (e.g. decision colours in lib/personas.ts), so it must be scanned too.
+  content: ["./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./lib/**/*.{ts,tsx}"],
   prefix: "",
   theme: {
-    container: {
-      center: true,
-      padding: "2rem",
-      screens: {
-        "2xl": "1400px",
-      },
-    },
     extend: {
       colors: {
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
-        primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
-        },
-        secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
-        },
-        destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
-        },
-        muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
-        },
-        accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
-        },
-        popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
-        },
-        card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
-        },
+        border: hsl("border"),
+        input: hsl("input"),
+        ring: hsl("ring"),
+        background: hsl("background"),
+        foreground: { DEFAULT: hsl("foreground"), 2: hsl("foreground-2") },
+        primary: { DEFAULT: hsl("primary"), foreground: hsl("primary-foreground") },
+        secondary: { DEFAULT: hsl("secondary"), foreground: hsl("secondary-foreground") },
+        destructive: { DEFAULT: hsl("destructive"), foreground: hsl("destructive-foreground") },
+        muted: { DEFAULT: hsl("muted"), foreground: hsl("muted-foreground") },
+        accent: { DEFAULT: hsl("accent"), foreground: hsl("accent-foreground") },
+        popover: { DEFAULT: hsl("popover"), foreground: hsl("popover-foreground") },
+        card: { DEFAULT: hsl("card"), foreground: hsl("card-foreground") },
+        buy: { DEFAULT: hsl("buy"), text: hsl("buy-text") },
+        watch: { DEFAULT: hsl("watch"), text: hsl("watch-text") },
+        skip: { DEFAULT: hsl("skip"), text: hsl("skip-text") },
+        violet: hsl("violet"),
+        ...personas,
       },
       fontFamily: {
-        // next/font variables from app/layout.tsx; without this `font-sans` ignored Inter.
-        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
-        mono: ["var(--font-mono)", "ui-monospace", "monospace"],
-        heading: ["var(--font-sans)", "system-ui", "sans-serif"],
+        sans: ["var(--font-sans)", "Trebuchet MS", "system-ui", "sans-serif"],
+        display: ["var(--font-display)", "Trebuchet MS", "sans-serif"],
+        hand: ["var(--font-hand)", "cursive"],
+        heading: ["var(--font-display)", "Trebuchet MS", "sans-serif"],
       },
       borderRadius: {
         lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        md: "calc(var(--radius) - 4px)",
+        sm: "calc(var(--radius) - 6px)",
+        wobble: "18px 22px 16px 24px / 22px 16px 24px 18px",
+        "wobble-lg": "26px 30px 24px 32px",
+        tab: "16px 20px 15px 22px",
+        blob: "46% 54% 50% 50% / 52% 48% 52% 48%",
+      },
+      boxShadow: {
+        sticker: "3px 4px 0 hsl(var(--shadow-ink))",
+        "sticker-sm": "2px 3px 0 hsl(var(--shadow-ink))",
+        "sticker-ink": "2px 3px 0 hsl(var(--foreground))",
+      },
+      maxWidth: {
+        page: "1180px",
       },
       keyframes: {
-        "accordion-down": {
-          from: { height: "0" },
-          to: { height: "var(--radix-accordion-content-height)" },
-        },
-        "accordion-up": {
-          from: { height: "var(--radix-accordion-content-height)" },
-          to: { height: "0" },
-        },
-        "pulse-glow": {
-          "0%, 100%": { opacity: "1", transform: "scale(1)" },
-          "50%": { opacity: "0.8", transform: "scale(1.05)" },
-        },
-        "float": {
-          "0%, 100%": { transform: "translateY(0)" },
-          "50%": { transform: "translateY(-10px)" },
-        },
-        "shimmer": {
-          "100%": {
-            transform: "translateX(100%)",
-          },
-        },
+        "accordion-down": { from: { height: "0" }, to: { height: "var(--radix-accordion-content-height)" } },
+        "accordion-up": { from: { height: "var(--radix-accordion-content-height)" }, to: { height: "0" } },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "pulse-glow": "pulse-glow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-        "float": "float 6s ease-in-out infinite",
-        "shimmer": "shimmer 2s infinite",
       },
     },
   },

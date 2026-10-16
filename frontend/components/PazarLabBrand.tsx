@@ -1,34 +1,16 @@
-import { Beaker } from "lucide-react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 
-interface PazarLabBrandProps {
-  className?: string;
-  iconClassName?: string;
-  size?: "sm" | "md";
-}
-
-export default function PazarLabBrand({
-  className,
-  iconClassName,
-  size = "md",
-}: PazarLabBrandProps) {
-  const iconSize = size === "sm" ? "w-5 h-5" : "w-6 h-6";
-  const textSize = size === "sm" ? "text-lg" : "text-xl";
-
+/** Word mark: "PazarLab" in ink, "AI" in the primary green (DESIGN.md §4). */
+export default function PazarLabBrand({ className, href = "/" }: { className?: string; href?: string }) {
   return (
-    <div className={cn("flex items-center gap-2.5", className)}>
-      <div
-        className={cn(
-          "rounded-lg bg-violet-500/20 p-2 shadow-[0_0_20px_-5px_rgba(139,92,246,0.35)] shrink-0",
-          iconClassName
-        )}
-      >
-        <Beaker className={cn(iconSize, "text-violet-400")} />
-      </div>
-      <span className={cn("font-bold tracking-tight", textSize)}>
-        <span className="text-white">PazarLab </span>
-        <span className="text-violet-400">AI</span>
+    <Link href={href} className={cn("inline-flex items-center gap-2 rounded-full font-display text-[23px] font-extrabold leading-none tracking-tight", className)}>
+      <span aria-hidden className="grid h-8 w-8 place-items-center rounded-blob border-2 border-foreground bg-watch text-base shadow-sticker-ink">
+        ◐
       </span>
-    </div>
+      <span>
+        PazarLab <span className="text-primary">AI</span>
+      </span>
+    </Link>
   );
 }
