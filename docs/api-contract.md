@@ -14,6 +14,8 @@
 | POST | `/api/simulate` | `SimulationRequest` | `SimulationResponse` (+ `simulationId`) |
 | POST | `/api/price-sweep` | `SimulationRequest` | `{ points: SweepPoint[9], bestRevenue, bestBuyers }`; SweepPoint = `{ factor, price, estimatedBuyers, buyRate, overallScore, revenue }` |
 | POST | `/api/compare` | `{ base: SimulationRequest, variant: SimulationRequest }` | `{ base: CoreMetrics, variant: CoreMetrics }`; CoreMetrics = `{ price, overallScore, estimatedBuyers, simulatedConsumers, decisionDistribution, marketBreadthScore, intentConversionScore, problemSolutionFit, topPersona, weaknesses }` |
+| POST | `/api/simulate/stream` | `SimulationRequest` | SSE: `event: step` `{ step, label }` (input_analysis, research, benchmark, simulate, debate) … `event: result` `SimulationResponse` |
+| POST | `/api/persona-chat` | `{ simulationId, persona, messages: [{ role: user\|persona, text ≤600 }] (1–12, son mesaj user) }` | SSE: `event: delta` `{ text }` … `event: done` · hata: `event: error` `{ detail }`; kayıt yoksa 404, bilinmeyen persona 422 |
 | GET | `/api/simulations/{id}` | – | `{ id, createdAt, productName, category, response: SimulationResponse, request: SimulationRequest | null }` (request görselsiz); bilinmeyen/süresi dolmuş → 404 |
 
 **Hatalar** (her yanıtta `X-Request-ID` başlığı vardır):

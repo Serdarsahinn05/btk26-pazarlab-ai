@@ -12,8 +12,8 @@ import RecentSimulations from "@/components/RecentSimulations";
 import { addToHistory, findInHistory, storableRequest } from "@/lib/history";
 import { DASHBOARD_VIEWS, DashboardView } from "@/components/TopBar";
 import personasData from "@/data/personas.json";
-import { analyzeProductInput, apiErrorMessage, getSimulation, simulateProduct } from "@/lib/api";
-import { CATEGORIES, InputAnalysisResponse, PurchaseMotivation, SimulationRequest, SimulationResponse } from "@/types";
+import { analyzeProductInput, apiErrorMessage, getSimulation, simulateProductStream } from "@/lib/api";
+import { CATEGORIES, InputAnalysisResponse, SimulationRequest, SimulationResponse } from "@/types";
 
 const PERSONA_COUNT = personasData.personaTypes.length;
 const BOT_COUNT = personasData.personaTypes.reduce((sum, p: { count?: number }) => sum + (p.count || 0), 0);
@@ -26,7 +26,7 @@ function DashboardContent() {
   const view: DashboardView = DASHBOARD_VIEWS.some((v) => v.id === requested) ? (requested as DashboardView) : "analysis";
 
   const [state, setState] = useState<"idle" | "loading" | "result">("idle");
-  const [motivation, setMotivation] = useState<PurchaseMotivation | null>(null);
+  const [doneSteps, setDoneSteps] = useState<string[]>([]);
   const [result, setResult] = useState<SimulationResponse | null>(null);
   const [pending, setPending] = useState<{ data: SimulationRequest; analysis: InputAnalysisResponse } | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
@@ -79,7 +79,6 @@ function DashboardContent() {
   };
 
   const handleSimulate = async (data: SimulationRequest) => {
-    setMotivation(data.purchaseMotivation);
     setState("loading");
     setResult(null);
     setToast(null);
@@ -102,8 +101,11 @@ function DashboardContent() {
   const executeSimulation = async (data: SimulationRequest, inputAnalysis?: InputAnalysisResponse) => {
     setState("loading");
     setResult(null);
+    setDoneSteps([]);
     try {
-      const response = await simulateProduct({ ...data, inputAnalysis });
+      const response = await simulateProductStream({ ...data, inputAnalysis }, (step) =>
+        setDoneSteps((prev) => (prev.includes(step) ? prev : [...prev, step]))
+      );
       const id = response.simulationId ?? `local-${Date.now()}`;
       const request = storableRequest({ ...data, inputAnalysis: inputAnalysis ?? response.inputAnalysis });
       addToHistory({
@@ -132,7 +134,6 @@ function DashboardContent() {
     setState("idle");
     setResult(null);
     setResultId(null);
-    setMotivation(null);
     router.replace("/dashboard", { scroll: false });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -163,7 +164,7 @@ function DashboardContent() {
         {state === "loading" && (resultParam && !resultId ? (
           <p className="text-muted-foreground">Kayıtlı sonuç açılıyor…</p>
         ) : (
-          <SimulationLogs motivation={motivation} />
+          <SimulationLogs done={doneSteps} />
         ))}
         <div hidden={state === "loading"}>
           <ProductForm onSubmit={handleSimulate} isLoading={state === "loading"} />

@@ -1,53 +1,41 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Check, Loader2 } from "lucide-react";
-import { PurchaseMotivation } from "@/types";
 import { cn } from "@/lib/utils";
 
-// Mirrors the backend graph: input_analysis → research → benchmark → simulate → debate.
-// Timing is approximate (the API returns once at the end); the last step waits for the response.
-const STEPS = [
-  { label: "Girdi kalitesi kontrol ediliyor", ms: 3000 },
-  { label: "Rakipler aranıyor", ms: 6000 },
-  { label: "Pazar karşılaştırması yazılıyor", ms: 12000 },
-  { label: "500 sentetik tüketici karar veriyor", ms: 8000 },
-  { label: "Personalar ürünü tartışıyor", ms: 0 },
-];
+// Same order and ids as the backend graph (app/services/graph.py STEP_LABELS).
+export const SIMULATION_STEPS = [
+  { id: "input_analysis", label: "Girdi kalitesi kontrol ediliyor" },
+  { id: "research", label: "Rakipler aranıyor" },
+  { id: "benchmark", label: "Pazar karşılaştırması yazılıyor" },
+  { id: "simulate", label: "500 sentetik tüketici karar veriyor" },
+  { id: "debate", label: "Personalar ürünü tartışıyor" },
+] as const;
 
-export default function SimulationLogs({ motivation }: { motivation: PurchaseMotivation | null }) {
-  const [active, setActive] = useState(0);
-
-  useEffect(() => {
-    setActive(0);
-    const timers: number[] = [];
-    let elapsed = 0;
-    STEPS.slice(0, -1).forEach((step, index) => {
-      elapsed += step.ms;
-      timers.push(window.setTimeout(() => setActive(index + 1), elapsed));
-    });
-    return () => timers.forEach(window.clearTimeout);
-  }, [motivation]);
+/** Live progress driven by /api/simulate/stream step events. */
+export default function SimulationLogs({ done }: { done: string[] }) {
+  const activeIndex = SIMULATION_STEPS.findIndex((s) => !done.includes(s.id));
 
   return (
     <section className="card-paper mx-auto max-w-xl" aria-live="polite" aria-busy="true">
       <h2 className="squiggle text-[21px] font-bold">Simülasyon çalışıyor</h2>
-      <p className="mt-2 text-sm text-muted-foreground">Gemini yoğunsa bu adım 1–2 dakika sürebilir.</p>
+      <p className="mt-2 text-sm text-muted-foreground">Adımlar gerçek zamanlı ilerler. Gemini yoğunsa 1–2 dakika sürebilir.</p>
       <ol className="mt-5 space-y-3">
-        {STEPS.map((step, index) => {
-          const done = index < active;
-          const current = index === active;
+        {SIMULATION_STEPS.map((step, index) => {
+          const isDone = done.includes(step.id);
+          const current = index === activeIndex;
           return (
-            <li key={step.label} className={cn("flex items-center gap-3", !done && !current && "text-muted-foreground")}>
+            <li key={step.id} className={cn("flex items-center gap-3", !isDone && !current && "text-muted-foreground")}>
               <span
                 className={cn(
                   "grid h-7 w-7 shrink-0 place-items-center rounded-blob border-2 font-display text-sm font-extrabold",
-                  done ? "border-buy bg-buy text-card" : current ? "border-foreground bg-watch" : "border-border bg-card"
+                  isDone ? "border-buy bg-buy text-card" : current ? "border-foreground bg-watch" : "border-border bg-card"
                 )}
               >
-                {done ? <Check className="h-4 w-4" aria-hidden /> : current ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : index + 1}
+                {isDone ? <Check className="h-4 w-4" aria-hidden /> : current ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : index + 1}
               </span>
               <span className={cn(current && "font-bold")}>{step.label}</span>
+              <span className="sr-only">{isDone ? "tamamlandı" : current ? "devam ediyor" : "bekliyor"}</span>
             </li>
           );
         })}

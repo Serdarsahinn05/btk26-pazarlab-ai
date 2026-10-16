@@ -15,7 +15,7 @@
 | 4 | `feat/redesign-canli-pazar` | DESIGN.md uygulaması ("Canlı pazar yeri"), F8–F14 | 2–3 gün | ✅ |
 | 5a | `feat/history-share` | Geçmiş, paylaşım, export | 1 gün | ✅ |
 | 5b | `feat/price-sweep-ab` | Fiyat eğrisi, A/B karşılaştırma | 1 gün | ✅ |
-| 5c | `feat/persona-chat-sse` | Persona sohbeti, canlı ilerleme | 1,5 gün | ⬜ |
+| 5c | `feat/persona-chat-sse` | Persona sohbeti, canlı ilerleme | 1,5 gün | ✅ |
 | 5d | `ci/pipeline` | CI, bağımlılık taraması | 0,5 gün | ⬜ |
 
 Sıralamanın gerekçesi: Önce güvenlik geliyor, çünkü açık CORS ve SSRF ile kota ve iç ağ riski demo sırasında bile var. Sonra B1 geliyor; AI katmanı çalışmıyorsa tasarımın gösterecek içeriği olmaz. Tasarım bunların üzerine kurulur.
@@ -112,7 +112,12 @@ Kabul kriteri: DESIGN.md'deki tüm kalıplar uygulanmış; bileşenlerde ham ren
   - Geçmiş kaydı artık isteği de (görseller hariç) saklıyor; paylaşılan linkte de araçlar çalışıyor (eski kayıtlar için şema geçişi).
   - Frontend: sonuç ekranında "Ne olur?" bölümü. Alıcı sayısı çizgi grafiği ("şu an" işaretli, hover ipucu) + ayrı ciro çubukları (iki eksenli grafik yerine iki grafik) + tablo görünümü. A/B formu: ad, fiyat, kargo, açıklama, iade, garanti; iki mini segment halka ve fark tablosu. Metin değişirse iki taraf da aynı kural tabanlı analizle karşılaştırılıyor.
   - Doğrulama: `tests/test_whatif.py` (6 test, toplam 56; LLM çağrılırsa test düşer). Puppeteer: eğrinin "şu an" noktası ana sonuçla aynı (317 = 317), tarama tek istek, A/B sonucu görünüyor, 375 px taşma yok.
-- [ ] **5c** `/api/persona-chat` (SSE) ve canlı graph ilerlemesi (SSE).
+- [x] **5c** Canlı ilerleme ve persona sohbeti:
+  - `iter_agentic_simulation()`: LangGraph `stream(stream_mode="updates")` ile her düğüm bitince adım üretiyor; `run_agentic_simulation` bunun üstüne kurulu.
+  - `POST /api/simulate/stream` (SSE): `step` olayları + son `result`; sonuç geçmişe kaydediliyor. Frontend `fetch` + stream okuyucu (`lib/sse.ts`); akış hiç olay gelmeden koparsa normal `/api/simulate`'e düşüyor. İlerleme ekranı artık tahmini süre değil gerçek adım gösteriyor.
+  - `POST /api/persona-chat` (SSE): ürün ve persona bağlamı **sunucudaki kayıttan** (`simulationId`) alınıyor, istemciden değil. Persona karakteri `personas.json`'dan, simülasyon sonucu kayıttan. En fazla 12 tur, mesaj başına 600 karakter, 1024 token, IP başına 15/dk. AI yoksa `error` olayı. `llm_client.stream_chat()` Gemini `streamGenerateContent?alt=sse` kullanıyor; parça sınırlarındaki boşluklar korunuyor, "thought" parçaları atlanıyor.
+  - Frontend: Tartışma sekmesinde "Personaya sor" paneli (persona seçici, hazır sorular, akışlı cevap, durdur düğmesi). Yalnızca tarayıcıda saklanan sonuçlarda açıklama gösteriliyor.
+  - Doğrulama: `tests/test_stream.py` (11 test, toplam 67). Gerçek Gemini ile Puppeteer: ilerleme sonuçtan önce birden çok adımda ilerledi, sonuç akıştan geldi ve kaydedildi, persona cevabı parça parça geldi (375 karakter, karakter içinde).
 - [ ] **5d** GitHub Actions: ruff, pytest, lint, build, `pip-audit`, `npm audit`; Dependabot.
 
 ## Riskler
