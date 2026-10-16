@@ -17,7 +17,7 @@
 | 5b | `feat/price-sweep-ab` | Fiyat eğrisi, A/B karşılaştırma | 1 gün | ✅ |
 | 5c | `feat/persona-chat-sse` | Persona sohbeti, canlı ilerleme | 1,5 gün | ✅ |
 | 5d | `ci/pipeline` | CI, bağımlılık taraması | 0,5 gün | ✅ |
-| 6 | `chore/next16-upgrade` | Next 14 → 16 (S14) | 0,5–1 gün | ⬜ |
+| 6 | `chore/next16-upgrade` | Next 14 → 16 (S14) | 0,5–1 gün | ✅ |
 
 Sıralamanın gerekçesi: Önce güvenlik geliyor, çünkü açık CORS ve SSRF ile kota ve iç ağ riski demo sırasında bile var. Sonra B1 geliyor; AI katmanı çalışmıyorsa tasarımın gösterecek içeriği olmaz. Tasarım bunların üzerine kurulur.
 
@@ -121,17 +121,26 @@ Kabul kriteri: DESIGN.md'deki tüm kalıplar uygulanmış; bileşenlerde ham ren
   - Doğrulama: `tests/test_stream.py` (11 test, toplam 67). Gerçek Gemini ile Puppeteer: ilerleme sonuçtan önce birden çok adımda ilerledi, sonuç akıştan geldi ve kaydedildi, persona cevabı parça parça geldi (375 karakter, karakter içinde).
 - [x] **5d** CI ve bağımlılık taraması:
   - `.github/workflows/ci.yml`: `main`'e push ve her PR'da iki iş. Backend (Python 3.11, Dockerfile ile aynı): `ruff check`, `pytest`, `pip-audit`. Frontend (Node 20): `npm ci`, `lint`, `tsc --noEmit`, `build`, `npm audit --omit=dev`.
-  - `npm audit` adımı şimdilik bloklamıyor (`continue-on-error`). Next 14'ün açıklarının 14.x'te düzeltmesi yok (S14); Faz 6'dan sonra bloklayıcı yapılacak.
+  - `npm audit` adımı Faz 5d'de bloklamıyordu (S14); Faz 6'dan beri bloklayıcı.
   - `.github/dependabot.yml`: pip ve npm haftalık (npm minor/patch tek PR'da gruplu), GitHub Actions aylık.
   - `pip-audit` bulguları için güncellendi: `fastapi` 0.115 → 0.143, `starlette` 1.8 (açıkça pinli), `uvicorn` 0.54, `pydantic` 2.14, `python-dotenv` 1.2. Dev'e `ruff` ve `pip-audit` eklendi.
   - Frontend: `shadcn` CLI'ı runtime bağımlılığından çıkarıldı; `@types/canvas-confetti` ve `tailwindcss-animate` devDependencies'e taşındı.
   - Ruff temizliği: `backend/ruff.toml` (`main.py`'de E402 kasıtlı: `.env` importlardan önce yükleniyor), kullanılmayan importlar, 16 tek satırlık `if x: ...` bölündü.
   - Doğrulama (yerelde): ruff temiz, pytest 67/67, `pip-audit` açık yok, lint/tsc/build temiz. `npm audit`: 1 kritik (next), 1 yüksek (next'in postcss'i). Workflow GitHub'da henüz koşmadı.
 
-## Faz 6: Next 16 yükseltmesi
-- [ ] `next` 14.2 → 16.x, `eslint-config-next` eşleşen sürüm; React 19 gerekiyorsa `react`/`react-dom` ve tipleri.
-- [ ] `next lint` kaldırıldıysa ESLint CLI'a geçiş; `next.config.mjs` (`standalone`, başlıklar) kontrolü.
-- [ ] `npm audit` temizse CI'daki `continue-on-error` kaldırılır.
+## Faz 6: Next 16 yükseltmesi ✅
+- [x] `next` 14.2.35 → 16.4.2, `eslint-config-next` 16.4.2, React 18 → 19.3 (`react`, `react-dom`, tipleri). Next 16 React 18.2'yi de kabul ediyor ama App Router içeride React 19 kullanıyor; sürümleri eşitlemek için 19'a geçildi. Kodda async `params` veya kaldırılan API kullanımı yoktu.
+- [x] `next lint` Next 16'da kaldırıldı: `eslint .` + `eslint.config.mjs` (flat config, ESLint 9). `.eslintrc.json` silindi. `next build` `tsconfig.json`'ı kendisi güncelledi (`jsx: react-jsx`, `target: ES2017`).
+- [x] Yeni `react-hooks` v7 kuralları (React Compiler) 12 hata buldu. Kural kapatmak yerine düzeltildi:
+  - `ui/ring.tsx`: render sırasında `offset` yeniden atanıyordu; segment başlangıçları önceden hesaplanıyor.
+  - `WhatIf` ve `DebateLogs`: effect içinde senkron state sıfırlama yerine, state'in hangi girdiye ait olduğu etiketleniyor ve render'da türetiliyor.
+  - `ThemeToggle`: `useMounted()`; `DebateLogs`: `useMediaQuery()` (yeni `lib/hooks.ts`, `useSyncExternalStore`).
+  - `tailwind.config.ts`: `require` yerine `import`; `types` içinde `any` kaldırıldı.
+  - İki gerekçeli istisna (`eslint-disable` + yorum): dashboard'un `?r=` URL senkronu ve geçmişin hydration sonrası localStorage'dan okunması.
+  - `Date.now` için compiler yanlış alarm veriyordu (çağrı async handler'da); modül seviyesinde `now()` yardımcısı.
+- [x] CI'daki `continue-on-error` kaldırıldı; `npm audit --omit=dev` bloklayıcı.
+- Doğrulama: lint, `tsc`, `next build` (standalone) temiz. `npm audit --omit=dev`: **0 açık**. Puppeteer + gerçek Gemini ile production build'de 10/10: landing, tema değişimi, halka ofsetleri, fiyat eğrisi, tartışmanın adım adım açılması ve "Tümünü göster", reduced-motion'da tek seferde, "Son simülasyonlar" kartı, 375 px taşma yok, konsolda hata/hydration uyarısı yok.
+- Yapılmadı: Docker imajı build edilmedi (`node:20-slim` Next 16'nın istediği ≥ 20.9'u karşılıyor). Dev araçlarındaki açıklar: S15.
 
 ## Riskler
 - **Gemini model adları sık değişiyor.** B1'de model env'den okunacak; varsayılan seçilirken o günkü güncel model listesi kontrol edilecek.

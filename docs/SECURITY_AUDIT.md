@@ -3,7 +3,7 @@
 - **Tarih:** 2026-10-16
 - **Kapsam:** `main` @ `4f3441e8`; backend (FastAPI + LangGraph), frontend (Next.js 14), Docker.
 - **Yöntem:** Kaynak kodun elle okunması (white-box). Düzeltmeler `backend/tests/test_security.py` ile otomatik test ediliyor.
-- **Son güncelleme:** Faz 5d (`ci/pipeline`). S14 bu fazda `npm audit` ile bulundu. Backend bağımlılıkları `pip-audit` temiz olacak şekilde güncellendi.
+- **Son güncelleme:** Faz 6 (`chore/next16-upgrade`). S14 Next 16 ile kapandı (`npm audit --omit=dev` 0 açık); dev araçlarındaki kalan açıklar S15 olarak kabul edildi.
 
 Durum değerleri: `açık`, `düzeltildi`, `kabul edildi`.
 
@@ -24,7 +24,8 @@ Durum değerleri: `açık`, `düzeltildi`, `kabul edildi`.
 | S11 | Düşük | Container root çalışıyor, bağımlılıklar pinli değil, `.env` gerçek env'i eziyor | düzeltildi (Docker build doğrulanmadı) |
 | S12 | Orta | 422 yanıtı girdiyi geri yansıtıyor; `inf` fiyatı sunucuyu 500'e düşürüyor | düzeltildi |
 | S13 | Düşük | Link okuyucu ile API sınırları uyumsuz (görsel sayısı, kategori) | düzeltildi |
-| S14 | Yüksek | Next.js 14.2'de yamasız açıklar (`npm audit`: 1 kritik, 1 yüksek) | açık (Faz 6) |
+| S14 | Yüksek | Next.js 14.2'de yamasız açıklar (`npm audit`: 1 kritik, 1 yüksek) | düzeltildi (Faz 6, `next@16.4.2`) |
+| S15 | Düşük | Dev araç zincirinde açıklar (`braces`, `postcss-selector-parser`; tailwind 3 ve `eslint-plugin-next` üzerinden) | kabul edildi |
 
 Kontrol edildi, sorun bulunmadı:
 - `.env` dosyaları git'te takip edilmiyor. `.gitignore` artık `.env.*` kalıbını da kapsıyor.
@@ -195,7 +196,15 @@ Bu alanların tamamı LLM prompt'larına giriyor. Sınırsız girdi, maliyet sal
 
 **İlgili olanlar:** Uygulama self-hosted (`standalone`) çalıştığı için Image Optimizer DoS'ları, Server Components DoS'ları ve rewrite/middleware cache poisoning kayıtları geçerli. `next/image` kullanımı ve rewrite tanımı az; bu riski azaltır ama kapatmaz. Windows'a özel RCE kaydı Docker (Linux) dağıtımında geçerli değil. Yüksek bulgu, Next'in kendi içinde taşıdığı `postcss` sürümünden geliyor; Next ile birlikte düzelir.
 
-**Plan:** Faz 6'da Next 16'ya yükseltme (major; React 19 ve ESLint yapılandırması etkilenebilir). O zamana kadar CI'daki `npm audit` adımı raporluyor ama bloklamıyor.
+**Düzeltme (Faz 6):** `next@16.4.2`, React 19. `npm audit --omit=dev` 0 açık; CI adımı bloklayıcı.
+
+## S15: Dev araç zinciri açıkları (Düşük, kabul edildi, Faz 6'da bulundu)
+
+**Kaynak:** Tam `npm audit` (dev dahil): 11 kayıt (7 yüksek, 4 orta), hepsi `braces` ve `postcss-selector-parser` kökenli; `tailwindcss` 3, `chokidar`, `fast-glob` ve `@next/eslint-plugin-next` üzerinden geliyor.
+
+**Neden kabul:** Bu paketler yalnızca build ve lint sırasında, depodaki kendi kaynak dosyalarımız üzerinde çalışıyor; production imajına girmiyor (`standalone` çıktısında yoklar). `postcss-selector-parser` için yama yok; `braces` için tek yol `npm audit fix --force`, yani Tailwind 4'e major geçiş.
+
+**Plan:** Tailwind 4 geçişi (IMPROVEMENTS B.11) ile tekrar değerlendirilecek. Dependabot yeni sürümleri izliyor.
 
 ---
 
