@@ -9,7 +9,7 @@ import PersonaLab from "@/components/PersonaLab";
 import AnalysisWarning from "@/components/AnalysisWarning";
 import StatusToast, { ToastState } from "@/components/StatusToast";
 import RecentSimulations from "@/components/RecentSimulations";
-import { addToHistory, findInHistory } from "@/lib/history";
+import { addToHistory, findInHistory, storableRequest } from "@/lib/history";
 import { DASHBOARD_VIEWS, DashboardView } from "@/components/TopBar";
 import personasData from "@/data/personas.json";
 import { analyzeProductInput, apiErrorMessage, getSimulation, simulateProduct } from "@/lib/api";
@@ -32,13 +32,14 @@ function DashboardContent() {
   const [toast, setToast] = useState<ToastState | null>(null);
   const [productName, setProductName] = useState("");
   const [resultId, setResultId] = useState<string | null>(null);
+  const [lastRequest, setLastRequest] = useState<SimulationRequest | null>(null);
 
   // Open a saved/shared result from ?r=<id>: this browser's history first, then the server.
   useEffect(() => {
     if (!resultParam || resultParam === resultId) return;
     const local = findInHistory(resultParam);
     if (local) {
-      showResult(local.response, local.productName, local.id);
+      showResult(local.response, local.productName, local.id, local.request ?? null);
       return;
     }
     let cancelled = false;
@@ -46,8 +47,9 @@ function DashboardContent() {
     getSimulation(resultParam)
       .then((stored) => {
         if (cancelled) return;
-        showResult(stored.response, stored.productName, stored.id);
+        showResult(stored.response, stored.productName, stored.id, stored.request ?? null);
         addToHistory({
+          request: stored.request ?? null,
           id: stored.id,
           createdAt: stored.createdAt * 1000,
           productName: stored.productName,
@@ -68,8 +70,9 @@ function DashboardContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- react only to the URL parameter
   }, [resultParam]);
 
-  const showResult = (response: SimulationResponse, name: string, id: string) => {
+  const showResult = (response: SimulationResponse, name: string, id: string, request: SimulationRequest | null) => {
     setResult(response);
+    setLastRequest(request);
     setProductName(name);
     setResultId(id);
     setState("result");
@@ -102,7 +105,9 @@ function DashboardContent() {
     try {
       const response = await simulateProduct({ ...data, inputAnalysis });
       const id = response.simulationId ?? `local-${Date.now()}`;
+      const request = storableRequest({ ...data, inputAnalysis: inputAnalysis ?? response.inputAnalysis });
       addToHistory({
+        request,
         id,
         createdAt: Date.now(),
         productName: data.productName,
@@ -110,7 +115,7 @@ function DashboardContent() {
         overallScore: response.overallScore,
         response,
       });
-      showResult(response, data.productName, id);
+      showResult(response, data.productName, id, request);
       // Put the result in the URL so refresh, back and "copy link" all keep it.
       router.replace(`/dashboard?view=${view}&r=${encodeURIComponent(id)}`, { scroll: false });
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -138,7 +143,7 @@ function DashboardContent() {
     <div className="space-y-8">
       {view === "personas" && <PersonaLab />}
 
-      {view !== "personas" && hasResult && result && <ResultDashboard data={result} view={view} productName={productName} onReset={reset} />}
+      {view !== "personas" && hasResult && result && <ResultDashboard data={result} view={view} productName={productName} request={lastRequest} onReset={reset} />}
 
       {view !== "personas" && view !== "analysis" && !hasResult && (
         <p className="rounded-wobble border-2 border-dashed border-border p-10 text-center text-muted-foreground">

@@ -12,7 +12,9 @@
 | POST | `/api/analyze-input` | `SimulationRequest` | `InputAnalysisResponse` |
 | POST | `/api/read-product-link` | `{ "url": string }` (8–2048 karakter) | `ProductLinkReadResponse` |
 | POST | `/api/simulate` | `SimulationRequest` | `SimulationResponse` (+ `simulationId`) |
-| GET | `/api/simulations/{id}` | – | `{ id, createdAt, productName, category, response: SimulationResponse }`; bilinmeyen/süresi dolmuş → 404 |
+| POST | `/api/price-sweep` | `SimulationRequest` | `{ points: SweepPoint[9], bestRevenue, bestBuyers }`; SweepPoint = `{ factor, price, estimatedBuyers, buyRate, overallScore, revenue }` |
+| POST | `/api/compare` | `{ base: SimulationRequest, variant: SimulationRequest }` | `{ base: CoreMetrics, variant: CoreMetrics }`; CoreMetrics = `{ price, overallScore, estimatedBuyers, simulatedConsumers, decisionDistribution, marketBreadthScore, intentConversionScore, problemSolutionFit, topPersona, weaknesses }` |
+| GET | `/api/simulations/{id}` | – | `{ id, createdAt, productName, category, response: SimulationResponse, request: SimulationRequest | null }` (request görselsiz); bilinmeyen/süresi dolmuş → 404 |
 
 **Hatalar** (her yanıtta `X-Request-ID` başlığı vardır):
 

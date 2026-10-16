@@ -15,6 +15,7 @@ import time
 from pathlib import Path
 from typing import Any, Optional
 
+from app.models.product import SimulationRequest
 from app.models.simulation import SimulationResponse
 
 _DEFAULT_PATH = Path(__file__).resolve().parents[2] / "data" / "pazarlab.db"
@@ -44,6 +45,10 @@ def _connect() -> sqlite3.Connection:
                response_json TEXT NOT NULL
            )"""
     )
+    # v2: the request (without images) so what-if tools work on shared results too.
+    columns = {row[1] for row in conn.execute("PRAGMA table_info(simulations)")}
+    if "request_json" not in columns:
+        conn.execute("ALTER TABLE simulations ADD COLUMN request_json TEXT")
     return conn
 
 
@@ -55,16 +60,18 @@ def _strip_data_urls(images: list[str]) -> list[str]:
     return [img for img in images if not img.startswith("data:")]
 
 
-def save(product_name: str, category: str, response: SimulationResponse) -> str:
+def save(request: SimulationRequest, response: SimulationResponse) -> str:
     """Persist a result and return its share id. Also prunes old/excess rows."""
     sim_id = "".join(secrets.choice(ID_ALPHABET) for _ in range(ID_LENGTH))
     stored = response.model_copy(update={"images": _strip_data_urls(response.images), "simulation_id": sim_id})
     payload = stored.model_dump_json(by_alias=True)
+    request_payload = request.model_copy(update={"images": []}).model_dump_json(by_alias=True)
     now = time.time()
     with _lock, _connect() as conn:
         conn.execute(
-            "INSERT INTO simulations (id, created_at, product_name, category, overall_score, response_json) VALUES (?, ?, ?, ?, ?, ?)",
-            (sim_id, now, product_name[:120], category, response.overall_score, payload),
+            "INSERT INTO simulations (id, created_at, product_name, category, overall_score, response_json, request_json)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (sim_id, now, request.product_name[:120], request.category, response.overall_score, payload, request_payload),
         )
         conn.execute("DELETE FROM simulations WHERE created_at < ?", (now - RETENTION_DAYS * 86400,))
         conn.execute(
@@ -79,7 +86,8 @@ def get(sim_id: str) -> Optional[dict[str, Any]]:
         return None
     with _lock, _connect() as conn:
         row = conn.execute(
-            "SELECT id, created_at, product_name, category, response_json FROM simulations WHERE id = ?", (sim_id,)
+            "SELECT id, created_at, product_name, category, response_json, request_json FROM simulations WHERE id = ?",
+            (sim_id,),
         ).fetchone()
     if row is None:
         return None
@@ -89,4 +97,5 @@ def get(sim_id: str) -> Optional[dict[str, Any]]:
         "productName": row[2],
         "category": row[3],
         "response": json.loads(row[4]),
+        "request": json.loads(row[5]) if row[5] else None,
     }

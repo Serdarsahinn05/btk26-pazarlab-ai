@@ -14,7 +14,7 @@
 | 3 | `fix/core-bugs` | B1–B7, F1–F7, temel testler | 1 gün | ✅ |
 | 4 | `feat/redesign-canli-pazar` | DESIGN.md uygulaması ("Canlı pazar yeri"), F8–F14 | 2–3 gün | ✅ |
 | 5a | `feat/history-share` | Geçmiş, paylaşım, export | 1 gün | ✅ |
-| 5b | `feat/price-sweep-ab` | Fiyat eğrisi, A/B karşılaştırma | 1 gün | ⬜ |
+| 5b | `feat/price-sweep-ab` | Fiyat eğrisi, A/B karşılaştırma | 1 gün | ✅ |
 | 5c | `feat/persona-chat-sse` | Persona sohbeti, canlı ilerleme | 1,5 gün | ⬜ |
 | 5d | `ci/pipeline` | CI, bağımlılık taraması | 0,5 gün | ⬜ |
 
@@ -106,7 +106,12 @@ Kabul kriteri: DESIGN.md'deki tüm kalıplar uygulanmış; bileşenlerde ham ren
   - Backend: `history_store.py` (stdlib sqlite3). `/api/simulate` sonucu kaydeder ve `simulationId` döner; `GET /api/simulations/{id}` sonucu getirir. Listeleme uç noktası yok (giriş sistemi olmadığı için sonuçlar yalnızca linki bilen tarafından açılır). 12 karakterlik rastgele kimlik; base64 görseller kaydedilmez; 90 gün / 5000 satır saklama; kayıt hatası simülasyonu bozmaz; `HISTORY_ENABLED=false` ile kapatılır. Docker'da `pazarlab-data` volume'u.
   - Frontend: paylaşım linki `/dashboard?r=<id>` (ayrı sayfa yerine dashboard; sekmeler ve persona linkleri `r`'yi koruyor). Tarayıcı geçmişi (`lib/history.ts`, 20 kayıt, tam sonuçla birlikte; kota dolarsa en eskiler düşer), "Son simülasyonlar" kartı (aç / sil / yedek indir / yedekten yükle), "Linki kopyala" ve "Markdown" rapor indirme (`lib/report.ts`), mevcut Yazdır/PDF.
   - Doğrulama: `tests/test_history.py` (5 test, toplam 50). Puppeteer uçtan uca 11/11: URL'de kimlik, yenilemede kalıcılık, sekme değişiminde korunma, boş tarayıcıda sunucudan açılma, bilinmeyen kimlikte hata, geçmiş listesi.
-- [ ] **5b** `/api/price-sweep` endpoint'i ve eğri grafiği (SVG); A/B karşılaştırma görünümü.
+- [x] **5b** Fiyat eğrisi ve A/B:
+  - Çekirdek: `simulate_core()` (LLM'siz, deterministik); `run_simulation` bunun üstüne AI yorumlarını ekliyor. Rastgelelik tohumu artık fiyatı (ve görselleri, girdi analizini) içermiyor: aynı sentetik kalabalık her fiyatı görüyor.
+  - `POST /api/price-sweep` (fiyatın %60–140'ı, 9 nokta; alıcı, skor, ciro; en çok ciro / alıcı noktası) ve `POST /api/compare` (A ve B için çekirdek metrikler). İkisi de LLM çağırmıyor, IP başına 20/dk.
+  - Geçmiş kaydı artık isteği de (görseller hariç) saklıyor; paylaşılan linkte de araçlar çalışıyor (eski kayıtlar için şema geçişi).
+  - Frontend: sonuç ekranında "Ne olur?" bölümü. Alıcı sayısı çizgi grafiği ("şu an" işaretli, hover ipucu) + ayrı ciro çubukları (iki eksenli grafik yerine iki grafik) + tablo görünümü. A/B formu: ad, fiyat, kargo, açıklama, iade, garanti; iki mini segment halka ve fark tablosu. Metin değişirse iki taraf da aynı kural tabanlı analizle karşılaştırılıyor.
+  - Doğrulama: `tests/test_whatif.py` (6 test, toplam 56; LLM çağrılırsa test düşer). Puppeteer: eğrinin "şu an" noktası ana sonuçla aynı (317 = 317), tarama tek istek, A/B sonucu görünüyor, 375 px taşma yok.
 - [ ] **5c** `/api/persona-chat` (SSE) ve canlı graph ilerlemesi (SSE).
 - [ ] **5d** GitHub Actions: ruff, pytest, lint, build, `pip-audit`, `npm audit`; Dependabot.
 

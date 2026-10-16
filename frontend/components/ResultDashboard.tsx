@@ -8,7 +8,8 @@ import confetti from "canvas-confetti";
 import { Check, Copy, FileDown, Link2, Printer, RotateCcw } from "lucide-react";
 import { downloadBlob } from "@/lib/history";
 import { simulationToMarkdown } from "@/lib/report";
-import { NormalizedProduct, Persona, SimulationResponse } from "@/types";
+import { NormalizedProduct, Persona, SimulationRequest, SimulationResponse } from "@/types";
+import WhatIf from "@/components/WhatIf";
 import { SegmentRing, Ring } from "@/components/ui/ring";
 import { DebateLogs } from "@/components/DebateLogs";
 import {
@@ -26,11 +27,18 @@ interface ResultDashboardProps {
   data: SimulationResponse;
   view: DashboardView;
   productName: string;
+  /** Original input; enables the what-if tools. Missing for results saved before it was stored. */
+  request?: SimulationRequest | null;
   onReset: () => void;
 }
 
-export default function ResultDashboard({ data, view, productName, onReset }: ResultDashboardProps) {
+export default function ResultDashboard({ data, view, productName, request, onReset }: ResultDashboardProps) {
   useCelebration(data, view);
+  // Same input analysis as the main run, so the price curve's "now" point matches the result.
+  const whatIfRequest = useMemo(
+    () => (request ? { ...request, inputAnalysis: request.inputAnalysis ?? data.inputAnalysis ?? undefined } : null),
+    [request, data.inputAnalysis]
+  );
 
   if (view === "benchmark") return <BenchmarkView markdown={data.benchmarkAnalysis} />;
   if (view === "debate") {
@@ -67,6 +75,7 @@ export default function ResultDashboard({ data, view, productName, onReset }: Re
         />
       </div>
       <ParamBars product={data.normalizedProduct} />
+      {whatIfRequest && <WhatIf request={whatIfRequest} />}
       <ImprovedDescription text={data.aiInsights.improvedDescription} images={data.images} />
     </div>
   );
