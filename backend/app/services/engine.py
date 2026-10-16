@@ -8,6 +8,10 @@ For every resident:
     utility  INTERCEPT + Q_SLOPE·(q − Q_CENTER) + β·ln(wtp / price) − cheap suspicion + motivation + audience
     P        sigmoid(utility + noise), averaged over MONTE_CARLO_RUNS draws of noise and the buy roll
 
+Word of mouth (Faz 12c): week 1 is the direct decision; in weeks 2–4 a resident whose friends bought gets
+SOCIAL_WEIGHT × sociability × (share of friends who bought) added to the utility and may convert.
+Sociability = mean of extraversion and agreeableness. The cumulative buyers per week form the adoption curve.
+
 Why: in v1 price fit fell in both directions around the category average, so halving the price lost
 buyers (B15). Here a lower price always raises ln(wtp/price); only quality-minded residents distrust a
 price far below the average. All constants are ASSUMPTIONS, chosen so a typical listing lands in the
@@ -42,6 +46,8 @@ CHEAP_PENALTY = 3.0
 MOTIVATION_BONUS = 0.35
 AUDIENCE_MATCH, AUDIENCE_MISS = 0.15, -0.20
 WATCH_THRESHOLD = 0.40  # a non-buyer with P ≥ this "watches" (adds to cart, waits) instead of skipping
+SOCIAL_WEIGHT = 1.1
+SOCIAL_WEEKS = 3  # weeks 2–4 after the direct decision in week 1
 
 # Product score → the resident trait that says how much they care about it (v1 mapping, price excluded).
 SENSITIVITY = {
@@ -129,7 +135,8 @@ def run_town(
     ratio = price / average_price if average_price else 1.0
 
     residents = residents_with_traits()
-    bases, wtps = [], []
+    index = {r["id"]: i for i, r in enumerate(residents)}
+    bases, wtps, parts, sociability = [], [], [], []
     for r in residents:
         t = r["traits"]
         cared = {k: feature_weight[k] * t[SENSITIVITY[k]] for k in values}
@@ -141,35 +148,70 @@ def run_town(
         price_term = min(max(beta * math.log(wtp / price), PRICE_UTILITY_CLIP[0]), PRICE_UTILITY_CLIP[1])
         cheap = CHEAP_PENALTY * t["qualityExpectation"] * (CHEAP_RATIO - ratio) if ratio < CHEAP_RATIO else 0.0
         bonus = MOTIVATION_BONUS if motivation in preferred.get(r["persona"], []) else 0.0
-        bases.append(INTERCEPT + Q_SLOPE * (q - Q_CENTER) + price_term - cheap + bonus + _audience_term(request, r, applicable))
+        audience_term = _audience_term(request, r, applicable)
+        fit_term = Q_SLOPE * (q - Q_CENTER)
+        bases.append(INTERCEPT + fit_term + price_term - cheap + bonus + audience_term)
         wtps.append(wtp)
+        # What moved this resident, for explanations ("bought because …"): signed utility parts, and the
+        # product score that helped / hurt most from the resident's own point of view.
+        contrib = {k: cared[k] / cared_total * (values[k] - 0.5) for k in values}
+        parts.append({"fit": fit_term, "price": price_term, "cheap": -cheap, "motivation": bonus, "audience": audience_term,
+                      "bestFeature": max(contrib, key=contrib.get), "worstFeature": min(contrib, key=contrib.get), "wtp": wtp})
+        sociability.append((r["bigFive"]["extraversion"] + r["bigFive"]["agreeableness"]) / 2)
 
     n = len(residents)
+    friends = [[index[f] for f in r.get("friends", []) if f in index] for r in residents]
     prob_sum = [0.0] * n
     buys = [0] * n
+    social_sum = [0.0] * n
+    weekly = [0.0] * (1 + SOCIAL_WEEKS)
     runs: list[dict[str, int]] = []
     for run in range(MONTE_CARLO_RUNS):
         rng = random.Random(seed * 1000 + run)
+        noisy = [base + rng.gauss(0.0, NOISE_SD) for base in bases]
+        probability = [_sigmoid(u) * market_relevance for u in noisy]
+        bought = [rng.random() < p for p in probability]
+        boost = [0.0] * n
+        weekly[0] += sum(bought)
+        for week in range(SOCIAL_WEEKS):
+            snapshot = list(bought)
+            for i in range(n):
+                if snapshot[i] or not friends[i]:
+                    continue
+                share = sum(snapshot[f] for f in friends[i]) / len(friends[i])
+                if share == 0:
+                    continue
+                boost[i] = SOCIAL_WEIGHT * sociability[i] * share
+                boosted = _sigmoid(noisy[i] + boost[i]) * market_relevance
+                # They already said no at `probability[i]`; convert with the extra probability only.
+                if boosted > probability[i] and rng.random() < (boosted - probability[i]) / (1.0 - probability[i]):
+                    bought[i] = True
+                probability[i] = max(probability[i], boosted)
+            weekly[week + 1] += sum(bought)
         counts = {"buy": 0, "watch": 0, "skip": 0}
-        for i, base in enumerate(bases):
-            p = _sigmoid(base + rng.gauss(0.0, NOISE_SD)) * market_relevance
-            prob_sum[i] += p
-            if rng.random() < p:
+        for i in range(n):
+            prob_sum[i] += probability[i]
+            social_sum[i] += boost[i]
+            if bought[i]:
                 counts["buy"] += 1
                 buys[i] += 1
             else:
-                counts["watch" if p >= WATCH_THRESHOLD else "skip"] += 1
+                counts["watch" if probability[i] >= WATCH_THRESHOLD else "skip"] += 1
         runs.append(counts)
 
+    for i in range(n):
+        parts[i]["social"] = social_sum[i] / MONTE_CARLO_RUNS
     too_expensive = sum(1 for w in wtps if w < price) / n
     buyer_runs = sorted(c["buy"] for c in runs)
     return {
         "residents": residents,
         "probability": [s / MONTE_CARLO_RUNS for s in prob_sum],
         "buyShare": [b / MONTE_CARLO_RUNS for b in buys],
+        "parts": parts,
         "decisionCounts": _mean_counts(runs, n),
         "buyersLow": buyer_runs[int(0.1 * (MONTE_CARLO_RUNS - 1))],
         "buyersHigh": buyer_runs[int(round(0.9 * (MONTE_CARLO_RUNS - 1)))],
+        "adoptionCurve": [round(w / MONTE_CARLO_RUNS) for w in weekly],
         "priceRisk": round(too_expensive, 2),
         "medianWtp": round(sorted(wtps)[n // 2], 2),
     }

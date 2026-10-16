@@ -216,6 +216,39 @@ export interface SimulationResponse {
   engineVersion?: number | null;
   /** Buyer count spread over the Monte Carlo runs (10th–90th percentile). */
   buyersRange?: { low: number; high: number; runs: number } | null;
+  /** Cumulative buyers per week: week 1 direct, weeks 2–4 through friends. */
+  adoptionCurve?: number[];
+  /** Buy rate per age band, gender, income level and kind of place. */
+  segments?: Record<"age" | "gender" | "incomeLevel" | "cityType", SegmentRate[]>;
+  representatives?: TownRepresentative[];
+  improvements?: Improvement[];
+}
+
+export interface SegmentRate {
+  label: string;
+  residents: number;
+  buyRate: number;
+}
+
+/** A resident of the synthetic town shown on the result screen (fictional). */
+export interface TownRepresentative {
+  id: string;
+  name: string;
+  age: number;
+  city: string;
+  occupation: string;
+  persona: string;
+  story: string;
+  buyProbability: number;
+  decision: "buy" | "watch" | "skip";
+  reason: string;
+}
+
+export interface Improvement {
+  key: string;
+  label: string;
+  deltaBuyers: number;
+  deltaRevenue: number;
 }
 
 /** GET /api/simulations/{id} */

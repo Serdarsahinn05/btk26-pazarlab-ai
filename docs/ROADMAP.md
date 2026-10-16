@@ -32,7 +32,7 @@
 | 11b | `spike/claude-artifact` | Claude-powered artifact araştırması | 0,5 gün | ✅ karar: Motor v2'den sonra |
 | 12a | `feat/town-population` | Kasaba nüfusu: 500 sakin, hikâye, Big Five, türetilen özellikler | 0,5 gün | ✅ |
 | 12b | `feat/engine-v2` | Motor v2: ödeme isteği, lojistik karar, Monte Carlo, `engineVersion` | 1 gün | ✅ |
-| 12c | `feat/town-dynamics` | Arkadaşlık ağı ve yayılma, "en etkili iyileştirme", segmentler | 1 gün | ⬜ |
+| 12c | `feat/town-dynamics` | Arkadaşlık ağı ve yayılma, "en etkili iyileştirme", segmentler | 1 gün | ✅ |
 | 12d | `feat/engine-v2-ui` | Arayüz: ± aralık, kasaba temsilcileri, segment grafiği, iyileştirme kartı | 1 gün | ⬜ |
 | 13 | `feat/product-entry-v2` | Ürün ekleme ekranı: link öncelikli akış + yeni yerleşim | 2 gün | ⬜ |
 | 14 | `feat/link-reader-v2` | Site okuyucuları, kayıtlı HTML testleri, "HTML ver" ucu | 2 gün | ⬜ |
@@ -215,8 +215,8 @@ Kabul kriteri: DESIGN.md'deki tüm kalıplar uygulanmış; bileşenlerde ham ren
 
 ## Şu an neredeyiz
 
-- **Son tamamlanan:** Faz 12b (Motor v2). Simülasyon artık kasabanın 500 sakiniyle ve ödeme isteği modeliyle çalışıyor; B15 kapandı. Skorlar v1'den farklı (tipik ilanda benzer aralık). Tüm dallar `main`'e merge edildi ve `origin`'e push'landı.
-- **Sıradaki:** Faz 12c (arkadaşlık ağı ve yayılma, en etkili iyileştirme, segmentler) → 12d (arayüz) …
+- **Son tamamlanan:** Faz 12c (arkadaşlık ağı, ağızdan ağıza yayılma, segmentler, kasaba temsilcileri, en etkili iyileştirme). Backend verileri hazır; arayüz henüz göstermiyor. Tüm dallar `main`'e merge edildi ve `origin`'e push'landı.
+- **Sıradaki:** Faz 12d (arayüz: ± aralık, benimseme eğrisi, segment grafiği, kasaba temsilcileri, iyileştirme kartı, eski motor notu) → 13 …
 - **Ertelenen (kullanıcı kararı, 2026-10-17):** Faz 11'in Claude.ai denemesi sonra birlikte yapılacak. Gerekenler: `cloudflared` kurulumu (`winget install Cloudflare.cloudflared`), tünel adresinin `MCP_ALLOWED_HOSTS`'a yazılması, Claude'da connector eklenmesi; açık soru `?key=` sorgu dizesinin korunup korunmadığı. Adımlar: docs/mcp-connector.md. (sıra aşağıdaki tabloda). Her faz kendi dalında, bitince bu bölüm güncellenir.
 - **Bekleyen kararlar:** kategori genişletme (hangi aileler) Faz 13'e gelince konuşulacak; Faz 9 için API anahtarı yok.
 - **Ortam notları:** `backend/venv` bozuk (eski bir kullanıcı yolunu gösteriyor). Testler geçici bir venv ile koşuyor. Gemini sık sık 429 veriyor; arayüz testlerinde AI kapalı ya da sahte SSE kullanılıyor. `gh`, nginx ve Docker daemon yok.
@@ -290,6 +290,16 @@ Dört alt faza bölündü (12a–12d); her biri ayrı dalda, ayrı testlerle. A�
 - Kalibrasyon (aynı girdiler, fiyat çarpanına göre alıcı): tişört v1 `251 / 256 / 275 / 282 / 293 / 268` (0,3× → 2×; fiyat arttıkça artıyordu) → v2 `282 / 290 / 287 / 263 / 233 / 182`; telefon ve kozmetik de aynı biçimde. Tipik fiyatta skor 57 → 53. Fiyat Hassas Alıcı %53 → %35. Simülasyon ~10 ms.
 - Doğrulama: `tests/test_engine.py` (8 test, toplam 160): fiyat düştükçe alıcı artıyor (0,6×–2×), fiyat hassas personanın fiyata tepkisi premium personadan büyük, çok ucuz fiyattan yalnızca kalite odaklı sakinler kaçınıyor, fiyat riski = fiyatın dışında kalan sakin oranı, hedef cinsiyet giyimde etkili ama teknolojide etkisiz, determinizm ve 500 toplamı, yanıtta sürüm ve aralık, 5 fiyatlık tarama < 1 sn. Eski 152 test değişmeden geçti. Puppeteer genel 10/10 ve kategori 10/10 (v1 kaydı ve yeni simülasyonlar birlikte).
 - Bilinen: arayüz henüz aralığı ve sürümü göstermiyor (12d); v1 ile kaydedilmiş sonuçlar açılınca "eski motor" notu da 12d'de.
+
+**12c ✅ Kasabanın dinamikleri** (`feat/town-dynamics`)
+- **Arkadaşlık ağı** (`town.json` sürüm 2): her sakinin 3–9 arkadaşı (ortalama 5,9), iki yönlü; benzerlik eğilimi (aynı şehir tipi ×3, yaş farkı ≤ 5 ×3). Arkadaşların %61'i aynı şehir tipinde (rastgele olsa ~%37).
+- **Ağızdan ağıza yayılma:** 1. hafta doğrudan karar; 2–4. haftalarda arkadaşlarının bir kısmı alan sakinin faydasına `1,1 × sosyallik × (alan arkadaş oranı)` ekleniyor (sosyallik = dışadönüklük ve uyumluluğun ortalaması) ve yalnızca ek olasılıkla dönüşüyor. Alıcı ~%11 artıyor (tişört 263 → 293), tipik skor v1'e daha yakın (56; v1 57). `adoptionCurve` haftalık kümülatif alıcı (ör. 315 → 345 → 348 → 348).
+- **Açıklanabilir kararlar:** motor her sakin için fayda bileşenlerini (uyum, fiyat, ucuzluk şüphesi, hedef kitle, motivasyon, arkadaş etkisi, ödeme isteği, en çok sevdiği/sevmediği ürün özelliği) kaydediyor. `services/town_insights.py` bunlardan AI'sız Türkçe gerekçe kuruyor: "Almadı: fiyatı pahalı buluyor (en fazla 149 TL verirdi), ürünün kendisine hitap etmediğini düşünüyor."
+- **Kasaba temsilcileri:** 5 sakin, hepsi farklı personadan: en net iki alıcı, gerçekten "bekleyen" biri, en net iki ret; hikâyeleri ve gerekçeleriyle.
+- **Segmentler:** yaş bandı, cinsiyet, gelir ve şehir tipine göre alma oranı. Unisex üründe kadın/erkek oranı eşit (%55/%55); hedef cinsiyet verilince ayrışıyor.
+- **En etkili iyileştirme:** aynı kasabada tek tek kargo 2 gün, kolay iade, garanti, fiyat −%10 ve +%10 deneniyor (girdi analizi sabit tutularak); alıcı kazancına göre ilk 3. Fiyat artışı yalnızca ciroyu artırıyorsa listeleniyor; her öneri alıcı ve ciro farkını birlikte taşıyor (ör. "Fiyatı %10 düşür" +12 alıcı ama −5.808 TL ciro).
+- MCP `simulate_product` artık benimseme eğrisi, iyileştirmeler, segmentler ve temsilcileri de dönüyor. Tam simülasyon ~170 ms (5 ek senaryo dahil); fiyat taraması iyileştirme hesaplamıyor.
+- Doğrulama: `tests/test_town_dynamics.py` (10 test, toplam 170): ağ simetrik ve benzerlik eğilimli, yayılma haftadan haftaya alıcı ekliyor ve kapatılınca kimse arkadaş yoluyla dönüşmüyor, segmentler 500'ü kapsıyor ve unisex üründe cinsiyet farksız / hedeflenince ayrışıyor, temsilciler 5 farklı persona ve karar yönünde gerekçe, gerekçe birim testleri, iyileştirmeler yalnızca anlamlı değişiklikleri deniyor ve sıralı, API alanları, tam simülasyon < 1,5 sn.
 
 - [ ] **Ödeme isteği (WTP):** her sakine kategori fiyatı × persona/gelir çarpanıyla log-normal bir üst fiyat. Fiyat düştükçe alma ihtimali artar; "çok ucuz şüphesi" yalnızca kalite odaklı sakinlerde. B15 kapanır.
 - [ ] **Lojistik karar:** `P = 1 / (1 + e^-fayda)`; ağırlıklar ve parametreler tek bir yapılandırma dosyasında, belgelenmiş varsayımlar olarak.

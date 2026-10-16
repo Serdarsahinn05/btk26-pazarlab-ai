@@ -15,6 +15,7 @@ from app.services.normalization_service import (
     normalize_product,
 )
 from app.services.engine import ENGINE_VERSION, MONTE_CARLO_RUNS, run_town
+from app.services.town_insights import representatives, segments
 from app.utils.math_utils import clamp, clamp_score, stable_seed
 
 
@@ -37,6 +38,39 @@ def simulate_core(request: SimulationRequest, input_analysis: Optional[InputAnal
     """
     input_analysis = input_analysis or request.input_analysis or deterministic_analysis(request)
     return _simulate(request, input_analysis)
+
+
+def _candidate_changes(request: SimulationRequest) -> list[tuple[str, str, SimulationRequest]]:
+    commerce = request.commerce
+    changes = []
+    if commerce.shipping_days > 2:
+        changes.append(("shipping_2_days", "Kargoyu 2 güne indir", request.model_copy(update={"commerce": commerce.model_copy(update={"shipping_days": 2})})))
+    if not commerce.return_available:
+        changes.append(("add_returns", "Kolay iade ekle", request.model_copy(update={"commerce": commerce.model_copy(update={"return_available": True})})))
+    if not commerce.warranty:
+        changes.append(("add_warranty", "Garanti ekle", request.model_copy(update={"commerce": commerce.model_copy(update={"warranty": True})})))
+    for key, factor, verb in (("price_down_10", 0.9, "düşür"), ("price_up_10", 1.1, "artır")):
+        price = round(request.price * factor, 2)
+        changes.append((key, f"Fiyatı %10 {verb} ({price:,.2f} TL)".replace(",", "X").replace(".", ",").replace("X", "."), request.model_copy(update={"price": price})))
+    return changes
+
+
+def best_improvements(request: SimulationRequest, input_analysis: InputAnalysisResponse, core: dict[str, Any], limit: int = 3) -> list[dict[str, Any]]:
+    """Try each single change on the same town and keep the ones that help most (Faz 12c).
+
+    The input analysis is reused, so only the change itself moves the result. A price rise counts
+    only if it raises revenue."""
+    base_buyers = core["estimated_buyers"]
+    base_revenue = base_buyers * request.price
+    results = []
+    for key, label, variant in _candidate_changes(request):
+        buyers = _simulate(variant, input_analysis)["estimated_buyers"]
+        delta_buyers = buyers - base_buyers
+        delta_revenue = round(buyers * variant.price - base_revenue, 2)
+        helps = delta_revenue > 0 if key == "price_up_10" else delta_buyers > 0
+        if helps:
+            results.append({"key": key, "label": label, "deltaBuyers": delta_buyers, "deltaRevenue": delta_revenue})
+    return sorted(results, key=lambda r: (r["deltaBuyers"], r["deltaRevenue"]), reverse=True)[:limit]
 
 
 def run_simulation(request: SimulationRequest) -> SimulationResponse:
@@ -87,6 +121,10 @@ def run_simulation(request: SimulationRequest) -> SimulationResponse:
         aiInsights=ai_insights,
         engineVersion=ENGINE_VERSION,
         buyersRange=core["buyers_range"],
+        adoptionCurve=core["adoption_curve"],
+        segments=core["segments"],
+        representatives=core["representatives"],
+        improvements=best_improvements(request, input_analysis, core),
     )
 
 
@@ -147,6 +185,9 @@ def _simulate(request: SimulationRequest, input_analysis: InputAnalysisResponse)
         "decision_counts": decision_counts,
         "buyers_range": {"low": town["buyersLow"], "high": town["buyersHigh"], "runs": MONTE_CARLO_RUNS},
         "median_wtp": town["medianWtp"],
+        "adoption_curve": town["adoptionCurve"],
+        "segments": segments(town),
+        "representatives": representatives(town),
     }
 
 

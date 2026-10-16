@@ -24,7 +24,8 @@ from app.services.town import TRAITS, derive_traits  # noqa: E402
 
 OUT = Path(__file__).resolve().parents[1] / "app" / "data" / "town.json"
 SEED = 20261017
-VERSION = 1
+VERSION = 2  # 2: friendship network (Faz 12c)
+FRIENDS_MIN, FRIENDS_MAX, FRIENDS_CAP = 3, 6, 9
 
 # Persona → (income weights low/middle/high, age range). From personaTemplates; the last two were missing there.
 DEMOGRAPHICS = {
@@ -197,6 +198,31 @@ def story_for(rng: random.Random, r: dict, kids: int) -> str:
     return " ".join([lead, household, hobby, *phrases])
 
 
+def add_friends(rng: random.Random, residents: list[dict]) -> None:
+    """Symmetric friendship graph with homophily: same kind of place and a similar age make friends likelier."""
+    friends: dict[str, set[str]] = {r["id"]: set() for r in residents}
+    for r in residents:
+        others = [o for o in residents if o["id"] != r["id"] and len(friends[o["id"]]) < FRIENDS_CAP]
+        weights = []
+        for o in others:
+            w = 3.0 if o["cityType"] == r["cityType"] else 1.0
+            gap = abs(o["age"] - r["age"])
+            w *= 3.0 if gap <= 5 else 1.5 if gap <= 12 else 1.0
+            weights.append(w)
+        want = rng.randint(FRIENDS_MIN, FRIENDS_MAX) - len(friends[r["id"]])
+        while want > 0 and others:
+            pick = rng.choices(range(len(others)), weights=weights)[0]
+            other = others.pop(pick)
+            weights.pop(pick)
+            if len(friends[r["id"]]) >= FRIENDS_CAP:
+                break
+            friends[r["id"]].add(other["id"])
+            friends[other["id"]].add(r["id"])
+            want -= 1
+    for r in residents:
+        r["friends"] = sorted(friends[r["id"]])
+
+
 def generate() -> dict:
     rng = random.Random(SEED)
     personas = load_persona_data()["personaTypes"]
@@ -247,6 +273,7 @@ def generate() -> dict:
             }
             resident["story"] = story_for(rng, resident, kids)
             residents.append(resident)
+    add_friends(rng, residents)
     return {"version": VERSION, "seed": SEED, "note": "Kurgusal sakinler; gerçek kişiler değildir.", "residents": residents}
 
 
