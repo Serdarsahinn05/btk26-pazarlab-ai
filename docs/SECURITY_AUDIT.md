@@ -3,7 +3,7 @@
 - **Tarih:** 2026-10-16
 - **Kapsam:** `main` @ `4f3441e8`; backend (FastAPI + LangGraph), frontend (Next.js 14), Docker.
 - **Yöntem:** Kaynak kodun elle okunması (white-box). Düzeltmeler `backend/tests/test_security.py` ile otomatik test ediliyor.
-- **Son güncelleme:** Faz 2 (`fix/security-hardening`). S1–S11 ele alındı; S12 ve S13 bu fazda bulundu ve düzeltildi.
+- **Son güncelleme:** Faz 5d (`ci/pipeline`). S14 bu fazda `npm audit` ile bulundu. Backend bağımlılıkları `pip-audit` temiz olacak şekilde güncellendi.
 
 Durum değerleri: `açık`, `düzeltildi`, `kabul edildi`.
 
@@ -24,6 +24,7 @@ Durum değerleri: `açık`, `düzeltildi`, `kabul edildi`.
 | S11 | Düşük | Container root çalışıyor, bağımlılıklar pinli değil, `.env` gerçek env'i eziyor | düzeltildi (Docker build doğrulanmadı) |
 | S12 | Orta | 422 yanıtı girdiyi geri yansıtıyor; `inf` fiyatı sunucuyu 500'e düşürüyor | düzeltildi |
 | S13 | Düşük | Link okuyucu ile API sınırları uyumsuz (görsel sayısı, kategori) | düzeltildi |
+| S14 | Yüksek | Next.js 14.2'de yamasız açıklar (`npm audit`: 1 kritik, 1 yüksek) | açık (Faz 6) |
 
 Kontrol edildi, sorun bulunmadı:
 - `.env` dosyaları git'te takip edilmiyor. `.gitignore` artık `.env.*` kalıbını da kapsıyor.
@@ -187,6 +188,14 @@ Bu alanların tamamı LLM prompt'larına giriyor. Sınırsız girdi, maliyet sal
 - Okuyucu en fazla 6 görsel döndürüyor ve yalnızca 10 geçerli kategoriyi eşliyor.
 - Form görsel listesini 6 ile sınırlıyor.
 - Yüklenen fotoğraflar tarayıcıda uzun kenarı 1280 px olacak şekilde küçültülüp JPEG'e çevriliyor.
+
+## S14: Next.js 14 bilinen açıkları (Yüksek, Faz 5d'de bulundu)
+
+**Kaynak:** `npm audit --omit=dev`. Etkilenen aralık `next` 9.3.4 – 16.3.0-preview; 14.x için yama yok, düzeltme `next@16.4.2`.
+
+**İlgili olanlar:** Uygulama self-hosted (`standalone`) çalıştığı için Image Optimizer DoS'ları, Server Components DoS'ları ve rewrite/middleware cache poisoning kayıtları geçerli. `next/image` kullanımı ve rewrite tanımı az; bu riski azaltır ama kapatmaz. Windows'a özel RCE kaydı Docker (Linux) dağıtımında geçerli değil. Yüksek bulgu, Next'in kendi içinde taşıdığı `postcss` sürümünden geliyor; Next ile birlikte düzelir.
+
+**Plan:** Faz 6'da Next 16'ya yükseltme (major; React 19 ve ESLint yapılandırması etkilenebilir). O zamana kadar CI'daki `npm audit` adımı raporluyor ama bloklamıyor.
 
 ---
 

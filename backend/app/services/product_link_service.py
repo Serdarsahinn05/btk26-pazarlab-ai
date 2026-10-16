@@ -352,13 +352,16 @@ class JSONLDExtractor:
         
         def collect_urls(data):
             if isinstance(data, list):
-                for item in data: collect_urls(item)
+                for item in data:
+                    collect_urls(item)
             elif isinstance(data, str):
-                if data.startswith(("http", "//")): images.append(data)
+                if data.startswith(("http", "//")):
+                    images.append(data)
             elif isinstance(data, dict):
                 # Trendyol style: {"contentUrl": [...]} or {"url": "..."}
                 url = data.get("contentUrl") or data.get("url")
-                if url: collect_urls(url)
+                if url:
+                    collect_urls(url)
 
         collect_urls(image_data)
         
@@ -751,12 +754,16 @@ class ImageProcessor:
         else:
             return []
 
-        if not url or not isinstance(url, str): return []
+        if not url or not isinstance(url, str):
+            return []
         url_lower = url.lower().strip()
 
-        if any(kw in url_lower for kw in cls.BLACKLIST): return []
-        if url_lower.endswith((".svg", ".gif", ".ico", ".js", ".css")): return []
-        if not url_lower.startswith(("http://", "https://", "//")): return []
+        if any(kw in url_lower for kw in cls.BLACKLIST):
+            return []
+        if url_lower.endswith((".svg", ".gif", ".ico", ".js", ".css")):
+            return []
+        if not url_lower.startswith(("http://", "https://", "//")):
+            return []
 
         score = 0
         sig = cls._url_signature(url)
@@ -777,9 +784,12 @@ class ImageProcessor:
             # Traditional scoring as fallback
             width = cls._extract_int(attrs.get("width"))
             height = cls._extract_int(attrs.get("height"))
-            if (width and width >= 400) or (height and height >= 400): score += 300
-            if attrs.get("data-src") or attrs.get("data-original"): score += 200
-            if any(w in url_lower for w in ["product", "urun", "item", "large", "full"]): score += 100
+            if (width and width >= 400) or (height and height >= 400):
+                score += 300
+            if attrs.get("data-src") or attrs.get("data-original"):
+                score += 200
+            if any(w in url_lower for w in ["product", "urun", "item", "large", "full"]):
+                score += 100
 
         return [(score, url)] if score > 0 else []
 
@@ -939,13 +949,15 @@ class GeminiAIExtractor:
         images = []
         def deep_flatten(item):
             if isinstance(item, list):
-                for i in item: deep_flatten(i)
+                for i in item:
+                    deep_flatten(i)
             elif isinstance(item, str) and item.strip():
                 images.append(item.strip())
             elif isinstance(item, dict):
                 # Sometimes image is a dict with 'url' key
                 url = item.get("url") or item.get("src") or item.get("hiRes")
-                if url: deep_flatten(url)
+                if url:
+                    deep_flatten(url)
         
         deep_flatten(raw_images)
         normalized["images"] = images
@@ -1199,9 +1211,8 @@ class ProductLinkReader:
         """Determines if we need AI to fill missing gaps."""
         # 1. Essential fields check
         essential_fields = ["price", "description", "image"]
-        for field in essential_fields:
-            if not data.get(field):
-                return True
+        if any(not data.get(name) for name in essential_fields):
+            return True
         
         # 2. Tech check: If it's likely a tech product, we MUST have features
         title = str(data.get("title", "")).lower()
@@ -1272,7 +1283,8 @@ class ProductLinkReader:
         
         def safe_add(items):
             if isinstance(items, list):
-                for i in items: safe_add(i)
+                for i in items:
+                    safe_add(i)
             elif isinstance(items, str) and items.strip():
                 url = items.strip()
                 if url not in seen:
@@ -1361,7 +1373,8 @@ class ProductLinkReader:
                             for item in set_data:
                                 if isinstance(item, dict):
                                     img_url = item.get("hiRes") or item.get("large") or item.get("main")
-                                    if img_url: images.append(img_url)
+                                    if img_url:
+                                        images.append(img_url)
                 except Exception:
                     continue
 
@@ -1378,10 +1391,12 @@ class ProductLinkReader:
                     data = json.loads(match.group(1))
                     if isinstance(data, list):
                         for item in data:
-                            if isinstance(item, str): images.append(item)
+                            if isinstance(item, str):
+                                images.append(item)
                             elif isinstance(item, dict):
                                 url = item.get("url") or item.get("src") or item.get("image")
-                                if url: images.append(url)
+                                if url:
+                                    images.append(url)
                 except Exception:
                     continue
 

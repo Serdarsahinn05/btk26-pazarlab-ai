@@ -1,7 +1,8 @@
-fastapi==0.115.6
-uvicorn[standard]==0.34.0
-pydantic==2.10.4
-python-dotenv==1.0.1
+fastapi==0.143.2
+starlette==1.8.0
+uvicorn[standard]==0.54.0
+pydantic==2.14.1
+python-dotenv==1.2.4
 requests==2.34.2
 cloudscraper==1.2.71
 langgraph==1.2.15

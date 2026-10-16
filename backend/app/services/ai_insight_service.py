@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List
 
-from app.models.product import PurchaseMotivation, SimulationRequest
+from app.models.product import SimulationRequest
 from app.models.simulation import AiInsights, NormalizedProduct, PersonaFeedback, PersonaResult
 from app.services import llm_client
 from app.utils.scoring_utils import infer_product_type, recommend_channels
