@@ -1,4 +1,3 @@
-import logging
 import os
 
 from fastapi import FastAPI
@@ -9,6 +8,7 @@ from dotenv import load_dotenv
 load_dotenv(override=False)
 
 from app import security
+from app.observability import configure_logging
 from app.api.analyze import router as analyze_router
 from app.api.health import router as health_router
 from app.api.product_link import router as product_link_router
@@ -16,10 +16,7 @@ from app.api.simulate import router as simulate_router
 from app.api.whatif import router as whatif_router
 from app.api.stream import router as stream_router
 
-logging.basicConfig(
-    level=os.getenv("LOG_LEVEL", "INFO"),
-    format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
-)
+configure_logging()
 
 
 def _get_allowed_origins() -> list[str]:

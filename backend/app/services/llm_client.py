@@ -113,10 +113,34 @@ class _ModelPool:
 
 _pool = _ModelPool()
 
+# Outcome of the most recent AI call, for /api/health (in-memory, per process).
+_last = {"okAt": None, "errorAt": None, "error": None}
+_last_lock = threading.Lock()
+
+
+def _note(error: Optional[Exception] = None) -> None:
+    now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    with _last_lock:
+        if error is None:
+            _last["okAt"] = now
+        else:
+            _last["errorAt"] = now
+            # Type and HTTP status only: never the message body, which may echo request data.
+            code = getattr(error, "code", None)
+            _last["error"] = f"HTTP {code}" if code else type(error).__name__
+
 
 def status() -> dict[str, Any]:
     """AI status for /api/health. Never touches the network so health checks stay fast."""
-    return {"configured": is_configured(), "model": _pool.cached_model() if is_configured() else None}
+    with _last_lock:
+        last = dict(_last)
+    return {
+        "configured": is_configured(),
+        "model": _pool.cached_model() if is_configured() else None,
+        "lastSuccessAt": last["okAt"],
+        "lastErrorAt": last["errorAt"],
+        "lastError": last["error"],
+    }
 
 
 def _extract_text(response: dict, strip: bool = True) -> str:
@@ -156,6 +180,7 @@ def _generate(instructions: str, data: Any, *, temperature: float, json_mode: bo
                 text = _extract_text(json.loads(resp.read().decode("utf-8")))
             if not text:
                 raise ValueError("empty response")
+            _note()
             return text
         except urllib.error.HTTPError as exc:
             last_error = exc
@@ -175,6 +200,7 @@ def _generate(instructions: str, data: Any, *, temperature: float, json_mode: bo
             last_error = exc
             logger.warning("Gemini %s failed: %r", model, exc)
 
+    _note(last_error or LLMUnavailable("no model"))
     raise LLMUnavailable(f"all Gemini models failed: {last_error!r}")
 
 
@@ -220,6 +246,7 @@ def stream_chat(
                 _pool.cool_down(model, 120)
                 logger.warning("Gemini %s stream failed with HTTP %s", model, exc.code)
                 continue
+            _note(exc)
             raise LLMUnavailable(f"Gemini HTTP {exc.code}") from exc
         except Exception as exc:
             last_error = exc
@@ -237,8 +264,10 @@ def stream_chat(
                     continue
                 if chunk:
                     yield chunk
+        _note()
         return
 
+    _note(last_error or LLMUnavailable("no model"))
     raise LLMUnavailable(f"all Gemini models failed: {last_error!r}")
 
 
