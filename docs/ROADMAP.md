@@ -30,8 +30,10 @@
 | 10b | `feat/offline-persona-chat` | AI'sız (kural tabanlı) persona sohbeti | 0,5 gün | ✅ |
 | 11 | `feat/mcp-connector` | PazarLab MCP sunucusu (Claude connector) | 1–1,5 gün | ✅ (Claude.ai denemesi bekliyor) |
 | 11b | `spike/claude-artifact` | Claude-powered artifact araştırması | 0,5 gün | ✅ karar: Motor v2'den sonra |
-| 12 | `feat/engine-v2-town` | Motor v2 + AI kasabası + Big Five | 3–4 gün | ⬜ |
-| 12b | `feat/claude-artifact` | Claude içinde bağımsız PazarLab sayfası (11b, seçenek B) | 1,5 gün | ⬜ isteğe bağlı |
+| 12a | `feat/town-population` | Kasaba nüfusu: 500 sakin, hikâye, Big Five, türetilen özellikler | 0,5 gün | ✅ |
+| 12b | `feat/engine-v2` | Motor v2: ödeme isteği, lojistik karar, Monte Carlo, `engineVersion` | 1 gün | ⬜ |
+| 12c | `feat/town-dynamics` | Arkadaşlık ağı ve yayılma, "en etkili iyileştirme", segmentler | 1 gün | ⬜ |
+| 12d | `feat/engine-v2-ui` | Arayüz: ± aralık, kasaba temsilcileri, segment grafiği, iyileştirme kartı | 1 gün | ⬜ |
 | 13 | `feat/product-entry-v2` | Ürün ekleme ekranı: link öncelikli akış + yeni yerleşim | 2 gün | ⬜ |
 | 14 | `feat/link-reader-v2` | Site okuyucuları, kayıtlı HTML testleri, "HTML ver" ucu | 2 gün | ⬜ |
 | 15 | `feat/layout-pass` | Diğer ekranların yerleşimi (audit → critique → ponytail-review) | 1,5 gün | ⬜ |
@@ -39,6 +41,7 @@
 | 17 | `chore/cleanup-e2e` | Ölü kod temizliği, Playwright testleri CI'da | 1 gün | ⬜ |
 | 18 | `feat/browser-extension` | "PazarLab'a gönder" tarayıcı eklentisi | 1–2 gün | ⬜ |
 | 19 | `feat/bring-your-population` | Kendi nüfusunu yükle + kalibrasyon (hesap sistemi, KVKK) | 3+ gün | ⬜ |
+| 20 | `feat/claude-artifact` | Claude içinde bağımsız PazarLab sayfası (11b, seçenek B) | 1,5 gün | ⬜ isteğe bağlı |
 
 Sıralamanın gerekçesi: Önce güvenlik geliyor, çünkü açık CORS ve SSRF ile kota ve iç ağ riski demo sırasında bile var. Sonra B1 geliyor; AI katmanı çalışmıyorsa tasarımın gösterecek içeriği olmaz. Tasarım bunların üzerine kurulur.
 
@@ -212,8 +215,8 @@ Kabul kriteri: DESIGN.md'deki tüm kalıplar uygulanmış; bileşenlerde ham ren
 
 ## Şu an neredeyiz
 
-- **Son tamamlanan:** Faz 11b (artifact araştırması: karar verildi). Öncesinde Faz 11 (MCP connector; Claude.ai denemesi ertelendi). Tüm dallar `main`'e merge edildi ve `origin`'e push'landı.
-- **Sıradaki:** Faz 12 (Motor v2 + AI kasabası) …
+- **Son tamamlanan:** Faz 12a (kasaba nüfusu). Motor henüz bunu kullanmıyor; skorlar değişmedi. Tüm dallar `main`'e merge edildi ve `origin`'e push'landı.
+- **Sıradaki:** Faz 12b (Motor v2: ödeme isteği + lojistik karar + Monte Carlo; skorlar değişecek, B15 kapanacak) → 12c → 12d …
 - **Ertelenen (kullanıcı kararı, 2026-10-17):** Faz 11'in Claude.ai denemesi sonra birlikte yapılacak. Gerekenler: `cloudflared` kurulumu (`winget install Cloudflare.cloudflared`), tünel adresinin `MCP_ALLOWED_HOSTS`'a yazılması, Claude'da connector eklenmesi; açık soru `?key=` sorgu dizesinin korunup korunmadığı. Adımlar: docs/mcp-connector.md. (sıra aşağıdaki tabloda). Her faz kendi dalında, bitince bu bölüm güncellenir.
 - **Bekleyen kararlar:** kategori genişletme (hangi aileler) Faz 13'e gelince konuşulacak; Faz 9 için API anahtarı yok.
 - **Ortam notları:** `backend/venv` bozuk (eski bir kullanıcı yolunu gösteriyor). Testler geçici bir venv ile koşuyor. Gemini sık sık 429 veriyor; arayüz testlerinde AI kapalı ya da sahte SSE kullanılıyor. `gh`, nginx ve Docker daemon yok.
@@ -267,9 +270,18 @@ Kaynak: claude.ai yayınlanmış artifact çalışma zamanı sözleşmesi 0.2.84
 - **A. Connector'a dayanan sayfa:** `mcp` (PazarLab araçları) + `sample`. Tek motor (backend), ama izleyicinin connector'ı eklemiş olması, connector'ın internette yayında olması gerekir ve sayfa herkese açık paylaşılamaz.
 - **B. Bağımsız sayfa:** deterministik motor JavaScript'e taşınır ve sayfanın içine gömülür; AI kısmı `sample`. Connector gerekmez, herhangi bir Claude kullanıcısı açabilir, paylaşılabilir. Bedeli iki dilde motor; Python ile JS'nin aynı sonucu verdiğini ortak test girdileriyle (Python'un ürettiği referans çıktılar) denetlemek gerekir.
 
-**Karar:** Şimdi yapılmıyor. Faz 12 motoru baştan değiştireceği için bugün JS'e taşımak işi iki kez yapmak olur. Motor v2 oturduktan sonra **B** seçeneğiyle Faz 12b (isteğe bağlı). Motor v2, parametreleri veri dosyalarında (kurallar, personalar, kasaba nüfusu) ve algoritması küçük kalacak şekilde tasarlanacak; böylece JS'e taşımak kolaylaşır. A seçeneği, connector yayına alındığında hızlı bir demo olarak ayrıca denenebilir.
+**Karar:** Şimdi yapılmıyor. Faz 12 motoru baştan değiştireceği için bugün JS'e taşımak işi iki kez yapmak olur. Motor v2 oturduktan sonra **B** seçeneğiyle Faz 20 (isteğe bağlı). Motor v2, parametreleri veri dosyalarında (kurallar, personalar, kasaba nüfusu) ve algoritması küçük kalacak şekilde tasarlanacak; böylece JS'e taşımak kolaylaşır. A seçeneği, connector yayına alındığında hızlı bir demo olarak ayrıca denenebilir.
 
 ### Faz 12: Motor v2 + AI kasabası
+Dört alt faza bölündü (12a–12d); her biri ayrı dalda, ayrı testlerle. Aşağıdaki maddeler fazın tamamını tanımlar.
+
+**12a ✅ Kasaba nüfusu** (`feat/town-population`)
+- `scripts/generate_town.py` → `app/data/town.json` (500 sakin, 551 KB). Deterministik (sabit tohum), AI yok: hikâyeler şablonlardan kuruluyor, ücretsiz ve tekrar üretilebilir. `--check` ile dosyanın üreticiyle uyumu denetlenir.
+- Sakin: ad, yaş (18–65), cinsiyet, şehir ve şehir tipi (büyükşehir / şehir / ilçe), hane (ailesiyle, yurt, ev arkadaşı, yalnız, eşiyle, eşi ve çocukları, tek ebeveyn), meslek (yaş ve gelire göre; öğrenci, emekli, kendi işi), gelir, iki hobi, alışveriş personası, Big Five, kişisel sapmalar, hikâye. Persona başına gelir ağırlıkları ve yaş aralıkları personas.json'daki kullanılmayan `personaTemplates` bloğundan alındı (eksik iki persona tamamlandı, alt yaş 18).
+- `services/town.py`: alışveriş özellikleri **çalışma anında** türetiliyor: persona aralığının merkezi + Big Five + demografi (gelir, yaş, çocuk) + kişisel sapma; persona kimliği korunsun diye aralığın en fazla ±0,12 dışına çıkabiliyor. Katsayılar varsayım olarak belgelendi (ör. sorumluluk → detay ihtiyacı ↑, dürtüsellik ↓; açıklık → yenilik arayışı ↑).
+- Klişe önlemi: cinsiyet personadan, meslekten ve hobilerden bağımsız; yaş yalnızca hobileri hafifçe etkiliyor. Türkçe dilbilgisi: şehir ekleri ünlü uyumu ve sert ünsüzle üretiliyor (İstanbul'da, Gaziantep'te, Akçaabat'ta); ekleri düzensiz bileşik adlar listeye alınmadı. Aynı kelimeyle biten hobiler yan yana gelmiyor; "yaşıyor" tekrarı önlendi.
+- Doğrulama: `tests/test_town.py` (13 test, toplam 152): dosya = üretici çıktısı, persona sayıları, yaşam bilgisi tutarlılığı (öğrenci ≤ 24, emekli ≥ 60, yurt → öğrenci, çocuk ↔ hane), her personada kadın oranı %30–70, persona ↔ gelir eğilimi, çeşitlilik (500 farklı hikâye, ≥ 25 şehir, ≥ 35 hobi, ≥ 40 meslek ifadesi), hikâyelerde ASCII Türkçe yok, türetilen özellikler sınırlar içinde, her personanın içinde Big Five → özellik ilişkilerinin belgelendiği yönde olması, gelir → fiyat hassasiyeti. Örnek hikâyeler elle okundu.
+
 - [ ] **Ödeme isteği (WTP):** her sakine kategori fiyatı × persona/gelir çarpanıyla log-normal bir üst fiyat. Fiyat düştükçe alma ihtimali artar; "çok ucuz şüphesi" yalnızca kalite odaklı sakinlerde. B15 kapanır.
 - [ ] **Lojistik karar:** `P = 1 / (1 + e^-fayda)`; ağırlıklar ve parametreler tek bir yapılandırma dosyasında, belgelenmiş varsayımlar olarak.
 - [ ] **Kasaba nüfusu (500 sakin):** ad, yaş, meslek, hane, gelir, şehir büyüklüğü, hobiler, alışveriş alışkanlıkları, kısa hikâye. Bir kez üretilir ve JSON olarak saklanır; simülasyon sırasında AI çağrılmaz.
