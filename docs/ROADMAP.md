@@ -23,7 +23,7 @@
 | 8b | `docs/deployment` | F20: dağıtım dokümanı | 0,25 gün | ✅ |
 | 8c | `feat/observability` | B.8: JSON log, sağlık bilgisi | 0,25 gün | ✅ |
 | 8d | `feat/categories-more` | B.9: ayakkabı, çanta, kozmetik | 0,5 gün | ✅ |
-| 8e | `chore/language-cleanup` | B.10: dil tutarlılığı | 0,25 gün | ⬜ |
+| 8e | `chore/language-cleanup` | B.10: dil tutarlılığı | 0,25 gün | ✅ |
 | 9 | `feat/llm-providers` | B.12: Gemini + Claude + GPT, yedekli zincir | 1 gün | ⬜ |
 
 Sıralamanın gerekçesi: Önce güvenlik geliyor, çünkü açık CORS ve SSRF ile kota ve iç ağ riski demo sırasında bile var. Sonra B1 geliyor; AI katmanı çalışmıyorsa tasarımın gösterecek içeriği olmaz. Tasarım bunların üzerine kurulur.
@@ -187,6 +187,14 @@ Kabul kriteri: DESIGN.md'deki tüm kalıplar uygulanmış; bileşenlerde ham ren
   - Frontend: "Aksesuar & Bakım" ailesi ve üç kategori için form alanları; landing'deki kategori sayısı artık `CATEGORIES.length` (elle "10" yazıyordu).
   - Bulunan hata **B17** (Türkçe karakterler kategori uyumunu düşürüyordu) bu fazda düzeltildi. Yazım sırasında düzenleme script'i bir regex'e görünmez backspace karakteri soktu; test yakaladı, düzeltildi, kod tabanında başka örnek yok.
   - Doğrulama: `tests/test_categories.py` (30 test, toplam 102): kategori/kural/anahtar kelime tutarlılığı, 13 × 7 ağırlık normalizasyonu, üç yeni kategoriyle uçtan uca simülasyon (kategori uyumu ≥ 0,6, yanlış kategori önerisi yok), yeni alanların kalite puanını artırması, Türkçe = ASCII uyumu, link eşleme vakaları. Puppeteer 10/10: açılır listede 13 kategori ve yeni aile, her kategoride alanlar, istekte yeni alanlar, sonuç ekranı. Genel uçtan uca test 10/10.
+- [x] **8e** B.10, dil tutarlılığı (`chore/language-cleanup`):
+  - "TASK INTELLIGENCE" gibi İngilizce başlıklar Faz 4'te zaten kalkmıştı. Asıl sorun backend'deydi: kullanıcıya görünen ~100 metin ASCII'ye çevrilmiş Türkçeydi (uyarılar, öneriler, kural tabanlı tavsiyeler, zayıflık mesajları, persona yorumları, hata mesajları).
+  - **LLM prompt'ları** (AI yorumları, girdi analizi, persona tartışması, güvenlik kuralı) Türkçe karakterlerle yeniden yazıldı ve "Türkçe karakterlerle yaz" kuralı eklendi. Faz 7 ekran görüntülerinde AI'ın kendi ürettiği metinler de ASCII'ydi ("Kumas kartini hazirlayin"); sebebi prompt'tu.
+  - `personas.json` (iki kopya): `displayName` eklendi, `name` kimlik olarak kaldı (sohbet anahtarı, URL, API); `reason`/`advice` düzeltildi. Frontend'deki elle yazılmış eşleme tablosu kalktı, `personaLabel()` veriden okuyor. Dosyalar metin düzeyinde düzenlendi (JSON'u yeniden yazmak 1300 satırlık biçim gürültüsü üretiyordu).
+  - `category_rules.json` etiketleri ("Kıyafet / Tişört") ve `services/labels.py` (kategori, motivasyon, gelir seviyesi, persona): kullanıcı metnine artık ham kimlik girmiyor.
+  - Bulunan ve düzeltilen hatalar: **B18** (model Türkçe isim yazınca tartışma mesajı başka personaya gidiyordu), **B19** (Türkçe profillerle hiç eşleşmeyen ASCII anahtar kelimeler; metne sızan ham kimlikler). `"KARARSIZ".lower()` → "kararsiz" sorunu için karar ifadeleri açıkça yazıldı. Persona yükleyici, içe aktarma döngüsünü kırmak için `normalization_service`'e taşındı.
+  - Anahtar kelime listeleri bilerek ASCII kaldı (`fold_text` ile eşleşiyorlar, B17).
+  - Doğrulama: `tests/test_language.py` (4 test, toplam 106): AI kapalıyken bütün çıktı metinlerinde ASCII Türkçe kelime ve ham kimlik yok; iki persona dosyası aynı ve her `displayName` katlandığında kimliğine eşit; Türkçe yazılmış model isimleri doğru personaya bağlanıyor; API hata mesajı Türkçe. Testteki regex bilerek büyük/küçük harfe duyarlı (`re.IGNORECASE` Unicode'da "ı" ile "i"yi eşit sayıp doğru metni işaretliyordu). Puppeteer 10/10 + kategori 10/10; AI kapalı sonuç ekranı elle kontrol edildi.
 
 ## Riskler
 - **Gemini model adları sık değişiyor.** B1'de model env'den okunacak; varsayılan seçilirken o günkü güncel model listesi kontrol edilecek.
