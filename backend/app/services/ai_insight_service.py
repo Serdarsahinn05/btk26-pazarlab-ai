@@ -161,6 +161,7 @@ def generate_insights(
         )
     except Exception as exc:
         logger.warning("AI insights unavailable, using rule-based fallback: %r", exc)
+        fallback_reason = "quota" if isinstance(exc, llm_client.AIQuotaExceeded) else "unavailable"
         motivation_line = MOTIVATION_INSIGHTS.get(
             motivation_str, "Bu ürün için motivasyon bazlı öneriler uygulanabilir."
         )
@@ -219,6 +220,7 @@ def generate_insights(
             channel_recommendation=channels,
             improved_description=improved_description.strip(),
             persona_feedback=persona_feedback,
+            ai_fallback_reason=fallback_reason,
         )
 
 

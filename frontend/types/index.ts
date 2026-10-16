@@ -171,6 +171,8 @@ export interface AiInsights {
   personaFeedback?: PersonaFeedback[];
   /** false when the backend used its rule-based fallback instead of the LLM */
   aiGenerated?: boolean;
+  /** why the fallback was used: this visitor's daily AI calls ran out, or the AI is down */
+  aiFallbackReason?: "quota" | "unavailable" | null;
 }
 
 export interface PersonaFeedback {

@@ -105,3 +105,11 @@ export const checkHealth = async (): Promise<HealthStatus | null> => {
     return null;
   }
 };
+
+/** User-facing note when the insights came from the rule-based fallback; null when the AI wrote them. */
+export function aiFallbackNote(insights?: { aiGenerated?: boolean; aiFallbackReason?: string | null }): string | null {
+  if (!insights || insights.aiGenerated !== false) return null;
+  return insights.aiFallbackReason === "quota"
+    ? "Bugünkü AI hakkın doldu; tavsiyeler kural tabanlı üretildi. Simülasyon sonuçları etkilenmedi."
+    : "AI şu anda kullanılamadı; tavsiyeler kural tabanlı üretildi.";
+}

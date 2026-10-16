@@ -6,8 +6,12 @@
   ``MAX_MODELS_PER_CALL`` models; failures are logged, never swallowed silently.
 - Instructions go in ``systemInstruction``; user and third-party data is sent
   separately inside a ``<data>`` block (see prompt_safety).
+- Budget (Faz 10a): identical one-shot calls are answered from a TTL cache, and each
+  client IP gets a daily number of real model calls. Cache hits cost no quota.
 """
 
+import copy
+import hashlib
 import json
 import logging
 import os
@@ -16,8 +20,10 @@ import threading
 import time
 import urllib.error
 import urllib.request
-from typing import Any, Iterator, Optional
+from collections import OrderedDict
+from typing import Any, Callable, Iterator, Optional
 
+from app.observability import client_ip_var
 from app.services.prompt_safety import UNTRUSTED_DATA_RULE, wrap_data
 
 logger = logging.getLogger("llm_client")
@@ -35,6 +41,96 @@ _SKIP_MARKERS = ("tts", "image", "audio", "embedding", "vision", "robotics", "co
 
 class LLMUnavailable(RuntimeError):
     """No key, no usable model, or every attempted model failed."""
+
+
+class AIQuotaExceeded(LLMUnavailable):
+    """This client used up today's AI calls; callers fall back to rule-based output like any other outage."""
+
+
+def _env_int(name: str, default: int) -> int:
+    try:
+        return int(os.getenv(name, str(default)))
+    except ValueError:
+        return default
+
+
+class _TTLCache:
+    """Small in-process LRU with expiry. Single worker, so no shared store is needed (see deployment.md)."""
+
+    def __init__(self) -> None:
+        self._items: "OrderedDict[str, tuple[float, Any]]" = OrderedDict()
+        self._lock = threading.Lock()
+        self.hits = 0
+        self.misses = 0
+
+    def get(self, key: str) -> Any:
+        ttl = _env_int("AI_CACHE_TTL_SECONDS", 6 * 3600)
+        with self._lock:
+            item = self._items.get(key)
+            if item is None or ttl <= 0 or time.time() - item[0] > ttl:
+                self._items.pop(key, None)
+                self.misses += 1
+                return None
+            self._items.move_to_end(key)
+            self.hits += 1
+            # Callers may mutate parsed JSON; never hand out the cached object itself.
+            return copy.deepcopy(item[1])
+
+    def put(self, key: str, value: Any) -> None:
+        if _env_int("AI_CACHE_TTL_SECONDS", 6 * 3600) <= 0:
+            return
+        limit = max(_env_int("AI_CACHE_MAX_ENTRIES", 500), 1)
+        with self._lock:
+            self._items[key] = (time.time(), copy.deepcopy(value))
+            self._items.move_to_end(key)
+            while len(self._items) > limit:
+                self._items.popitem(last=False)
+
+    def stats(self) -> dict[str, int]:
+        with self._lock:
+            return {"entries": len(self._items), "hits": self.hits, "misses": self.misses}
+
+    def clear(self) -> None:
+        with self._lock:
+            self._items.clear()
+            self.hits = self.misses = 0
+
+
+class _DailyQuota:
+    """Real model calls per client IP per day (Turkey time). AI_DAILY_CALLS_PER_IP=0 turns it off."""
+
+    def __init__(self) -> None:
+        self._day = ""
+        self._used: dict[str, int] = {}
+        self._lock = threading.Lock()
+
+    @staticmethod
+    def limit() -> int:
+        return _env_int("AI_DAILY_CALLS_PER_IP", 60)
+
+    @staticmethod
+    def _today() -> str:
+        return time.strftime("%Y-%m-%d", time.gmtime(time.time() + 3 * 3600))  # Europe/Istanbul, no DST
+
+    def consume(self) -> None:
+        limit, ip = self.limit(), client_ip_var.get()
+        if limit <= 0 or not ip:  # off, or not inside an HTTP request (scripts, tests of internals)
+            return
+        with self._lock:
+            today = self._today()
+            if today != self._day:  # new day: forget yesterday, which also bounds memory
+                self._day, self._used = today, {}
+            if self._used.get(ip, 0) >= limit:
+                raise AIQuotaExceeded(f"daily AI quota of {limit} calls reached")
+            self._used[ip] = self._used.get(ip, 0) + 1
+
+    def clear(self) -> None:
+        with self._lock:
+            self._day, self._used = "", {}
+
+
+_cache = _TTLCache()
+_quota = _DailyQuota()
 
 
 def _api_key() -> str:
@@ -140,6 +236,8 @@ def status() -> dict[str, Any]:
         "lastSuccessAt": last["okAt"],
         "lastErrorAt": last["errorAt"],
         "lastError": last["error"],
+        "cache": _cache.stats(),
+        "dailyCallsPerIp": _quota.limit(),
     }
 
 
@@ -157,6 +255,7 @@ def _generate(instructions: str, data: Any, *, temperature: float, json_mode: bo
     models = _pool.candidates()
     if not models:
         raise LLMUnavailable("no usable Gemini model")
+    _quota.consume()
 
     generation_config: dict[str, Any] = {"temperature": temperature, "maxOutputTokens": max_tokens}
     if json_mode:
@@ -223,6 +322,8 @@ def stream_chat(
     models = _pool.candidates()
     if not models:
         raise LLMUnavailable("no usable Gemini model")
+    # Chats are never cached (each turn is new), but they do count against the daily quota.
+    _quota.consume()
 
     body = json.dumps({
         "systemInstruction": {"parts": [{"text": instructions + UNTRUSTED_DATA_RULE}]},
@@ -271,19 +372,37 @@ def stream_chat(
     raise LLMUnavailable(f"all Gemini models failed: {last_error!r}")
 
 
+def _cached(kind: str, instructions: str, data: Any, temperature: float, max_tokens: int, produce: Callable[[], Any]) -> Any:
+    """Same prompt + data + settings → same answer for AI_CACHE_TTL_SECONDS. Only successful results are stored."""
+    material = json.dumps([kind, instructions, data, temperature, max_tokens], ensure_ascii=False, sort_keys=True, default=str)
+    key = hashlib.sha256(material.encode("utf-8")).hexdigest()
+    hit = _cache.get(key)
+    if hit is not None:
+        return hit
+    value = produce()
+    _cache.put(key, value)
+    return value
+
+
 def generate_text(
     instructions: str, data: Any, *, temperature: float = 0.4, max_tokens: int = MAX_OUTPUT_TOKENS, timeout: float = TIMEOUT_SECONDS
 ) -> str:
-    return _generate(instructions, data, temperature=temperature, json_mode=False, max_tokens=max_tokens, timeout=timeout)
+    return _cached("text", instructions, data, temperature, max_tokens, lambda: _generate(
+        instructions, data, temperature=temperature, json_mode=False, max_tokens=max_tokens, timeout=timeout
+    ))
 
 
 def generate_json(
     instructions: str, data: Any, *, temperature: float = 0.4, max_tokens: int = MAX_OUTPUT_TOKENS, timeout: float = TIMEOUT_SECONDS
 ) -> Any:
-    text = _generate(instructions, data, temperature=temperature, json_mode=True, max_tokens=max_tokens, timeout=timeout)
-    text = text.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
-    try:
-        return json.loads(text)
-    except json.JSONDecodeError as exc:
-        logger.warning("Gemini returned invalid/truncated JSON (%d chars): %s", len(text), exc)
-        raise
+    def produce() -> Any:
+        text = _generate(instructions, data, temperature=temperature, json_mode=True, max_tokens=max_tokens, timeout=timeout)
+        text = text.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError as exc:
+            logger.warning("Gemini returned invalid/truncated JSON (%d chars): %s", len(text), exc)
+            raise
+
+    # Parsed before caching, so a truncated answer is retried next time instead of repeated.
+    return _cached("json", instructions, data, temperature, max_tokens, produce)

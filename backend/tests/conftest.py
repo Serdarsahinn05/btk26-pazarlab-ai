@@ -35,6 +35,14 @@ def _reset_rate_limits():
     RateLimit.reset_all()
 
 
+@pytest.fixture(autouse=True)
+def _reset_ai_budget():
+    from app.services import llm_client
+
+    llm_client._cache.clear()
+    llm_client._quota.clear()
+
+
 @pytest.fixture
 def payload():
     return copy.deepcopy(VALID_REQUEST)

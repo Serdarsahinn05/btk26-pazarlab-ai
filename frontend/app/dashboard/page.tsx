@@ -12,7 +12,7 @@ import RecentSimulations from "@/components/RecentSimulations";
 import { addToHistory, findInHistory, storableRequest } from "@/lib/history";
 import { DASHBOARD_VIEWS, DashboardView } from "@/components/TopBar";
 import personasData from "@/data/personas.json";
-import { analyzeProductInput, apiErrorMessage, getSimulation, simulateProductStream } from "@/lib/api";
+import { aiFallbackNote, analyzeProductInput, apiErrorMessage, getSimulation, simulateProductStream } from "@/lib/api";
 import { CATEGORIES, InputAnalysisResponse, SimulationRequest, SimulationResponse } from "@/types";
 
 const PERSONA_COUNT = personasData.personaTypes.length;
@@ -126,9 +126,8 @@ function DashboardContent() {
       // Put the result in the URL so refresh, back and "copy link" all keep it.
       router.replace(`/dashboard?view=${view}&r=${encodeURIComponent(id)}`, { scroll: false });
       window.scrollTo({ top: 0, behavior: "smooth" });
-      if (response.aiInsights?.aiGenerated === false) {
-        setToast({ tone: "info", message: "AI şu anda kullanılamadı; tavsiyeler kural tabanlı üretildi." });
-      }
+      const note = aiFallbackNote(response.aiInsights);
+      if (note) setToast({ tone: "info", message: note });
     } catch (error) {
       setState("idle");
       setToast({ tone: "error", message: apiErrorMessage(error), onRetry: () => executeSimulation(data, inputAnalysis) });

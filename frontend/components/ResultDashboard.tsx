@@ -9,6 +9,7 @@ import { Check, Copy, FileDown, Link2, Printer, RotateCcw } from "lucide-react";
 import { downloadBlob } from "@/lib/history";
 import { simulationToMarkdown } from "@/lib/report";
 import { NormalizedProduct, Persona, SimulationRequest, SimulationResponse } from "@/types";
+import { aiFallbackNote } from "@/lib/api";
 import WhatIf from "@/components/WhatIf";
 import PersonaChat from "@/components/PersonaChat";
 import { SegmentRing, Ring } from "@/components/ui/ring";
@@ -166,7 +167,7 @@ function ActionCard({ data, productName, onReset }: { data: SimulationResponse; 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="squiggle text-[21px] font-bold">Ne yapmalı?</h2>
         {data.aiInsights.aiGenerated === false && (
-          <span className="chip text-muted-foreground" title="AI kullanılamadı; tavsiyeler kural tabanlı">kural tabanlı</span>
+          <span className="chip text-muted-foreground" title={aiFallbackNote(data.aiInsights) ?? undefined}>kural tabanlı</span>
         )}
       </div>
       <p className="text-lg font-semibold leading-snug">{data.aiInsights.summary}</p>
