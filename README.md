@@ -88,6 +88,7 @@ Demo kapsami bilincli olarak dar tutuldu. Amac cok kategori gostermek degil, sec
 |---|---|
 | Giyim | Tisort, pantolon, mont, elbise, etek |
 | Teknoloji | Telefon, laptop, kulaklik, tablet, akilli saat |
+| Aksesuar ve bakim | Ayakkabi, canta, kozmetik |
 
 ---
 

@@ -18,6 +18,7 @@ import requests
 
 from app.services import llm_client
 from app.services.safe_http import UnsafeURLError, get_following_redirects, validate_url
+from app.utils.text_utils import fold_text
 
 try:
     import cloudscraper
@@ -1299,11 +1300,14 @@ class ProductLinkReader:
 
     @staticmethod
     def _map_category(raw_category: Optional[str], title: Optional[str]) -> str:
-        """Maps raw marketplace categories to the 10 categories accepted by SimulationRequest."""
-        text = f"{raw_category or ''} {title or ''}".lower()
-        
-        # Mapping rules
+        """Maps raw marketplace categories to the categories accepted by SimulationRequest."""
+        text = fold_text(f"{raw_category or ''} {title or ''}")
+
+        # Order matters: "laptop çantası" is a bag and "24 saat kalıcı ruj" is cosmetics, so these come first.
         mappings = {
+            "kozmetik": ["kozmetik", "makyaj", "ruj", "maskara", "fondöten", "parfüm", "serum", "nemlendirici", "kremi", "şampuan", "losyon", "oje", "cilt bakım"],
+            "canta": ["çanta", "sırt çantası", "backpack", "handbag", "cüzdan", "valiz", "bavul"],
+            "ayakkabi": ["ayakkabı", "sneaker", "bot", "çizme", "sandalet", "terlik", "loafer", "babet"],
             "telefon": ["telefon", "phone", "mobile", "cep", "iphone", "samsung", "xiaomi", "redmi"],
             "laptop": ["laptop", "bilgisayar", "computer", "notebook", "dizüstü", "macbook"],
             "akilli_saat": ["saat", "watch", "smartwatch", "bileklik"],
@@ -1316,8 +1320,13 @@ class ProductLinkReader:
             "etek": ["etek", "skirt"],
         }
         
+        def hit(keyword: str) -> bool:
+            k = fold_text(keyword)
+            # Short words need word boundaries, so "bot" does not match "robot".
+            return re.search(rf"\b{re.escape(k)}\b", text) is not None if len(k) <= 4 else k in text
+
         for target, keywords in mappings.items():
-            if any(k in text for k in keywords):
+            if any(hit(k) for k in keywords):
                 return target
         
         return "tisort" # Fallback
@@ -1337,13 +1346,19 @@ class ProductLinkReader:
             "baglanti": "connectivity", "connectivity": "connectivity",
             "su_dayanimi": "waterResistance", "su_gecirmezlik": "waterResistance",
             
+            # Shoes, bags, cosmetics
+            "taban": "soleMaterial", "taban_malzemesi": "soleMaterial", "topuk_boyu": "heelHeight", "topuk_yuksekligi": "heelHeight",
+            "bolme": "compartments", "bolme_sayisi": "compartments", "aski": "strapType", "aski_tipi": "strapType",
+            "cilt_tipi": "skinType", "sac_tipi": "skinType", "hacim": "volume", "icerik": "ingredients", "icindekiler": "ingredients",
+            "olcu": "dimensions", "boyut": "dimensions", "ebat": "dimensions",
+
             # Clothing
             "kumas": "fabric", "materyal": "fabric", "kalip": "fit", "sezon": "season",
             "renk": "color", "beden": "size"
         }
         mapped = {}
         for k, v in (features or {}).items():
-            k_norm = str(k).lower().strip().replace(" ", "_").replace("ı", "i")
+            k_norm = fold_text(str(k)).strip().replace(" ", "_")
             target = mapping.get(k_norm, k_norm)
             mapped[target] = str(v)
         return mapped

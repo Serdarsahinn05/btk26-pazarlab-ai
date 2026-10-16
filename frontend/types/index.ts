@@ -11,6 +11,7 @@ export type PurchaseMotivation =
 export const CATEGORIES = [
   "tisort", "pantolon", "mont", "elbise", "etek",
   "telefon", "laptop", "kulaklik", "tablet", "akilli_saat",
+  "ayakkabi", "canta", "kozmetik",
 ] as const;
 export type Category = (typeof CATEGORIES)[number];
 
@@ -72,6 +73,16 @@ export interface Features {
   compatibleModel?: string;
   dimensions?: string;
   installationEase?: string;
+
+  // Shoes, bags, cosmetics
+  soleMaterial?: string;
+  heelHeight?: string;
+  compartments?: string;
+  strapType?: string;
+  skinType?: string;
+  ingredients?: string;
+  volume?: string;
+  certifications?: string;
 }
 
 export interface Commerce {

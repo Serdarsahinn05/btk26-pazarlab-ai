@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Category, PurchaseMotivation, SimulationRequest } from "@/types";
 import { apiErrorMessage, readProductLink } from "@/lib/api";
-import { Link2, Loader2, Shirt, Smartphone, Sparkles, Trash2, Upload } from "lucide-react";
+import { Link2, Loader2, Shirt, ShoppingBag, Smartphone, Sparkles, Trash2, Upload } from "lucide-react";
 
 // Backend accepts at most 6 images of ~1.5 MB each (see SimulationRequest.images).
 const MAX_IMAGES = 6;
@@ -38,7 +38,7 @@ interface ProductFormProps {
 }
 
 type FieldType = "text" | "select" | "checkbox" | "number";
-type FamilyKey = "kiyafet" | "teknoloji";
+type FamilyKey = "kiyafet" | "teknoloji" | "aksesuar";
 
 interface DynamicField {
   name: string;
@@ -306,6 +306,75 @@ const categoryConfig: Record<string, CategoryConfig> = {
       { name: "connectivity", label: "Bağlantı / uyum", placeholder: "Bluetooth, eSIM, iOS/Android..." },
       { name: "useCase", label: "Kullanım amacı", placeholder: "Spor, sağlık takibi, bildirim..." }
     ]
+  },
+  ayakkabi: {
+    family: "aksesuar",
+    label: "Aksesuar / Ayakkabı",
+    shortLabel: "Ayakkabı",
+    defaultMotivation: "stil_begeni",
+    audience: "full",
+    exampleName: "Hakiki Deri Günlük Sneaker",
+    descriptionPlaceholder: "Saya ve taban malzemesini, numara aralığını, kalıbın dar/geniş olduğunu, rahatlık ve kullanım alanını yazın.",
+    fields: [
+      { name: "material", label: "Saya malzemesi", placeholder: "Hakiki deri, süet, file...", required: true },
+      { name: "soleMaterial", label: "Taban", placeholder: "Kauçuk, EVA, ortopedik iç taban..." },
+      { name: "sizeRange", label: "Numara aralığı", placeholder: "36-45", required: true },
+      { name: "fit", label: "Kalıp", type: "select", options: [
+        { value: "normal", label: "Normal kalıp" },
+        { value: "dar", label: "Dar kalıp (bir numara büyük)" },
+        { value: "genis", label: "Geniş kalıp" }
+      ] },
+      { name: "heelHeight", label: "Topuk / taban yüksekliği", placeholder: "3 cm" },
+      { name: "useCase", label: "Kullanım alanı", placeholder: "Günlük, koşu, ofis, yürüyüş..." },
+      { name: "season", label: "Sezon", type: "select", options: seasonOptions },
+      { name: "waterproof", label: "Su geçirmez", type: "checkbox" }
+    ]
+  },
+  canta: {
+    family: "aksesuar",
+    label: "Aksesuar / Çanta",
+    shortLabel: "Çanta",
+    defaultMotivation: "stil_begeni",
+    audience: "full",
+    exampleName: "Su Geçirmez Laptop Sırt Çantası",
+    descriptionPlaceholder: "Ölçüleri, malzemeyi, bölmeleri, askı tipini ve içine neyin sığdığını (laptop, A4, su şişesi) yazın.",
+    fields: [
+      { name: "material", label: "Malzeme", placeholder: "Hakiki deri, kanvas, polyester...", required: true },
+      { name: "dimensions", label: "Ölçüler / hacim", placeholder: "45 x 30 x 15 cm, 20 L", required: true },
+      { name: "compartments", label: "Bölmeler", placeholder: "Laptop bölmesi, 3 iç cep..." },
+      { name: "strapType", label: "Askı tipi", type: "select", options: [
+        { value: "el", label: "El çantası" },
+        { value: "omuz", label: "Omuz askısı" },
+        { value: "capraz", label: "Çapraz askı" },
+        { value: "sirt", label: "Sırt çantası" }
+      ] },
+      { name: "colorsText", label: "Renk seçenekleri", placeholder: "Siyah, taba, lacivert..." },
+      { name: "useCase", label: "Kullanım alanı", placeholder: "Ofis, okul, seyahat, günlük..." },
+      { name: "waterproof", label: "Su geçirmez", type: "checkbox" }
+    ]
+  },
+  kozmetik: {
+    family: "aksesuar",
+    label: "Bakım / Kozmetik",
+    shortLabel: "Kozmetik",
+    defaultMotivation: "ihtiyac",
+    audience: "full",
+    exampleName: "Hyaluronik Asitli Nemlendirici Krem 50 ml",
+    descriptionPlaceholder: "Öne çıkan içerikleri, cilt/saç tipini, hacmi, kullanım şeklini ve test/sertifika bilgisini yazın.",
+    fields: [
+      { name: "brand", label: "Marka", placeholder: "Marka ve ürün serisi", required: true },
+      { name: "skinType", label: "Cilt / saç tipi", type: "select", options: [
+        { value: "tum", label: "Tüm cilt tipleri" },
+        { value: "kuru", label: "Kuru" },
+        { value: "yagli", label: "Yağlı" },
+        { value: "karma", label: "Karma" },
+        { value: "hassas", label: "Hassas" }
+      ] },
+      { name: "ingredients", label: "Öne çıkan içerikler", placeholder: "Hyaluronik asit, niasinamid, SPF 50...", required: true },
+      { name: "volume", label: "Hacim / gramaj", placeholder: "50 ml" },
+      { name: "certifications", label: "Test ve sertifikalar", placeholder: "Dermatolojik test, vegan, cruelty-free..." },
+      { name: "useCase", label: "Kullanım amacı", placeholder: "Günlük nem, akne bakımı, makyaj..." }
+    ]
   }
 };
 
@@ -321,6 +390,12 @@ const categoryFamilies = [
     label: "Teknolojik Cihaz",
     icon: Smartphone,
     items: ["telefon", "laptop", "kulaklik", "tablet", "akilli_saat"]
+  },
+  {
+    key: "aksesuar",
+    label: "Aksesuar & Bakım",
+    icon: ShoppingBag,
+    items: ["ayakkabi", "canta", "kozmetik"]
   }
 ];
 
@@ -408,7 +483,15 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
         noiseCancellation: formData.get("noiseCancellation") === "on",
         microphone: getString(formData, "microphone"),
         waterResistance: getString(formData, "waterResistance"),
-        latency: getString(formData, "latency")
+        latency: getString(formData, "latency"),
+        soleMaterial: getString(formData, "soleMaterial"),
+        heelHeight: getString(formData, "heelHeight"),
+        compartments: getString(formData, "compartments"),
+        strapType: getString(formData, "strapType"),
+        skinType: getString(formData, "skinType"),
+        ingredients: getString(formData, "ingredients"),
+        volume: getString(formData, "volume"),
+        certifications: getString(formData, "certifications")
       },
       commerce: {
         shippingDays: Number(formData.get("shippingDays") || 3),

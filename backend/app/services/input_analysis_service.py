@@ -4,8 +4,10 @@ from typing import Any, Dict, Iterable, Mapping, Optional
 
 from app.models.input_analysis import InputAnalysisResponse, InputQualitySignals
 from app.models.product import SimulationRequest
+from app.models.category import FASHION
 from app.services import llm_client
 from app.utils.math_utils import clamp
+from app.utils.text_utils import fold_text
 
 logger = logging.getLogger("input_analysis")
 
@@ -61,6 +63,9 @@ CATEGORY_TERMS = {
     "kulaklik": {"kulaklik", "bluetooth", "anc", "mikrofon", "pil", "saat", "gecikme", "kablolu"},
     "tablet": {"tablet", "ekran", "kalem", "gb", "batarya", "wifi", "lte", "ram", "hafiza"},
     "akilli_saat": {"akilli", "saat", "nabiz", "gps", "batarya", "spor", "su", "amoled", "bildirim"},
+    "ayakkabi": {"ayakkabi", "sneaker", "bot", "cizme", "sandalet", "terlik", "taban", "numara", "topuk"},
+    "canta": {"canta", "sirt", "omuz", "bolme", "fermuar", "aski", "cuzdan", "valiz"},
+    "kozmetik": {"krem", "serum", "sampuan", "parfum", "ruj", "makyaj", "cilt", "spf", "ml", "nemlendirici", "vegan"},
 }
 
 
@@ -75,6 +80,9 @@ IMPORTANT_FIELDS = {
     "kulaklik": ["brand", "connection_type", "battery", "noise_cancellation", "microphone", "water_resistance", "latency", "use_case"],
     "tablet": ["brand", "processor", "ram", "storage", "screen_size", "battery", "connectivity", "use_case"],
     "akilli_saat": ["brand", "battery", "screen_size", "display_type", "water_resistance", "sensors", "connectivity", "use_case"],
+    "ayakkabi": ["material", "sole_material", "size_range", "fit", "heel_height", "use_case", "season"],
+    "canta": ["material", "dimensions", "compartments", "strap_type", "use_case", "colors"],
+    "kozmetik": ["brand", "skin_type", "ingredients", "volume", "certifications", "use_case"],
 }
 
 
@@ -176,14 +184,14 @@ def deterministic_analysis(request: SimulationRequest) -> InputAnalysisResponse:
     """Rule-based input checks only (no LLM); also the fallback when Gemini is unavailable."""
     features = request.features
     raw_features = features.model_dump(exclude_none=True)
-    text = " ".join(
+    text = fold_text(" ".join(
         [
             request.product_name,
             request.product_url or "",
             request.description,
             " ".join(str(value) for value in raw_features.values()),
         ]
-    ).lower()
+    ))
 
     filled_important = _filled_ratio(features, IMPORTANT_FIELDS.get(request.category, []))
     description_quality = _description_quality(request.description)
@@ -213,7 +221,7 @@ def deterministic_analysis(request: SimulationRequest) -> InputAnalysisResponse:
     if category_fit < 0.40:
         warnings.append("Urun bilgileri secilen kategoriyle tam uyusmuyor olabilir.")
         suggestions.append("Kategori ve alt urunu tekrar kontrol et.")
-    if request.category in {"telefon", "laptop", "tablet", "akilli_saat"} and not features.brand:
+    if request.category in {"telefon", "laptop", "tablet", "akilli_saat", "kozmetik"} and not features.brand:
         warnings.append("Marka/model bilgisi net degil.")
         suggestions.append("Marka ve modeli yazarsan guven ve teknik uyum daha dogru hesaplanir.")
     if description_quality < 0.45:
@@ -320,7 +328,7 @@ def _category_fit(category: str, text: str, filled_ratio: float) -> float:
 
 
 def _category_hits(terms: Iterable[str], text: str) -> int:
-    tokens = set(re.findall(r"[a-zA-ZğüşöçıİĞÜŞÖÇ0-9]+", text.lower()))
+    tokens = set(re.findall(r"[a-z0-9]+", fold_text(text)))
     hits = 0
     for term in terms:
         normalized = term.lower()
@@ -342,15 +350,15 @@ def _brand_trust_from_input(features: Any, commerce: Any, description: str) -> f
         score += 0.20
     if commerce.return_available:
         score += 0.12
-    if any(word in description.lower() for word in ["garanti", "fatura", "orijinal", "yetkili", "sertifika"]):
+    if any(word in fold_text(description) for word in ["garanti", "fatura", "orijinal", "yetkili", "sertifika"]):
         score += 0.16
     return clamp(score)
 
 
 def _visual_signal(category: str, features: Any, description: str) -> float:
-    text = description.lower()
+    text = fold_text(description)
     score = 0.42
-    if category in {"tisort", "pantolon", "mont", "elbise", "etek"}:
+    if category in FASHION:
         if getattr(features, "colors", None):
             score += 0.15
         if getattr(features, "fit", None):
@@ -368,8 +376,8 @@ def _looks_like_noise(text: str) -> bool:
 
 
 def _noise_reasons(text: str, label: str) -> list[str]:
-    cleaned = re.sub(r"\s+", "", text.lower())
-    words = [word for word in re.split(r"\s+", text.lower().strip()) if word]
+    cleaned = re.sub(r"\s+", "", fold_text(text))
+    words = [word for word in re.split(r"\s+", fold_text(text).strip()) if word]
     reasons = []
     if len(cleaned) < 8:
         reasons.append(f"{label} cok kisa".strip())
@@ -388,7 +396,7 @@ def _noise_reasons(text: str, label: str) -> list[str]:
 
 
 def _looks_like_generic_marketing(description: str) -> bool:
-    words = [word for word in re.split(r"\s+", description.lower().strip()) if word]
+    words = [word for word in re.split(r"\s+", fold_text(description).strip()) if word]
     if len(words) < 8:
         return True
     generic_words = {
@@ -397,7 +405,7 @@ def _looks_like_generic_marketing(description: str) -> bool:
     }
     detail_terms = set().union(*CATEGORY_TERMS.values())
     generic_hits = sum(1 for word in words if word in generic_words)
-    detail_hits = sum(1 for term in detail_terms if term in description.lower())
+    detail_hits = sum(1 for term in detail_terms if term in fold_text(description))
     return generic_hits >= 5 and detail_hits < 2
 
 

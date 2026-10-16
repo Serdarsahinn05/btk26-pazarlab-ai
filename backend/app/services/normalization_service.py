@@ -3,15 +3,15 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Optional, Union
 
+from app.models.category import FASHION, SEASONAL, TECH
 from app.models.input_analysis import InputQualitySignals
 from app.models.product import PurchaseMotivation, SimulationRequest
 from app.models.simulation import NormalizedProduct
 from app.utils.math_utils import clamp, normalize_weights
+from app.utils.text_utils import fold_text
 
 
 DATA_DIR = Path(__file__).resolve().parents[1] / "data"
-CLOTHING_CATEGORIES = {"tisort", "pantolon", "mont", "elbise", "etek"}
-TECH_CATEGORIES = {"telefon", "laptop", "kulaklik", "tablet", "akilli_saat"}
 
 
 @lru_cache(maxsize=1)
@@ -44,7 +44,7 @@ def normalize_product(request: SimulationRequest, ai_signals: Optional[InputQual
     category_rule = get_category_rule(request.category)
     features = request.features
     commerce = request.commerce
-    description = request.description.lower()
+    description = fold_text(request.description)
 
     average_price = float(category_rule["averagePrice"])
     price_ratio = request.price / average_price if average_price else 1.0
@@ -137,6 +137,26 @@ def _score_quality(category: str, features: Any, commerce: Any) -> float:
         score += 0.08 if _feature(features, "microphone") else 0
         score += 0.06 if _feature(features, "water_resistance") else 0
         score += 0.06 if _feature(features, "latency") else 0
+    elif category == "ayakkabi":
+        score += 0.12 if features.material else 0
+        score += 0.12 if _feature(features, "sole_material") else 0
+        score += 0.08 if _feature(features, "size_range") else 0
+        score += 0.06 if features.fit else 0
+        score += 0.06 if features.waterproof else 0
+        score += 0.06 if _any_feature(features, "heel_height", "use_case") else 0
+    elif category == "canta":
+        score += 0.14 if features.material else 0
+        score += 0.12 if _feature(features, "dimensions") else 0
+        score += 0.10 if _feature(features, "compartments") else 0
+        score += 0.08 if _feature(features, "strap_type") else 0
+        score += 0.06 if features.waterproof else 0
+        score += 0.04 if features.use_case else 0
+    elif category == "kozmetik":
+        score += 0.10 if features.brand else 0
+        score += 0.14 if _feature(features, "ingredients") else 0
+        score += 0.10 if _feature(features, "skin_type") else 0
+        score += 0.08 if _feature(features, "volume") else 0
+        score += 0.12 if _feature(features, "certifications") else 0
     else:
         score += 0.10 if features.material else 0
         score += 0.08 if features.style else 0
@@ -148,7 +168,7 @@ def _score_trend(motivation: PurchaseMotivation, category: str, features: Any, d
     score = 0.35
     if motivation in {PurchaseMotivation.STYLE, PurchaseMotivation.TREND}:
         score += 0.30
-    if category in CLOTHING_CATEGORIES:
+    if category in FASHION:
         score += 0.12
     if category in {"kulaklik", "akilli_saat"}:
         score += 0.06
@@ -222,7 +242,7 @@ def _score_visual_appeal(motivation: PurchaseMotivation, features: Any, descript
 
 
 def _score_season(category: str, features: Any) -> float:
-    if category not in CLOTHING_CATEGORIES:
+    if category not in SEASONAL:
         return 0.70
     if category == "mont" and features.season in {"winter", "kis"}:
         return 0.90
@@ -254,7 +274,7 @@ def _score_target_audience(request: SimulationRequest, description: str) -> floa
     audience = request.target_audience
     features = request.features
 
-    if request.category in TECH_CATEGORIES:
+    if request.category in TECH:
         score = 0.45
         score += 0.14 if audience.income_level in {"low", "middle", "high"} else 0
         score += 0.12 if features.storage or features.ram else 0

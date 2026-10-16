@@ -1,15 +1,10 @@
 from enum import Enum
-from typing import Annotated, Any, Literal, Optional
+from typing import Annotated, Any, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
+from app.models.category import Category
 from app.models.input_analysis import InputAnalysisResponse
-
-
-Category = Literal[
-    "tisort", "pantolon", "mont", "elbise", "etek",
-    "telefon", "laptop", "kulaklik", "tablet", "akilli_saat",
-]
 
 ShortText = Annotated[str, StringConstraints(strip_whitespace=True, max_length=200)]
 Label = Annotated[str, StringConstraints(strip_whitespace=True, max_length=40)]
@@ -81,6 +76,15 @@ class ProductFeatures(BaseModel):
     compatible_model: Optional[ShortText] = Field(default=None, alias="compatibleModel")
     dimensions: Optional[ShortText] = None
     installation_ease: Optional[ShortText] = Field(default=None, alias="installationEase")
+    # Shoes, bags, cosmetics
+    sole_material: Optional[ShortText] = Field(default=None, alias="soleMaterial")
+    heel_height: Optional[ShortText] = Field(default=None, alias="heelHeight")
+    compartments: Optional[ShortText] = None
+    strap_type: Optional[ShortText] = Field(default=None, alias="strapType")
+    skin_type: Optional[ShortText] = Field(default=None, alias="skinType")
+    ingredients: Optional[ShortText] = None
+    volume: Optional[ShortText] = None
+    certifications: Optional[ShortText] = None
 
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
