@@ -91,7 +91,23 @@
   }
 
   .terminal-text {
-    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-family: var(--font-mono), 'Fira Code', monospace;
+  }
+
+  /* Used by scroll containers; the global ::-webkit-scrollbar rules below do the styling. */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 

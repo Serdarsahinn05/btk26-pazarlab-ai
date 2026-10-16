@@ -11,7 +11,7 @@
 | 0 | – | Repo senkronizasyonu | 15 dk | ✅ |
 | 1 | `chore/docs-roadmap` | Dokümanlar, repo temizliği | 0,5 gün | ✅ |
 | 2 | `fix/security-hardening` | S1–S13 | 1–1,5 gün | ✅ |
-| 3 | `fix/core-bugs` | B1–B7, F1–F7, temel testler | 1 gün | ⬜ |
+| 3 | `fix/core-bugs` | B1–B7, F1–F7, temel testler | 1 gün | ✅ |
 | 4 | `feat/editorial-redesign` | DESIGN.md uygulaması, F8–F10 | 2–3 gün | ⬜ |
 | 5a | `feat/history-share` | Geçmiş, paylaşım, export | 1 gün | ⬜ |
 | 5b | `feat/price-sweep-ab` | Fiyat eğrisi, A/B karşılaştırma | 1 gün | ⬜ |
@@ -57,20 +57,25 @@ Kabul kriteri: SECURITY_AUDIT.md'deki doğrulama listesi geçer. Sonuç: 8 madde
 
 Ölü kod temizliğinden iki parça bu fazda yapıldı, çünkü değişen kodla çakışıyordu: `MOCK_SIMULATION_RESPONSE` ve `debate_node` v1.
 
-## Faz 3: Çekirdek hatalar
-Kabul kriteri: Gerçek bir anahtarla `/api/simulate` yanıtında `aiInsights` şablon değil, gerçek LLM çıktısı (log'da `ai_used=true`). Backend kapalıyken UI görünür bir hata gösterir.
+## Faz 3: Çekirdek hatalar ✅
+Kabul kriteri: Gerçek bir anahtarla `/api/simulate` yanıtında `aiInsights` şablon değil, gerçek LLM çıktısı olmalı; backend kapalıyken UI görünür bir hata göstermeli.
+Sonuç: Gerçek anahtarla yapılan denemede `aiInsights.aiGenerated=true`, `inputAnalysis.aiUsed=true` döndü ve tartışma gerçek LLM metni içeriyordu (61 sn). Bu fazdan önce üçü de sessizce şablona düşüyordu.
 
-- [ ] **B1** `llm_client.py`: tek Gemini istemcisi; üç çağrı yolu buna taşınır.
-- [ ] **B2** Çift input analizi kaldırılır.
-- [ ] **B3** Ortak kategori Enum'u.
-- [ ] **B4–B6** Graph bir kez derlenir, kalan ölü kod (`graph.py:~480` çift log doğrulaması, `build_ai_insights`, `scoring_utils`) ve kopya modeller temizlenir.
-- [ ] **B8–B9** Geliştirme ortamı: bozuk `backend/venv` yeniden kurulur, Python sürümü README'de netleştirilir.
-- [ ] **F1** Hata toast'u + "Tekrar dene"; analiz hatası simülasyonu bloklamaz; axios timeout.
-- [ ] **F2–F3** Tailwind v4 sınıfları v3'e çevrilir, geçersiz `rgba(var())` düzeltilir, `@tailwindcss/typography` eklenir.
-- [ ] **F4** Landing kaydırması ve çift padding düzeltilir.
-- [ ] **F5** Gerçek health/model bilgisi; sabit sayılar kaldırılır.
-- [ ] **F6–F7** Persona renkleri index ile eşlenir; tipler güncellenir.
-- [ ] **B7** pytest altyapısı: deterministiklik ve skor aralığı testleri, LLM mock'lu graph testi.
+- [x] **B1** `app/services/llm_client.py`: tek Gemini istemcisi. Graph, AI yorumları, girdi analizi ve link okuyucu bunu kullanıyor. `langchain-google-genai` kaldırıldı (graph orkestrasyonu için yalnızca `langgraph` kaldı). Model `GEMINI_MODEL` değişkeninden ya da otomatik keşifle seçiliyor (kararlı > preview, flash > lite > pro, yeniden eskiye). 429 ve 5xx alan model 2 dk soğumaya alınıyor. Zaman aşımında başka modele geçilmiyor. Çıktı sınırı 8192 token.
+- [x] **B2** İstemciden gelen `inputAnalysis` yeniden hesaplanmıyor.
+- [x] **B3** `Category` `Literal`'i backend'de, `CATEGORIES` sabiti frontend'de. Link okuyucunun yalnızca bu değerleri döndürdüğü testle doğrulanıyor.
+- [x] **B4–B6** Graph bir kez derleniyor. Çift log doğrulaması, `build_ai_insights`, `scoring_utils` içindeki kullanılmayan fonksiyonlar, `trend_mock_data.json`, iki ayrı model yöneticisi ve `AIQuotaError` silindi.
+- [ ] **B8** Bozuk `backend/venv`: dokunulmadı (kullanıcının yerel ortamı). Silip `py -3.11 -m venv venv` ile yeniden kurulmalı.
+- [x] **B9** Python sürümü README'de belirtildi (Faz 2).
+- [x] **F1** `StatusToast` + "Tekrar dene"; `apiErrorMessage()` 429/422/413/ağ/timeout durumlarını Türkçe mesaja çeviriyor. Girdi analizi başarısız olursa simülasyon devam ediyor. axios timeout 180 sn. AI kullanılamadıysa bilgi toast'u çıkıyor.
+- [x] **F1b** (yeni) Simülasyon hata verdiğinde veya uyarı iptal edildiğinde formdaki **tüm girdi siliniyordu**; form artık yükleme sırasında unmount edilmiyor, gizleniyor.
+- [x] **F2–F3** Tailwind v4 sınıfları v3'e çevrildi (odak halkaları artık görünüyor). `rgba(var())` 8 yerde düzeltildi. `@tailwindcss/typography` eklendi. `font-sans` ve `font-mono` artık `next/font` değişkenlerini kullanıyor.
+- [x] **F4** `body`'deki `overflow-hidden h-screen` kaldırıldı, dashboard'daki çift padding giderildi, mobil menü link tıklanınca kapanıyor, ikon düğmelerine `aria-label` eklendi.
+- [x] **F5** StatusBar `/api/health` sonucunu gösteriyor (API, model, rakip araması). `/api/health` ağa çıkmadan önbellekten cevap veriyor. Sabit kategori sayısı kaldırıldı.
+- [x] **F6–F7** Persona renkleri `personas.json` sırasına göre 12 renkle eşleniyor. Tiplere `weaknessSignals`, `aiGenerated`, `HealthStatus` ve `Category` eklendi; `aiRoleplayPrompt` kaldırıldı.
+- [x] **F7b** (yeni) Link okuyucu fiyatı virgüllü yazdığı için `type=number` alanı boş kalıyordu; düzeltildi. Formdaki alanlara backend sınırları kadar `maxLength` eklendi ve linkten gelen uzun başlıklar kırpılıyor.
+- [x] **B7** `tests/test_core.py`: deterministiklik, toplamlar, fiyat monotonluğu, fallback işareti, model sıralaması, 429'da yedek modele geçiş, health'in ağa çıkmaması, mock'lu graph akışı ve kategori sözleşmesi. Toplam 42 test.
+- [x] `prefers-reduced-motion`: animasyonlar kısalıyor, confetti çalışmıyor.
 
 ## Faz 4: Editoryal yeniden tasarım
 Kabul kriteri: DESIGN.md'deki tüm kalıplar uygulanmış; bileşenlerde ham renk sınıfı kalmamış (`rg "zinc-|violet-|text-white|rgba\(" frontend/components frontend/app` boş döner, `ui/` hariç); her iki tema ve 375 px genişlik kontrol edilmiş; `impeccable audit` ardından `ponytail-review` çalıştırılmış.

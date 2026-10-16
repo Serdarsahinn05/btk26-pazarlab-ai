@@ -68,6 +68,8 @@ class AiInsights(BaseModel):
     channel_recommendation: list[str] = Field(alias="channelRecommendation")
     improved_description: str = Field(alias="improvedDescription")
     persona_feedback: list[PersonaFeedback] = Field(default_factory=list, alias="personaFeedback")
+    # False when the rule-based fallback produced these texts (no key, quota, model error).
+    ai_generated: bool = Field(default=False, alias="aiGenerated")
 
     model_config = ConfigDict(populate_by_name=True)
 

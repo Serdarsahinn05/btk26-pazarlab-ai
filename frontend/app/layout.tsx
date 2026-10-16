@@ -24,7 +24,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="tr" suppressHydrationWarning>
-      <body className={`${inter.variable} ${mono.variable} font-sans bg-background text-foreground overflow-hidden h-screen flex flex-col`}>
+      {/* No overflow-hidden here: the landing page must scroll; the dashboard shell manages its own height. */}
+      <body className={`${inter.variable} ${mono.variable} font-sans bg-background text-foreground`}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           <LayoutShell>
             {children}

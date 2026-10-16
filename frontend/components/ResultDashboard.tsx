@@ -39,7 +39,8 @@ const itemVariants: Variants = {
 export default function ResultDashboard({ data, view }: ResultDashboardProps) {
 
   useEffect(() => {
-    if (data && view === "analysis") {
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (data && view === "analysis" && !reducedMotion) {
       const duration = 3 * 1000;
       const end = Date.now() + duration;
 
@@ -86,7 +87,7 @@ export default function ResultDashboard({ data, view }: ResultDashboardProps) {
           <p className="text-sm text-muted-foreground mt-1">Yapay zeka ajanları ürününüzü pazar gerçekliğiyle test etti.</p>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-xs font-bold text-primary-foreground bg-primary/20 text-primary border border-primary/30 px-4 py-2 rounded-full shadow-[0_0_15px_rgba(var(--primary),0.3)]">
+          <span className="text-xs font-bold text-primary-foreground bg-primary/20 text-primary border border-primary/30 px-4 py-2 rounded-full shadow-[0_0_15px_hsl(var(--primary)/0.3)]">
             {String(data.simulatedConsumers)} Tüketici Analiz Edildi
           </span>
         </div>

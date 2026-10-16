@@ -1,10 +1,13 @@
+import logging
 import re
 from typing import Any, Dict, Iterable, Mapping, Optional
 
 from app.models.input_analysis import InputAnalysisResponse, InputQualitySignals
 from app.models.product import SimulationRequest
-from app.services.ai_insight_service import _call_gemini_generate_content
+from app.services import llm_client
 from app.utils.math_utils import clamp
+
+logger = logging.getLogger("input_analysis")
 
 
 INPUT_ANALYSIS_PROMPT = """
@@ -78,9 +81,10 @@ IMPORTANT_FIELDS = {
 def analyze_input(request: SimulationRequest) -> InputAnalysisResponse:
     deterministic = _fallback_analysis(request)
     try:
-        model_json = _call_gemini_generate_content(INPUT_ANALYSIS_PROMPT, _payload(request))
+        model_json = llm_client.generate_json(INPUT_ANALYSIS_PROMPT, _payload(request), temperature=0.2)
         return _merge_ai_with_deterministic_guard(_parse_ai_response(model_json), deterministic)
-    except Exception:
+    except Exception as exc:
+        logger.warning("AI input analysis unavailable, using deterministic checks: %r", exc)
         return deterministic
 
 

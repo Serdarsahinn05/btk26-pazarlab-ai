@@ -1,14 +1,11 @@
 from __future__ import annotations
 
-import json
 import logging
-import os
-import urllib.request
 from typing import Any, Dict, List, Mapping, Optional
 
 from app.models.product import PurchaseMotivation, SimulationRequest
 from app.models.simulation import AiInsights, NormalizedProduct, PersonaFeedback, PersonaResult
-from app.services.prompt_safety import UNTRUSTED_DATA_RULE, wrap_data
+from app.services import llm_client
 from app.utils.scoring_utils import infer_product_type, recommend_channels
 
 logger = logging.getLogger("ai_insights")
@@ -79,66 +76,14 @@ MOTIVATION_INSIGHTS: Dict[str, str] = {
 }
 
 
-def _extract_text_from_response(data: Dict[str, Any]) -> str:
-    """Robustly extracts text from Gemini API response parts, handling thinking blocks."""
-    try:
-        parts = data.get("candidates", [{}])[0].get("content", {}).get("parts", [])
-        texts = []
-        for part in parts:
-            if "text" in part:
-                texts.append(part["text"])
-            elif "thinking" in part:
-                texts.append(part["thinking"])
-            elif isinstance(part, dict):
-                # Handle unexpected nested formats
-                for key in ["text", "thinking", "content"]:
-                    if key in part:
-                        texts.append(str(part[key]))
-                        break
-        return "\n".join(texts)
-    except Exception as e:
-        logger.error(f"Error extracting text from Gemini response: {e}")
-        return ""
-
-def _call_gemini_generate_content(system_prompt: str, user_payload: Mapping[str, Any]) -> Dict[str, Any]:
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        raise RuntimeError("GEMINI_API_KEY missing")
-
-    model = os.getenv("GEMINI_MODEL", "gemini-1.5-flash-latest")
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
-    body = {
-        "systemInstruction": {
-            "parts": [{"text": system_prompt + UNTRUSTED_DATA_RULE}]
-        },
-        "contents": [{
-            "role": "user",
-            "parts": [{"text": wrap_data(user_payload)}]
-        }],
-        "generationConfig": {
-            "responseMimeType": "application/json",
-            "temperature": 0.4,
-            "maxOutputTokens": 2048,
-        }
+def _persona_brief(persona: PersonaResult) -> Dict[str, Any]:
+    return {
+        "name": persona.name,
+        "purchaseProbability": round(persona.purchase_probability, 2),
+        "decisionLabel": persona.decision_label,
+        "reason": persona.reason,
+        "microFeedback": persona.micro_feedback,
     }
-
-    req = urllib.request.Request(
-        url,
-        data=json.dumps(body).encode("utf-8"),
-        headers={
-            "Content-Type": "application/json",
-            "x-goog-api-key": api_key,
-        },
-        method="POST",
-    )
-    with urllib.request.urlopen(req, timeout=20) as resp:
-        raw = resp.read().decode("utf-8")
-    data = json.loads(raw)
-    content = _extract_text_from_response(data)
-    if not content:
-        raise ValueError("Gemini API returned empty content")
-    return json.loads(content)
-
 
 
 def generate_insights(
@@ -169,8 +114,9 @@ def generate_insights(
         "intentConversionScore": intent_conversion_score,
         "problemSolutionFit": problem_solution_fit,
         "weaknessSignals": weakness_signals,
-        "topPersonas": [p.model_dump(by_alias=True) for p in top_personas],
-        "allPersonas": [p.model_dump(by_alias=True) for p in all_personas],
+        # Only what the model needs: full persona dumps (traits etc.) made the prompt slow.
+        "topPersonas": [_persona_brief(p) for p in top_personas],
+        "allPersonas": [_persona_brief(p) for p in all_personas],
         "normalizedProduct": normalized_product.model_dump(by_alias=True),
     }
 
@@ -183,7 +129,7 @@ def generate_insights(
     )
 
     try:
-        model_json = _call_gemini_generate_content(prompt, payload)
+        model_json = llm_client.generate_json(prompt, payload, temperature=0.4, timeout=60)
         summary_str = str(model_json.get("summary", "")).strip() or "Genel değerlendirme hazır."
         pt_insight = str(model_json.get("productTypeInsight", "") or model_json.get("product_type_insight", "")).strip() or "Ürün tipi yorumu hazır."
         recipe = list(model_json.get("salesRecipe", []) or model_json.get("sales_recipe", []))[:5] or ["Listeleme ve açıklamayı güçlendir."]
@@ -206,9 +152,10 @@ def generate_insights(
             channel_recommendation=ch_rec,
             improved_description=imp_desc,
             persona_feedback=persona_feedback,
+            ai_generated=True,
         )
-    except Exception:
-        # Fallback akışı
+    except Exception as exc:
+        logger.warning("AI insights unavailable, using rule-based fallback: %r", exc)
         motivation_line = MOTIVATION_INSIGHTS.get(
             motivation_str, "Bu ürün için motivasyon bazlı öneriler uygulanabilir."
         )
@@ -453,91 +400,3 @@ def _build_improved_description(request: SimulationRequest, category_str: str) -
         f"{request.product_name}, {category_str} kategorisinde {request.target_audience.income_level} segment icin konumlanan bir urundur. "
         f"{details}. {request.description.strip()} {trust}"
     )
-
-
-def build_ai_insights(simulation_summary: Mapping[str, Any], category: Optional[str] = None) -> Dict[str, Any]:
-    """
-    Alternatif çağrılar ve geriye dönük uyumluluk için sağlanan, sözlük döndüren fonksiyon.
-    """
-    purchase_motivation = str(simulation_summary.get("purchaseMotivation", "") or "")
-    market_breadth_score = float(simulation_summary.get("marketBreadthScore", 0) or 0)
-    intent_conversion_score = float(simulation_summary.get("intentConversionScore", 0) or 0)
-    problem_solution_fit = float(simulation_summary.get("problemSolutionFit", 0) or 0)
-    weakness_signals = list(simulation_summary.get("weaknessSignals", []) or [])
-
-    category_final = category or str(simulation_summary.get("category", ""))
-    if not category_final:
-        category_final = "Genel"
-
-    prompt = SYSTEM_PROMPT.format(
-        category=category_final,
-        purchaseMotivation=purchase_motivation,
-        marketBreadthScore=int(market_breadth_score),
-        intentConversionScore=int(intent_conversion_score),
-        problemSolutionFit=int(problem_solution_fit),
-    )
-
-    payload = dict(simulation_summary)
-    payload["category"] = category_final
-
-    try:
-        model_json = _call_gemini_generate_content(prompt, payload)
-        return {
-            "aiInsights": {
-                "summary": str(model_json.get("summary", "")).strip() or "Genel değerlendirme hazır.",
-                "productTypeInsight": str(model_json.get("productTypeInsight", "") or model_json.get("product_type_insight", "")).strip() or "Ürün tipi yorumu hazır.",
-                "salesRecipe": list(model_json.get("salesRecipe", []) or model_json.get("sales_recipe", []))[:5] or ["Listeleme ve açıklamayı güçlendir."],
-                "marketingAdvice": str(model_json.get("marketingAdvice", "") or model_json.get("marketing_advice", "")).strip() or "Kanal stratejisini belirle.",
-                "descriptionAdvice": str(model_json.get("descriptionAdvice", "") or model_json.get("description_advice", "")).strip() or "Açıklamayı netleştir.",
-                "pricingAdvice": str(model_json.get("pricingAdvice", "") or model_json.get("pricing_advice", "")).strip() or "Fiyat duyarlılığını test et.",
-                "seasonAdvice": str(model_json.get("seasonAdvice", "") or model_json.get("season_advice", "")).strip() or "Sezon uyumunu vurgula.",
-                "channelRecommendation": list(model_json.get("channelRecommendation", []) or model_json.get("channel_recommendation", [])) or recommend_channels(purchase_motivation, float(market_breadth_score)),
-                "improvedDescription": str(model_json.get("improvedDescription", "") or model_json.get("improved_description", "")).strip() or "İyileştirilmiş açıklama hazır."
-            }
-        }
-    except Exception:
-        motivation_line = MOTIVATION_INSIGHTS.get(
-            purchase_motivation, "Bu ürün için motivasyon bazlı öneriler uygulanabilir."
-        )
-        product_type = infer_product_type(purchase_motivation)
-        channels = recommend_channels(purchase_motivation, float(market_breadth_score))
-
-        top_weakness = [FALLBACK_MAP.get(s, "") for s in weakness_signals]
-        top_weakness = [t for t in top_weakness if t][:3]
-        weakness_sentence = " ".join(top_weakness) if top_weakness else "Genel olarak ürün bilgisini daha net ve güven verici hale getirmek faydalı olur."
-
-        niche_note = ""
-        if float(market_breadth_score) < 40:
-            niche_note = " Pazar genişliği düşük; geniş kitle reklamı yerine arama niyeti yüksek kullanıcılara ulaşmak daha doğru."
-
-        summary = (
-            f"{category_final} kategorisinde skorlar: pazar genişliği {int(market_breadth_score)}/100, dönüşüm {int(intent_conversion_score)}/100."
-            f" Problem uyumu {int(problem_solution_fit)}/100. {weakness_sentence}{niche_note}"
-        )
-
-        product_type_insight = (
-            f"Bu ürün {purchase_motivation} motivasyonuyla alınan bir {product_type}. {motivation_line}{niche_note}"
-        )
-
-        sales_recipe = [
-            "Ürün başlığına net faydayı ve ayırt edici özelliği ekle.",
-            "İade/garanti/kargo bilgisini görünür hale getir.",
-            "Açıklamaya ölçü/uyumluluk/kullanım senaryosu gibi karar verdiren detayları ekle.",
-            "En güçlü kanalda 1 hafta A/B test ile görsel + fiyat mesajını dene."
-        ]
-        if product_type == "trend/stil ürünü":
-            sales_recipe.insert(0, "Görselleri 1:1 + kısa video formatına optimize et.")
-
-        return {
-            "aiInsights": {
-                "summary": summary.strip(),
-                "productTypeInsight": product_type_insight.strip(),
-                "salesRecipe": sales_recipe[:5],
-                "marketingAdvice": f"Kanal odağı: {', '.join(channels)}. Kısa, net fayda + güven unsurlarıyla mesajlaş.",
-                "descriptionAdvice": "Açıklamada ölçü/uyumluluk, malzeme, kullanım ve paket içeriği gibi karar kriterlerini netleştir.",
-                "pricingAdvice": "Fiyat hassasiyetini ölçmek için sınırlı süreli kupon test edebilirsin.",
-                "seasonAdvice": "Sezon uyumunu güçlendirmek için kullanım senaryolarını vurgula.",
-                "channelRecommendation": channels,
-                "improvedDescription": f"{category_final} ürünü. Öne çıkan fayda ve güven garantisiyle listelenmiştir."
-            }
-        }

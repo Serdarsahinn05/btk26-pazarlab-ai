@@ -8,16 +8,20 @@
 
 | Method | Yol | İstek | Yanıt |
 |---|---|---|---|
-| GET | `/api/health` | – | `{ "status": "ok" }` |
+| GET | `/api/health` | – | `{ status, ai: { configured, model }, research: { configured } }` (ağa çıkmaz; `model`, ilk AI çağrısına kadar `null` olabilir) |
 | POST | `/api/analyze-input` | `SimulationRequest` | `InputAnalysisResponse` |
 | POST | `/api/read-product-link` | `{ "url": string }` (8–2048 karakter) | `ProductLinkReadResponse` |
 | POST | `/api/simulate` | `SimulationRequest` | `SimulationResponse` |
 
-**Hatalar:**
-- `422`: Pydantic doğrulama hatası.
-- `400`: `/read-product-link` linki okuyamadı.
+**Hatalar** (her yanıtta `X-Request-ID` başlığı vardır):
 
-Planlanan değişiklikler (bkz. [SECURITY_AUDIT.md](SECURITY_AUDIT.md)): `429` (rate limit), tek tip hata gövdesi `{ "detail": string, "requestId": string }`, alanlarda üst sınırlar.
+| Kod | Gövde | Ne zaman |
+|---|---|---|
+| 400 | `{ detail }` | `/read-product-link`: link herkese açık bir http/https sayfası değil |
+| 411 / 413 | `{ detail, requestId }` | `Content-Length` yok / gövde 10 MB'tan büyük |
+| 422 | `{ detail: [{ loc, msg, type }], requestId }` | Doğrulama hatası (girdi yansıtılmaz) |
+| 429 | `{ detail }` + `Retry-After` | IP başına dakikalık limit (simulate 5, analyze 10, link 10) |
+| 500 | `{ detail, requestId }` | Beklenmeyen hata (ayrıntı yalnızca sunucu logunda) |
 
 ---
 
@@ -25,17 +29,17 @@ Planlanan değişiklikler (bkz. [SECURITY_AUDIT.md](SECURITY_AUDIT.md)): `429` (
 
 | Alan | Tip | Kural |
 |---|---|---|
-| `category` | string | `tisort, pantolon, mont, elbise, etek, telefon, laptop, kulaklik, tablet, akilli_saat`. Bilinmeyen değer şu an `tisort` kabul ediliyor. |
+| `category` | enum | `tisort, pantolon, mont, elbise, etek, telefon, laptop, kulaklik, tablet, akilli_saat`; başka değer 422 |
 | `purchaseMotivation` | enum | `stil_begeni, ihtiyac, problem_cozme, yedek_parca_tamir, hediye, trend, profesyonel_kullanim` |
-| `productName` | string | ≥ 4 karakter |
-| `productUrl` | string? | |
-| `price` | number | > 0 |
-| `description` | string | ≥ 40 karakter |
-| `targetAudience` | `{ ageRange, gender, incomeLevel }` | string'ler |
-| `features` | object | Kategoriye özel isteğe bağlı alanlar (`fabric`, `ram`, `storage`, `screenSize` …; tam liste `ProductFeatures`'ta) |
+| `productName` | string | 4–120 karakter |
+| `productUrl` | string? | ≤ 2048 karakter |
+| `price` | number | 0 < fiyat ≤ 10.000.000, `inf/nan` yok |
+| `description` | string | 40–4000 karakter |
+| `targetAudience` | `{ ageRange, gender, incomeLevel }` | her biri ≤ 40 karakter |
+| `features` | object | Kategoriye özel isteğe bağlı alanlar (`fabric`, `ram`, `storage`, `screenSize` …; tam liste `ProductFeatures`'ta). Metin ≤ 200 karakter, liste ≤ 20 öğe; bilinmeyen anahtarlar atılır |
 | `commerce` | `{ shippingDays: 0–60, returnAvailable: bool, warranty: bool, warrantyMonths?: 0–120 }` | |
-| `images` | string[] | URL veya data URL |
-| `inputAnalysis` | `InputAnalysisResponse?` | `/analyze-input` sonucu (şu an sunucu bunu yeniden hesaplıyor) |
+| `images` | string[] | En fazla 6; URL veya data URL, öğe başına ≤ 1,5 M karakter |
+| `inputAnalysis` | `InputAnalysisResponse?` | `/analyze-input` sonucu; gönderilirse sunucu yeniden hesaplamaz |
 
 ## InputAnalysisResponse
 
@@ -93,8 +97,7 @@ Planlanan değişiklikler (bkz. [SECURITY_AUDIT.md](SECURITY_AUDIT.md)): `429` (
 | `aiComment` | string? |
 | `personalityType` | string? |
 | `personalityTraits` | object |
-| `aiRoleplayPrompt` | string? (**kaldırılacak**, bkz. S9) |
 
 ### AiInsights
 
-`summary`, `productTypeInsight`, `salesRecipe[]`, `marketingAdvice`, `descriptionAdvice`, `pricingAdvice`, `seasonAdvice`, `channelRecommendation[]`, `improvedDescription`, `personaFeedback[{ name, feedback, action }]`.
+`summary`, `productTypeInsight`, `salesRecipe[]`, `marketingAdvice`, `descriptionAdvice`, `pricingAdvice`, `seasonAdvice`, `channelRecommendation[]`, `improvedDescription`, `personaFeedback[{ name, feedback, action }]`, `aiGenerated` (`false` = AI kullanılamadı, metinler kural tabanlı).

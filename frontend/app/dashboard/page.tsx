@@ -7,10 +7,11 @@ import SimulationLogs from "@/components/SimulationLogs";
 import ResultDashboard from "@/components/ResultDashboard";
 import PersonaLab from "@/components/PersonaLab";
 import personasData from "../../data/personas.json";
-import { PurchaseMotivation, SimulationRequest, SimulationResponse, InputAnalysisResponse } from "@/types";
+import { CATEGORIES, PurchaseMotivation, SimulationRequest, SimulationResponse, InputAnalysisResponse } from "@/types";
 
 
-import { analyzeProductInput, simulateProduct } from "@/lib/api";
+import { analyzeProductInput, apiErrorMessage, simulateProduct } from "@/lib/api";
+import StatusToast, { ToastState } from "@/components/StatusToast";
 import { Sparkles, BrainCircuit, Activity, Info, Maximize2, Minimize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
@@ -82,7 +83,7 @@ function getRecommendationClasses(tone?: SmartRecommendation["tone"]) {
 function DashboardContent() {
   const personaCount = personasData.personaTypes.length;
   const agentCount = personasData.personaTypes.reduce((acc, p: { count?: number }) => acc + (p.count || 0), 0);
-  const categoryCount = 10;
+  const categoryCount = CATEGORIES.length;
 
   const searchParams = useSearchParams();
 
@@ -95,44 +96,53 @@ function DashboardContent() {
   const [resultData, setResultData] = useState<SimulationResponse | null>(null);
   const [pendingAnalysis, setPendingAnalysis] = useState<{ data: SimulationRequest; analysis: InputAnalysisResponse } | null>(null);
   const [smartPanelExpanded, setSmartPanelExpanded] = useState(false);
+  const [toast, setToast] = useState<ToastState | null>(null);
 
   const handleSimulate = async (data: SimulationRequest) => {
     setCurrentMotivation(data.purchaseMotivation);
     setSimulationState("loading");
     setResultData(null);
     setSmartPanelExpanded(false);
-    
-    try {
-      const inputAnalysis = await analyzeProductInput(data);
-      if (inputAnalysis.shouldWarn) {
-        setPendingAnalysis({ data, analysis: inputAnalysis });
-        setSimulationState("idle");
-        return;
-      }
+    setToast(null);
 
-      await executeSimulation(data, inputAnalysis);
+    let inputAnalysis: InputAnalysisResponse | undefined;
+    try {
+      inputAnalysis = await analyzeProductInput(data);
     } catch (error) {
-      console.error("Simülasyon hatası:", error);
-      setSimulationState("idle");
+      // The quality check is advisory: if it fails, the backend runs it itself during /simulate.
+      console.warn("Girdi analizi atlandı:", apiErrorMessage(error));
     }
+    if (inputAnalysis?.shouldWarn) {
+      setPendingAnalysis({ data, analysis: inputAnalysis });
+      setSimulationState("idle");
+      return;
+    }
+    await executeSimulation(data, inputAnalysis);
   };
 
-  const executeSimulation = async (data: SimulationRequest, inputAnalysis: InputAnalysisResponse) => {
+  const executeSimulation = async (data: SimulationRequest, inputAnalysis?: InputAnalysisResponse) => {
     setSimulationState("loading");
     setResultData(null);
     const minDelay = new Promise(resolve => setTimeout(resolve, 2500));
-    
+
     try {
       const [response] = await Promise.all([
         simulateProduct({ ...data, inputAnalysis }),
         minDelay
       ]);
-      
+
       setResultData(response);
       setSimulationState("result");
+      if (response.aiInsights && response.aiInsights.aiGenerated === false) {
+        setToast({ tone: "info", message: "AI şu anda kullanılamadı; tavsiyeler kural tabanlı üretildi." });
+      }
     } catch (error) {
-      console.error("Simülasyon hatası:", error);
       setSimulationState("idle");
+      setToast({
+        tone: "error",
+        message: apiErrorMessage(error),
+        onRetry: () => executeSimulation(data, inputAnalysis),
+      });
     }
   };
 
@@ -149,7 +159,7 @@ function DashboardContent() {
 
 
   return (
-    <div className="p-8 h-full flex flex-col gap-8">
+    <div className="h-full flex flex-col gap-8">
       {/* Top Header Section */}
       <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div>
@@ -196,7 +206,7 @@ function DashboardContent() {
                 <PersonaLab />
               </motion.div>
             ) : simulationState !== "result" ? (
-              <motion.div 
+              <motion.div
                 key="form-pane"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -208,18 +218,18 @@ function DashboardContent() {
                     <BrainCircuit className="w-6 h-6 text-primary" />
                     <h3 className="font-bold tracking-tight">Ürün Detayları & Analiz</h3>
                   </div>
-                  
+
                   <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-                    {simulationState === "loading" ? (
-                      <SimulationLogs motivation={currentMotivation} />
-                    ) : (
-                      <ProductForm onSubmit={handleSimulate} isLoading={false} />
-                    )}
+                    {simulationState === "loading" && <SimulationLogs motivation={currentMotivation} />}
+                    {/* Hidden, not unmounted: a failed run or a cancelled warning keeps the typed input. */}
+                    <div hidden={simulationState === "loading"}>
+                      <ProductForm onSubmit={handleSimulate} isLoading={simulationState === "loading"} />
+                    </div>
                   </div>
                 </div>
               </motion.div>
             ) : (
-              <motion.div 
+              <motion.div
                 key="result-pane"
                 initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -244,7 +254,7 @@ function DashboardContent() {
               <Activity className="w-5 h-5 text-accent" />
               <h3 className="font-bold tracking-tight">Analiz Durumu</h3>
             </div>
-            
+
             <div className="space-y-4">
               <div className={cn("bg-secondary/50 rounded-xl border border-border flex items-center gap-4", simulationState === "result" ? "p-3" : "p-4")}>
                 <div className={cn("w-3 h-3 rounded-full animate-pulse", simulationState === "loading" ? "bg-accent" : "bg-primary")} />
@@ -295,7 +305,7 @@ function DashboardContent() {
                 Simülasyon sonucundan çıkarılan en yakın uygulanabilir adımlar.
               </p>
              )}
-             
+
              <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-y-auto pr-3 custom-scrollbar">
                 {recommendations.length > 0 ? (
                   recommendations.map((rec, i) => (
@@ -330,7 +340,7 @@ function DashboardContent() {
           </div>
 
           {simulationState === "result" && (
-            <Button 
+            <Button
               onClick={resetSimulation}
               className="w-full py-6 rounded-2xl font-black tracking-widest uppercase bg-primary hover:bg-primary/90 glow-blue"
             >
@@ -340,10 +350,12 @@ function DashboardContent() {
         </div>
       </div>
 
+      <StatusToast toast={toast} onClose={() => setToast(null)} />
+
       {/* Analysis Warning Modal */}
       <AnimatePresence>
         {pendingAnalysis && (
-          <AnalysisWarning 
+          <AnalysisWarning
             analysis={pendingAnalysis.analysis}
             onConfirm={() => {
               const { data, analysis } = pendingAnalysis;

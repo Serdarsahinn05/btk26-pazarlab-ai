@@ -51,8 +51,8 @@ export default function SimulationLogs({ motivation }: SimulationLogsProps) {
       transition={{ duration: 0.4, ease: "easeOut" }}
       className="w-full max-w-2xl mx-auto"
     >
-      <Card className="shadow-[0_0_40px_rgba(var(--primary),0.15)] border-primary/30 bg-black/90 backdrop-blur-xl text-primary font-mono relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-[2px] bg-primary/50 shadow-[0_0_10px_rgba(var(--primary),1)] animate-[float_3s_linear_infinite]" style={{ transformOrigin: "top" }} />
+      <Card className="shadow-[0_0_40px_hsl(var(--primary)/0.15)] border-primary/30 bg-black/90 backdrop-blur-xl text-primary font-mono relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-[2px] bg-primary/50 shadow-[0_0_10px_hsl(var(--primary)/1)] animate-[float_3s_linear_infinite]" style={{ transformOrigin: "top" }} />
 
         <CardContent className="p-6">
           <div className="flex items-center space-x-3 mb-4 border-b border-primary/20 pb-4">

@@ -7,6 +7,13 @@ export type PurchaseMotivation =
   | "trend" 
   | "profesyonel_kullanim";
 
+/** Must match `Category` in backend/app/models/product.py. */
+export const CATEGORIES = [
+  "tisort", "pantolon", "mont", "elbise", "etek",
+  "telefon", "laptop", "kulaklik", "tablet", "akilli_saat",
+] as const;
+export type Category = (typeof CATEGORIES)[number];
+
 export interface TargetAudience {
   ageRange: string;
   gender: string;
@@ -97,7 +104,7 @@ export interface InputAnalysisResponse {
 }
 
 export interface SimulationRequest {
-  category: string;
+  category: Category;
   purchaseMotivation: PurchaseMotivation;
   productName: string;
   productUrl?: string;
@@ -123,7 +130,6 @@ export interface Persona {
   microFeedback?: string;
   aiComment?: string | null;
   personalityType?: string | null;
-  aiRoleplayPrompt?: string | null;
   personalityTraits?: Record<string, unknown>;
 }
 
@@ -152,6 +158,8 @@ export interface AiInsights {
   channelRecommendation: string[];
   improvedDescription: string;
   personaFeedback?: PersonaFeedback[];
+  /** false when the backend used its rule-based fallback instead of the LLM */
+  aiGenerated?: boolean;
 }
 
 export interface PersonaFeedback {
@@ -182,14 +190,19 @@ export interface SimulationResponse {
   topPersonas: Persona[];
   allPersonas?: Persona[];
   weaknesses: string[];
+  weaknessSignals?: string[];
   normalizedProduct: NormalizedProduct;
   aiInsights: AiInsights;
   debateLogs?: DebateLog[];
   benchmarkAnalysis?: string;
   images?: string[];
-
-
   inputAnalysis?: InputAnalysisResponse;
+}
+
+export interface HealthStatus {
+  status: string;
+  ai: { configured: boolean; model: string | null };
+  research: { configured: boolean };
 }
 
 export interface ProductVariant {

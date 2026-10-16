@@ -1,208 +1,16 @@
-import os
-import json
 import logging
 import re
-import time
-import urllib.request
-from typing import Any, Dict, List, TypedDict, Optional, Set
+from typing import Any, Dict, List, Optional, Set, TypedDict
 
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph import StateGraph, END
 
 from app.models.product import SimulationRequest
 from app.models.simulation import SimulationResponse
-from app.services.prompt_safety import UNTRUSTED_DATA_RULE, clip, wrap_data
+from app.services import llm_client
+from app.services.prompt_safety import clip
 from app.services.simulation_service import run_simulation
 
 logger = logging.getLogger("graph_service")
-
-# ---------------------------------------------------------------------------
-# API-Driven Model Manager (No Hardcoded Priority)
-# ---------------------------------------------------------------------------
-class GeminiModelManager:
-    """
-    Fully dynamic model management.
-    Fetches live model list from Google API, filters by capability and quota.
-    No hardcoded priority list - uses whatever the API allows.
-    """
-    
-    # Models known to be completely deprecated/broken
-    BLOCKED_MODELS = {
-        "gemini-1.0-pro", "gemini-pro", "gemini-ultra",
-        "gemini-1.5-flash", "gemini-1.5-pro",  # EOL, 404 veriyor
-        "gemini-1.5-flash-latest", "gemini-1.5-pro-latest",
-    }
-    
-    def __init__(self):
-        self._available_models: Optional[List[str]] = None
-        self._quota_exhausted: Set[str] = set()
-        self._last_refresh = 0
-        self._refresh_interval = 300  # 5 minutes
-    
-    def _fetch_live_models(self) -> List[str]:
-        """Fetch ALL models from Google API that support generateContent."""
-        api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key:
-            logger.error("No GEMINI_API_KEY found!")
-            return []
-        
-        try:
-            req = urllib.request.Request(
-                "https://generativelanguage.googleapis.com/v1beta/models",
-                headers={"x-goog-api-key": api_key},
-            )
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-            
-            models = []
-            for m in data.get("models", []):
-                name = m.get("name", "").split("/")[-1]
-                methods = m.get("supportedGenerationMethods", [])
-                
-                # Only text generation models (skip vision-only, embedding, etc.)
-                if "generateContent" not in methods:
-                    continue
-                
-                # Skip blocked/deprecated models
-                if name in self.BLOCKED_MODELS:
-                    continue
-                
-                # Skip vision-only variants (usually have "vision" in name)
-                if "vision" in name.lower():
-                    continue
-                
-                # Skip TTS and other non-text models
-                if any(x in name.lower() for x in ["tts", "embedding", "image", "audio"]):
-                    continue
-                
-                models.append(name)
-            
-            logger.info(f"API returned {len(models)} usable models: {models}")
-            return models
-            
-        except Exception as e:
-            logger.error(f"Failed to fetch model list from API: {e}")
-            return []
-    
-    def get_available_models(self, force_refresh: bool = False) -> List[str]:
-        """
-        Returns models from API, excluding quota-exhausted ones.
-        No hardcoded priority - API decides what's available.
-        """
-        now = time.time()
-        
-        if force_refresh or self._available_models is None or (now - self._last_refresh) > self._refresh_interval:
-            self._available_models = self._fetch_live_models()
-            self._last_refresh = now
-            
-            if not self._available_models:
-                logger.error("API returned NO usable models! Check API key and quota.")
-        
-        # Filter out quota-exhausted
-        usable = [m for m in (self._available_models or []) if m not in self._quota_exhausted]
-        
-        if not usable and self._available_models:
-            logger.warning("All models quota exhausted! Clearing cache and retrying...")
-            self._quota_exhausted.clear()
-            usable = self._available_models.copy()
-        
-        logger.info(f"Models available for use (quota-aware): {usable}")
-        return usable
-    
-    def mark_quota_exhausted(self, model_name: str):
-        """Mark a model as quota-exhausted."""
-        self._quota_exhausted.add(model_name)
-        remaining = [m for m in (self._available_models or []) if m not in self._quota_exhausted]
-        logger.warning(f"Model '{model_name}' quota exhausted. Remaining: {remaining}")
-
-
-# Global singleton
-_model_manager = GeminiModelManager()
-
-
-def get_safe_model_name() -> str:
-    """Returns first available model from API, or empty string if none."""
-    models = _model_manager.get_available_models()
-    return models[0] if models else ""
-
-
-# ---------------------------------------------------------------------------
-# Robust LLM Caller with API-Driven Fallback
-# ---------------------------------------------------------------------------
-MAX_MODELS_PER_CALL = 2
-LLM_TIMEOUT_SECONDS = 30
-LLM_MAX_OUTPUT_TOKENS = 2048
-
-
-def invoke_llm_with_retry(
-    instructions: str,
-    data: Any,
-    temperature: float = 0.2,
-    max_retries: int = 2,
-    base_delay: float = 1.0
-) -> str:
-    """
-    Tries at most MAX_MODELS_PER_CALL models in API-returned order.
-    Instructions go in the system message; user/third-party data goes in the
-    user message inside a <data> block so it cannot act as instructions.
-    """
-    models_to_try = _model_manager.get_available_models()[:MAX_MODELS_PER_CALL]
-
-    if not models_to_try:
-        raise RuntimeError("No available Gemini models! API key invalid or all quotas exhausted.")
-
-    messages = [
-        ("system", instructions + UNTRUSTED_DATA_RULE),
-        ("human", wrap_data(data)),
-    ]
-    last_exception = None
-
-    for model_name in models_to_try:
-        for attempt in range(max_retries):
-            try:
-                llm = ChatGoogleGenerativeAI(
-                    model=model_name,
-                    temperature=temperature,
-                    max_retries=0,
-                    timeout=LLM_TIMEOUT_SECONDS,
-                    max_output_tokens=LLM_MAX_OUTPUT_TOKENS,
-                )
-                response = llm.invoke(messages)
-                return response.content
-
-            except Exception as e:
-                error_str = str(e).lower()
-                last_exception = e
-
-                # Quota exhausted (429) - skip immediately
-                if "429" in error_str or "quota" in error_str or "rate limit" in error_str:
-                    _model_manager.mark_quota_exhausted(model_name)
-                    break
-                
-                # Temporary unavailable (503) - retry with backoff
-                elif "503" in error_str or "unavailable" in error_str:
-                    delay = base_delay * (2 ** attempt)
-                    logger.warning(f"Model '{model_name}' 503. Retry {attempt+1}/{max_retries} in {delay:.1f}s...")
-                    time.sleep(delay)
-                    continue
-                
-                # Model not found (404) - permanently remove
-                elif "404" in error_str or "not found" in error_str:
-                    logger.error(f"Model '{model_name}' 404. Removing from pool.")
-                    _model_manager._quota_exhausted.add(model_name)
-                    break
-                
-                # Auth/other error - don't retry this model
-                else:
-                    logger.error(f"Model '{model_name}' error: {e}")
-                    break
-
-        logger.info(f"Model '{model_name}' failed, trying next from API list...")
-
-    # All models from API failed
-    logger.error(f"All {len(models_to_try)} models failed. Last error: {last_exception}")
-    raise last_exception if last_exception else RuntimeError("All LLM invocations failed")
-
 
 # ---------------------------------------------------------------------------
 # State Definition
@@ -212,7 +20,7 @@ class GraphState(TypedDict):
     competitors: List[Dict[str, Any]]
     benchmark_analysis: str
     debate_logs: List[Dict[str, str]]
-    simulation_response: SimulationResponse
+    simulation_response: Optional[SimulationResponse]
     category: str
     product_name: str
 
@@ -222,11 +30,14 @@ class GraphState(TypedDict):
 # ---------------------------------------------------------------------------
 
 def input_analysis_node(state: GraphState) -> Dict[str, Any]:
+    request = state["request"]
+    if request.input_analysis is not None:
+        # The dashboard already called /api/analyze-input; its result arrives
+        # schema-validated with the request, so don't pay for a second LLM call.
+        return {}
     logger.info("Analyzing input quality...")
     from app.services.input_analysis_service import analyze_input
-    input_analysis = analyze_input(state["request"])
-    state["request"].input_analysis = input_analysis
-    return {"request": state["request"]}
+    return {"request": request.model_copy(update={"input_analysis": analyze_input(request)})}
 
 
 def research_node(state: GraphState) -> Dict[str, Any]:
@@ -261,10 +72,10 @@ def benchmark_node(state: GraphState) -> Dict[str, Any]:
     }
 
     try:
-        content = invoke_llm_with_retry(instructions, data, temperature=0.2)
+        content = llm_client.generate_text(instructions, data, temperature=0.2, max_tokens=4096)
         return {"benchmark_analysis": clip(content, 4000)}
     except Exception as e:
-        logger.error(f"Benchmark failed: {e}")
+        logger.warning("Benchmark unavailable: %r", e)
         return {"benchmark_analysis": "Pazar analizi yapılamadı."}
 
 
@@ -420,23 +231,12 @@ def debate_node_v2(state: GraphState) -> Dict[str, Any]:
     }
 
     try:
-        content = invoke_llm_with_retry(instructions, data, temperature=0.7)
-        content = content.replace("```json", "").replace("```", "").strip()
-        debate_logs = json.loads(content)
-        validated = _sanitize_debate_logs(debate_logs, personas)
-        return {"debate_logs": validated or _fallback_debate_logs(personas)}
-    except json.JSONDecodeError:
-        try:
-            start, end = content.find("["), content.rfind("]") + 1
-            if start != -1 and end > start:
-                logs = json.loads(content[start:end])
-                validated = _sanitize_debate_logs(logs, personas)
-                return {"debate_logs": validated or _fallback_debate_logs(personas)}
-        except Exception:
-            pass
-        return {"debate_logs": _fallback_debate_logs(personas)}
+        logs = llm_client.generate_json(instructions, data, temperature=0.7)
+        if isinstance(logs, dict):  # some models wrap the array: {"messages": [...]}
+            logs = next((v for v in logs.values() if isinstance(v, list)), [])
+        return {"debate_logs": _sanitize_debate_logs(logs, personas) or _fallback_debate_logs(personas)}
     except Exception as e:
-        logger.error(f"Persona debate error: {e}")
+        logger.warning("Persona debate unavailable: %r", e)
         return {"debate_logs": _fallback_debate_logs(personas)}
 
 
@@ -466,9 +266,12 @@ def create_simulation_graph():
     return workflow.compile()
 
 
+_GRAPH = create_simulation_graph()
+
+
 def run_agentic_simulation(request: SimulationRequest) -> SimulationResponse:
-    graph = create_simulation_graph()
-    
+    graph = _GRAPH
+
     initial_state = {
         "request": request,
         "product_name": request.product_name,
@@ -486,23 +289,8 @@ def run_agentic_simulation(request: SimulationRequest) -> SimulationResponse:
         if not response:
             raise ValueError("Simülasyon sonuç üretemedi.")
 
-        raw_logs = final_state.get("debate_logs", [])
-        if not isinstance(raw_logs, list):
-            raw_logs = []
-        
-        validated_logs = []
-        for log in raw_logs:
-            if isinstance(log, dict) and log.get("name") is not None:
-                validated_logs.append({
-                    "name": str(log.get("name", "Bilinmiyor")),
-                    "text": str(log.get("text", ""))
-                })
-            else:
-                validated_logs.append({"name": "Sistem", "text": str(log) if log else "Geçersiz veri."})
-        
-        response.debate_logs = validated_logs or [{"name": "Sistem", "text": "Tartışma kurgulanamadı."}]
-        debate_personas = [response.all_personas[0], response.all_personas[len(response.all_personas) // 2], response.all_personas[-1]] if len(response.all_personas) >= 3 else response.all_personas
-        response.debate_logs = _sanitize_debate_logs(raw_logs, debate_personas) or _fallback_debate_logs(debate_personas)
+        # debate_node_v2 already sanitized the logs and filled in a fallback.
+        response.debate_logs = final_state.get("debate_logs") or [{"name": "Sistem", "text": "Tartışma kurgulanamadı."}]
         response.benchmark_analysis = final_state.get("benchmark_analysis", "")
              
         return response

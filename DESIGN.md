@@ -230,6 +230,9 @@ Seçilen yön editoryal defter (§1). Karşılaştırma için değerlendirilen d
 | B. İsviçre veri tasarımı | Beyaz zemin, siyah ızgara, büyük grotesk rakamlar (Inter Tight), tek vurgu rengi | Çok okunaklı, yoğun veriyi en iyi taşır, yazdırılabilir rapora çok uygun | Soğuk ve kurumsal; markayı daha az hatırlatır |
 | C. Terminal / Bloomberg | Koyu zemin, mono ağırlıklı, amber/yeşil veri renkleri, yoğun tablolar | Mevcut koyu temadan en az geçiş eforu; "güç kullanıcısı" hissi | Yeni başlayan satıcıyı korkutur; mevcut neon görünümün sorunlarını tekrarlama riski |
 | D. Yumuşak SaaS (Linear/Vercel çizgisi) | Nötr griler, ince kenarlar, tek marka rengi, bol boşluk | Tanıdık, güvenli, shadcn ile en hızlı uygulanır | Sıradan; PazarLab'ı diğer AI araçlarından ayırmaz |
-| E. Sıcak pazar yeri | Toprak tonları, el çizimi ikonlar, hafif doku | Türk e-ticaret satıcısına samimi, akılda kalıcı | İllüstrasyon üretimi gerekir; veri yoğun ekranlarda dağınık görünebilir |
+| E. Sıcak pazar yeri | Toprak tonları, el çizimi ikonlar, hafif doku | Türk e-ticaret satıcısına samimi, akılda kalıcı | İllüstrasyon üretimi gerekir; veri yoğun ekranlarda dağınık görünebilir. İlk prototipte kırmızı ağırlığı fazla bulundu |
+| F. Defter × Pazar | A'nın düzeni + E'nin sıcaklığı: kâğıt/mürekkep, Fraunces; kâğıt dokusu, başlık altı el çizimi dalga, tek kenar notu; terracotta yalnızca dalgada | Ayırt edici ama sakin; uzun okumada yormaz | El yazısı detayları dozunda tutulmazsa dağınık görünebilir |
+
+Karşılaştırma sayfası (6 stil, açık/koyu, 375 px): [PazarLab Stil Karşılaştırma](https://claude.ai/artifact/LhXnSfYCZFTo1JLWRUBhLZ) (özel link). F stilinin token değerleri kullanıcı onaylarsa §2'ye taşınır.
 
 **Öneri:** A ile devam. Benchmark ve rapor dışa aktarımı (Faz 5a) için B'nin ızgara ve rakam disiplini A'nın içine alınabilir (yazdırma CSS'i). C ve D yalnızca kullanıcı testinde A beğenilmezse yeniden değerlendirilir.
