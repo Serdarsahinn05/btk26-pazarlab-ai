@@ -13,6 +13,8 @@ services:
     read_only: true
     tmpfs:
       - /tmp
+    volumes:
+      - pazarlab-data:/app/data
     security_opt:
       - no-new-privileges:true
 
@@ -33,3 +35,6 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+
+volumes:
+  pazarlab-data:

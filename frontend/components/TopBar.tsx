@@ -18,7 +18,11 @@ export type DashboardView = (typeof DASHBOARD_VIEWS)[number]["id"];
 
 /** Dashboard header: brand, pill tabs (scroll sideways on phones), API status, theme. */
 export default function TopBar() {
-  const current = useSearchParams().get("view") || "analysis";
+  const params = useSearchParams();
+  const current = params.get("view") || "analysis";
+  // Keep an opened/shared result (?r=) while switching tabs.
+  const resultId = params.get("r");
+  const hrefFor = (view: string) => `/dashboard?view=${view}${resultId ? `&r=${encodeURIComponent(resultId)}` : ""}`;
 
   return (
     <header className="no-print sticky top-0 z-40 border-b-2 border-dashed border-border bg-background/95 backdrop-blur-sm">
@@ -30,7 +34,7 @@ export default function TopBar() {
             return (
               <Link
                 key={view.id}
-                href={`/dashboard?view=${view.id}`}
+                href={hrefFor(view.id)}
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   "whitespace-nowrap border-2 px-3.5 py-1.5 text-sm font-bold transition-colors",

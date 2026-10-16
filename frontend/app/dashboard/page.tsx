@@ -1,23 +1,28 @@
 "use client";
 
-import { useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import ProductForm from "@/components/ProductForm";
 import SimulationLogs from "@/components/SimulationLogs";
 import ResultDashboard from "@/components/ResultDashboard";
 import PersonaLab from "@/components/PersonaLab";
 import AnalysisWarning from "@/components/AnalysisWarning";
 import StatusToast, { ToastState } from "@/components/StatusToast";
+import RecentSimulations from "@/components/RecentSimulations";
+import { addToHistory, findInHistory } from "@/lib/history";
 import { DASHBOARD_VIEWS, DashboardView } from "@/components/TopBar";
 import personasData from "@/data/personas.json";
-import { analyzeProductInput, apiErrorMessage, simulateProduct } from "@/lib/api";
+import { analyzeProductInput, apiErrorMessage, getSimulation, simulateProduct } from "@/lib/api";
 import { CATEGORIES, InputAnalysisResponse, PurchaseMotivation, SimulationRequest, SimulationResponse } from "@/types";
 
 const PERSONA_COUNT = personasData.personaTypes.length;
 const BOT_COUNT = personasData.personaTypes.reduce((sum, p: { count?: number }) => sum + (p.count || 0), 0);
 
 function DashboardContent() {
-  const requested = useSearchParams().get("view");
+  const router = useRouter();
+  const params = useSearchParams();
+  const requested = params.get("view");
+  const resultParam = params.get("r");
   const view: DashboardView = DASHBOARD_VIEWS.some((v) => v.id === requested) ? (requested as DashboardView) : "analysis";
 
   const [state, setState] = useState<"idle" | "loading" | "result">("idle");
@@ -25,6 +30,50 @@ function DashboardContent() {
   const [result, setResult] = useState<SimulationResponse | null>(null);
   const [pending, setPending] = useState<{ data: SimulationRequest; analysis: InputAnalysisResponse } | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
+  const [productName, setProductName] = useState("");
+  const [resultId, setResultId] = useState<string | null>(null);
+
+  // Open a saved/shared result from ?r=<id>: this browser's history first, then the server.
+  useEffect(() => {
+    if (!resultParam || resultParam === resultId) return;
+    const local = findInHistory(resultParam);
+    if (local) {
+      showResult(local.response, local.productName, local.id);
+      return;
+    }
+    let cancelled = false;
+    setState("loading");
+    getSimulation(resultParam)
+      .then((stored) => {
+        if (cancelled) return;
+        showResult(stored.response, stored.productName, stored.id);
+        addToHistory({
+          id: stored.id,
+          createdAt: stored.createdAt * 1000,
+          productName: stored.productName,
+          category: stored.category,
+          overallScore: stored.response.overallScore,
+          response: stored.response,
+        });
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        setState("idle");
+        setToast({ tone: "error", message: apiErrorMessage(error) });
+        router.replace("/dashboard");
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- react only to the URL parameter
+  }, [resultParam]);
+
+  const showResult = (response: SimulationResponse, name: string, id: string) => {
+    setResult(response);
+    setProductName(name);
+    setResultId(id);
+    setState("result");
+  };
 
   const handleSimulate = async (data: SimulationRequest) => {
     setMotivation(data.purchaseMotivation);
@@ -52,8 +101,18 @@ function DashboardContent() {
     setResult(null);
     try {
       const response = await simulateProduct({ ...data, inputAnalysis });
-      setResult(response);
-      setState("result");
+      const id = response.simulationId ?? `local-${Date.now()}`;
+      addToHistory({
+        id,
+        createdAt: Date.now(),
+        productName: data.productName,
+        category: data.category,
+        overallScore: response.overallScore,
+        response,
+      });
+      showResult(response, data.productName, id);
+      // Put the result in the URL so refresh, back and "copy link" all keep it.
+      router.replace(`/dashboard?view=${view}&r=${encodeURIComponent(id)}`, { scroll: false });
       window.scrollTo({ top: 0, behavior: "smooth" });
       if (response.aiInsights?.aiGenerated === false) {
         setToast({ tone: "info", message: "AI şu anda kullanılamadı; tavsiyeler kural tabanlı üretildi." });
@@ -67,26 +126,28 @@ function DashboardContent() {
   const reset = () => {
     setState("idle");
     setResult(null);
+    setResultId(null);
     setMotivation(null);
+    router.replace("/dashboard", { scroll: false });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const showResult = state === "result" && result !== null;
+  const hasResult = state === "result" && result !== null;
 
   return (
     <div className="space-y-8">
       {view === "personas" && <PersonaLab />}
 
-      {view !== "personas" && showResult && <ResultDashboard data={result} view={view} onReset={reset} />}
+      {view !== "personas" && hasResult && result && <ResultDashboard data={result} view={view} productName={productName} onReset={reset} />}
 
-      {view !== "personas" && view !== "analysis" && !showResult && (
+      {view !== "personas" && view !== "analysis" && !hasResult && (
         <p className="rounded-wobble border-2 border-dashed border-border p-10 text-center text-muted-foreground">
           {view === "benchmark" ? "Rakip analizi" : "Persona tartışması"} bir simülasyon çalıştırıldıktan sonra burada görünür.
         </p>
       )}
 
       {/* The form stays mounted (only hidden) so switching tabs, a failed run or a cancelled warning keeps the typed input. */}
-      <div hidden={view !== "analysis" || showResult} className="space-y-8">
+      <div hidden={view !== "analysis" || hasResult} className="space-y-8">
         <header className="space-y-2">
           <h1 className="text-[clamp(32px,5vw,52px)] font-extrabold leading-[1.02] tracking-tight">Ürününü test et</h1>
           <p className="text-foreground-2">
@@ -94,10 +155,15 @@ function DashboardContent() {
             <span className="ml-1 inline-block -rotate-2 font-hand text-xl text-muted-foreground">satmadan önce dene</span>
           </p>
         </header>
-        {state === "loading" && <SimulationLogs motivation={motivation} />}
+        {state === "loading" && (resultParam && !resultId ? (
+          <p className="text-muted-foreground">Kayıtlı sonuç açılıyor…</p>
+        ) : (
+          <SimulationLogs motivation={motivation} />
+        ))}
         <div hidden={state === "loading"}>
           <ProductForm onSubmit={handleSimulate} isLoading={state === "loading"} />
         </div>
+        {state !== "loading" && <RecentSimulations />}
       </div>
 
       <StatusToast toast={toast} onClose={() => setToast(null)} />

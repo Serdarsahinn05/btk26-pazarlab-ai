@@ -197,6 +197,17 @@ export interface SimulationResponse {
   benchmarkAnalysis?: string;
   images?: string[];
   inputAnalysis?: InputAnalysisResponse;
+  /** Share id; null when the backend could not save the result. */
+  simulationId?: string | null;
+}
+
+/** GET /api/simulations/{id} */
+export interface StoredSimulation {
+  id: string;
+  createdAt: number; // unix seconds
+  productName: string;
+  category: string;
+  response: SimulationResponse;
 }
 
 export interface HealthStatus {

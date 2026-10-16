@@ -5,7 +5,9 @@ import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import confetti from "canvas-confetti";
-import { Check, Copy, Printer, RotateCcw } from "lucide-react";
+import { Check, Copy, FileDown, Link2, Printer, RotateCcw } from "lucide-react";
+import { downloadBlob } from "@/lib/history";
+import { simulationToMarkdown } from "@/lib/report";
 import { NormalizedProduct, Persona, SimulationResponse } from "@/types";
 import { SegmentRing, Ring } from "@/components/ui/ring";
 import { DebateLogs } from "@/components/DebateLogs";
@@ -23,10 +25,11 @@ import type { DashboardView } from "@/components/TopBar";
 interface ResultDashboardProps {
   data: SimulationResponse;
   view: DashboardView;
+  productName: string;
   onReset: () => void;
 }
 
-export default function ResultDashboard({ data, view, onReset }: ResultDashboardProps) {
+export default function ResultDashboard({ data, view, productName, onReset }: ResultDashboardProps) {
   useCelebration(data, view);
 
   if (view === "benchmark") return <BenchmarkView markdown={data.benchmarkAnalysis} />;
@@ -49,10 +52,10 @@ export default function ResultDashboard({ data, view, onReset }: ResultDashboard
     <div className="space-y-6">
       <div className="grid gap-6 lg:grid-cols-[5fr_7fr]">
         <DecisionCard data={data} />
-        <ActionCard data={data} onReset={onReset} />
+        <ActionCard data={data} productName={productName} onReset={onReset} />
       </div>
       <KpiRow data={data} />
-      <PersonaGrid personas={sortedPersonas(data)} />
+      <PersonaGrid personas={sortedPersonas(data)} resultId={data.simulationId} />
       <div className="grid items-start gap-6 md:grid-cols-2">
         <ListCard title="Zayıflıklar" items={data.weaknesses} empty="Belirgin bir zayıflık bulunmadı." />
         <ListCard
@@ -124,9 +127,28 @@ function DecisionCard({ data }: { data: SimulationResponse }) {
   );
 }
 
-function ActionCard({ data, onReset }: { data: SimulationResponse; onReset: () => void }) {
+function ActionCard({ data, productName, onReset }: { data: SimulationResponse; productName: string; onReset: () => void }) {
   const actions = data.aiInsights.salesRecipe.slice(0, 3);
   const risk = data.weaknesses?.[0];
+  const [copied, setCopied] = useState(false);
+  const shareUrl = data.simulationId ? `${window.location.origin}/dashboard?r=${data.simulationId}` : undefined;
+
+  const copyLink = async () => {
+    if (!shareUrl) return;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1600);
+    } catch {
+      window.prompt("Linki kopyalayın:", shareUrl);
+    }
+  };
+
+  const downloadMarkdown = () => {
+    const md = simulationToMarkdown(data, productName, shareUrl);
+    const slug = productName.toLowerCase().replace(/[^a-z0-9ğüşıöç]+/gi, "-").slice(0, 40) || "simulasyon";
+    downloadBlob(new Blob([md], { type: "text/markdown;charset=utf-8" }), `pazarlab-${slug}.md`);
+  };
 
   return (
     <section className="card-paper flex flex-col gap-4">
@@ -157,8 +179,17 @@ function ActionCard({ data, onReset }: { data: SimulationResponse; onReset: () =
         <button type="button" onClick={onReset} className="btn-sticker-primary">
           <RotateCcw className="h-4 w-4" aria-hidden /> Yeni simülasyon
         </button>
+        {shareUrl && (
+          <button type="button" onClick={copyLink} className="btn-sticker" title="Bu sonucu açan link (90 gün saklanır)">
+            {copied ? <Check className="h-4 w-4" aria-hidden /> : <Link2 className="h-4 w-4" aria-hidden />}
+            {copied ? "Kopyalandı" : "Linki kopyala"}
+          </button>
+        )}
+        <button type="button" onClick={downloadMarkdown} className="btn-sticker">
+          <FileDown className="h-4 w-4" aria-hidden /> Markdown
+        </button>
         <button type="button" onClick={() => window.print()} className="btn-sticker">
-          <Printer className="h-4 w-4" aria-hidden /> Raporu yazdır / PDF
+          <Printer className="h-4 w-4" aria-hidden /> Yazdır / PDF
         </button>
       </div>
     </section>
@@ -193,7 +224,8 @@ function KpiRow({ data }: { data: SimulationResponse }) {
   );
 }
 
-function PersonaGrid({ personas }: { personas: Persona[] }) {
+function PersonaGrid({ personas, resultId }: { personas: Persona[]; resultId?: string | null }) {
+  const keep = resultId ? `&r=${encodeURIComponent(resultId)}` : "";
   return (
     <section className="space-y-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -208,7 +240,7 @@ function PersonaGrid({ personas }: { personas: Persona[] }) {
           return (
             <Link
               key={p.name}
-              href={`/dashboard?view=debate&persona=${personaSlug(p.name)}`}
+              href={`/dashboard?view=debate&persona=${personaSlug(p.name)}${keep}`}
               className="tilt-odd grid w-[150px] shrink-0 snap-start justify-items-center gap-2 rounded-wobble border-2 border-border p-4 text-center shadow-sticker transition-transform duration-150 md:w-auto"
               style={{ background: `color-mix(in srgb, ${color} 7%, hsl(var(--card)))` }}
             >
