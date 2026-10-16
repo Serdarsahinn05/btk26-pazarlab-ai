@@ -21,6 +21,8 @@ export interface HistoryEntry {
 export interface ChatMessage {
   role: "user" | "persona";
   text: string;
+  /** Answer written from the simulation data because the AI was unavailable or the daily AI quota ran out. */
+  ruleBased?: "quota" | "unavailable";
 }
 
 /** Drop uploaded images before caching a request: they can be megabytes each. */

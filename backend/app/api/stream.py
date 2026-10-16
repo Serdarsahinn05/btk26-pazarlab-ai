@@ -3,6 +3,7 @@
 import json
 import logging
 import os
+import re
 from typing import Iterator, Literal
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -14,6 +15,7 @@ from app.security import RateLimit
 from app.services import history_store, llm_client
 from app.services.graph import STEP_LABELS, iter_agentic_simulation
 from app.services.persona_chat import build_persona_prompt, find_persona
+from app.services.persona_offline import rule_based_reply
 
 router = APIRouter(prefix="/api", tags=["stream"])
 logger = logging.getLogger("stream")
@@ -72,12 +74,22 @@ def persona_chat(payload: PersonaChatRequest) -> StreamingResponse:
     turns = [{"role": "user" if m.role == "user" else "model", "text": m.text} for m in payload.messages]
 
     def events() -> Iterator[str]:
+        sent = False
         try:
             for chunk in llm_client.stream_chat(instructions, turns):
+                sent = True
                 yield _event("delta", {"text": chunk})
             yield _event("done", {})
-        except llm_client.LLMUnavailable:
-            yield _event("error", {"detail": "Persona şu anda cevap veremiyor (AI kullanılamıyor). Biraz sonra tekrar deneyin."})
+        except llm_client.LLMUnavailable as exc:
+            if sent:  # never append a template to a half-written AI answer
+                yield _event("error", {"detail": "Cevap yarıda kesildi. Biraz sonra tekrar deneyin."})
+                return
+            # No AI (down or this visitor's daily quota): answer from the simulation data instead (Faz 10b).
+            reply = rule_based_reply(persona, record["request"], record["response"], payload.messages[-1].text)
+            for sentence in re.findall(r"[^.!?]+[.!?]", reply) or [reply]:
+                yield _event("delta", {"text": sentence.strip() + " "})
+            reason = "quota" if isinstance(exc, llm_client.AIQuotaExceeded) else "unavailable"
+            yield _event("done", {"ruleBased": True, "reason": reason})
         except Exception:
             logger.exception("persona chat failed")
             yield _event("error", {"detail": "Beklenmeyen bir hata oluştu."})

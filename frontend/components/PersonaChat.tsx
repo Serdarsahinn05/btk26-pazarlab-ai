@@ -10,6 +10,10 @@ import { Persona } from "@/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const MAX_TURNS = 12; // backend limit per request
+const RULE_BASED_NOTE = {
+  quota: "Bugünkü AI hakkın doldu; persona simülasyon verisinden cevap verdi.",
+  unavailable: "AI şu anda kullanılamıyor; persona simülasyon verisinden cevap verdi.",
+} as const;
 const SUGGESTIONS = ["Neden bu kararı verdin?", "Fiyat ne olsa alırdın?", "Açıklamada neyi eksik buldun?"];
 
 const canChat = (id?: string | null): id is string => !!id && !id.startsWith("local-");
@@ -94,8 +98,12 @@ export default function PersonaChat({ simulationId, personas }: { simulationId?:
         "/api/persona-chat",
         { simulationId, persona, messages: window.map((m) => ({ role: m.role, text: m.text.slice(0, 600) })) },
         (event, data) => {
-          const payload = data as { text?: string; detail?: string };
+          const payload = data as { text?: string; detail?: string; ruleBased?: boolean; reason?: "quota" | "unavailable" };
           if (event === "delta" && payload.text) appendToAnswer(payload.text);
+          if (event === "done" && payload.ruleBased) {
+            const reason = payload.reason ?? "unavailable";
+            setMessages((prev) => prev.map((m, i) => (i === prev.length - 1 ? { ...m, text: m.text.trim(), ruleBased: reason } : m)));
+          }
           if (event === "error") setError(payload.detail || "Persona cevap veremedi.");
         },
         controller.signal
@@ -155,7 +163,14 @@ export default function PersonaChat({ simulationId, personas }: { simulationId?:
                 className="max-w-[90%] rounded-[4px_16px_16px_4px] border-2 border-l-[6px] border-border bg-card px-4 py-2.5 shadow-sticker-sm"
                 style={{ borderLeftColor: color }}
               >
-                <b className="block font-display text-sm">{personaLabel(persona)}</b>
+                <b className="flex items-center gap-2 font-display text-sm">
+                  {personaLabel(persona)}
+                  {m.ruleBased && (
+                    <span className="chip font-sans text-muted-foreground" title={RULE_BASED_NOTE[m.ruleBased]}>
+                      kural tabanlı
+                    </span>
+                  )}
+                </b>
                 {m.text || <Loader2 className="mt-1 h-4 w-4 animate-spin text-muted-foreground" aria-label="Yazıyor" />}
               </li>
             )

@@ -78,16 +78,6 @@ def test_persona_chat_rejects_bad_requests(client, stored_id, body, status):
     assert client.post("/api/persona-chat", json=body).status_code == status
 
 
-def test_persona_chat_reports_unavailable_ai_as_event(client, stored_id, monkeypatch):
-    monkeypatch.setenv("GEMINI_API_KEY", "")
-    res = client.post(
-        "/api/persona-chat",
-        json={"simulationId": stored_id, "persona": "Trend Takipcisi", "messages": [{"role": "user", "text": "Merhaba"}]},
-    )
-    kind, data = parse_sse(res.text)[-1]
-    assert kind == "error" and "AI" in data["detail"]
-
-
 # --- llm_client.stream_chat SSE parsing -----------------------------------
 
 class _FakeStream(io.BytesIO):

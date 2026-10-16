@@ -27,7 +27,7 @@
 | 8e | `chore/language-cleanup` | B.10: dil tutarlılığı | 0,25 gün | ✅ |
 | 9 | `feat/llm-providers` | B.12: Gemini + Claude + GPT, yedekli zincir | 1 gün | ⏸ API anahtarı yok, bekliyor |
 | 10a | `feat/ai-budget` | AI önbelleği, IP başına günlük AI kotası | 0,5 gün | ✅ |
-| 10b | `feat/offline-persona-chat` | AI'sız (kural tabanlı) persona sohbeti | 0,5 gün | ⬜ |
+| 10b | `feat/offline-persona-chat` | AI'sız (kural tabanlı) persona sohbeti | 0,5 gün | ✅ |
 | 11 | `feat/mcp-connector` | PazarLab MCP sunucusu (Claude connector) | 1–1,5 gün | ⬜ |
 | 11b | `spike/claude-artifact` | Claude-powered artifact araştırması | 0,5 gün | ⬜ |
 | 12 | `feat/engine-v2-town` | Motor v2 + AI kasabası + Big Five | 3–4 gün | ⬜ |
@@ -211,8 +211,8 @@ Kabul kriteri: DESIGN.md'deki tüm kalıplar uygulanmış; bileşenlerde ham ren
 
 ## Şu an neredeyiz
 
-- **Son tamamlanan:** Faz 10a (AI bütçesi). Tüm dallar `main`'e merge edildi ve `origin`'e push'landı.
-- **Sıradaki:** Faz 10b (AI'sız persona sohbeti) → 11 → 11b → 12 … (sıra aşağıdaki tabloda). Her faz kendi dalında, bitince bu bölüm güncellenir.
+- **Son tamamlanan:** Faz 10b (AI'sız persona sohbeti). Tüm dallar `main`'e merge edildi ve `origin`'e push'landı.
+- **Sıradaki:** Faz 11 (MCP connector) → 11b → 12 … (sıra aşağıdaki tabloda). Her faz kendi dalında, bitince bu bölüm güncellenir.
 - **Bekleyen kararlar:** kategori genişletme (hangi aileler) Faz 13'e gelince konuşulacak; Faz 9 için API anahtarı yok.
 - **Ortam notları:** `backend/venv` bozuk (eski bir kullanıcı yolunu gösteriyor). Testler geçici bir venv ile koşuyor. Gemini sık sık 429 veriyor; arayüz testlerinde AI kapalı ya da sahte SSE kullanılıyor. `gh`, nginx ve Docker daemon yok.
 
@@ -235,10 +235,12 @@ Kabul kriteri: DESIGN.md'deki tüm kalıplar uygulanmış; bileşenlerde ham ren
 - Doğrulama: `tests/test_ai_budget.py` (8 test, toplam 114): aynı çağrıda tek ağ isteği ve kopya dönmesi, bozuk JSON'un saklanmaması, önbelleğin kapatılabilmesi, IP başına kota + önbellek isabetinin bedava olması + sohbetin de kotaya takılması, istek dışı ve kota kapalı durumlar, API'de `aiFallbackReason=quota` (bu test istemci IP'sinin threadpool'daki servislere taşındığını da kanıtlıyor), `unavailable`, health alanları. lint/tsc temiz; AI kapalı Puppeteer 10/10.
 - Risk: paylaşılan NAT arkasındaki kullanıcılar aynı kotayı paylaşır (deployment.md'ye yazıldı). Önbellek ve kota process belleğinde; yeniden başlatınca sıfırlanır.
 
-### Faz 10b: AI'sız persona sohbeti
-- [ ] AI yoksa (`LLMUnavailable` / kota) persona, kendi verisinden (karar, gerekçe, öneri, kişilik özellikleri, ürünün zayıflıkları) kural tabanlı cevap üretir; sorunun konusuna göre (fiyat, kargo, açıklama, garanti, neden almadın) farklı şablon seçer.
-- [ ] Cevap arayüzde "kural tabanlı" olarak işaretlenir; SSE sözleşmesi değişmez (aynı `delta`/`done` olayları).
-- Kabul: AI kapalıyken Puppeteer'da sohbet cevap veriyor; 5 soru tipi için testler.
+### Faz 10b: AI'sız persona sohbeti ✅
+- [x] `services/persona_offline.py`: AI yoksa (`LLMUnavailable`, günlük kota dahil) persona, kayıttaki kendi sonucundan (karar, ihtimal, öneri), kişilik verisinden (`values`, `biggestFear`), ürünün zayıflıklarından ve ürün verisinden (fiyat ↔ kategori ortalaması, kargo süresi, iade, garanti) cevap kuruyor. Konu, katlanmış anahtar kelimelerle seçiliyor: fiyat, kargo/iade, güven/garanti, açıklama/görsel, öneri, neden, genel.
+- [x] SSE sözleşmesi aynı (`delta` … `done`); yalnızca `done` = `{ ruleBased: true, reason }` eklendi. AI cevabı yarıda kesilirse şablon eklenmiyor, hata olayı gidiyor.
+- [x] Arayüz: cevapta "kural tabanlı" etiketi (açıklaması nedene göre); işaret, kaydedilen sohbette de saklanıyor (`ChatMessage.ruleBased`).
+- Yazım notları: persona `reason` metinleri üçüncü şahıs ("bu persona için…") olduğundan birinci şahıs cevapta kullanılmadı; yerine `values` alanı. "En büyük korku" yalnızca güven ihtiyacı yüksek personalarda (`brandTrustNeed` orta değeri ≥ 0,7) gösteriliyor, yoksa konuyla ilgisiz düşüyordu.
+- Doğrulama: `tests/test_offline_chat.py` (17 test, toplam 130): AI yokken ve kota dolunca kural tabanlı cevap + neden, yarım AI cevabına şablon eklenmemesi, 9 konu tespiti vakası, fiyat karşılaştırması (pahalı/uygun/ucuz), ürün verisinin cevaba yansıması, korkunun yalnızca güvene duyarlı personada çıkması. Eski "AI yoksa hata olayı" testi kaldırıldı (davranış bilerek değişti). Puppeteer (gerçek backend, AI kapalı, sahte yanıt yok) 5/5: cevap geliyor, etiketli, hata notu yok, yenilemede kalıyor; genel test 10/10. Örnek cevaplar elle okundu.
 
 ### Faz 11: MCP connector
 - [ ] Backend'e uzak MCP sunucusu (Streamable HTTP): `simulate`, `price_sweep`, `compare_ab`, `read_product_link`, `list_personas`, `get_simulation`. Araçlar deterministik çekirdeği kullanır; sunucu tarafında LLM çağrılmaz.
