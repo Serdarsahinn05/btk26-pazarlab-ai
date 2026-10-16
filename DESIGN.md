@@ -147,3 +147,89 @@ mürekkebe döner. Input: `--card` zemin, 1.5px kenar, odakta `outline: 2px soli
 - Ham renk değerleri ve Tailwind palet renkleri (`blue-500`, `zinc-900` …) bileşen içinde.
 - Tailwind v4 sözdizimi (`ring-3`, `rounded-4xl`, `size-3!`, `data-horizontal:`) — proje v3.
 - Sahte durum verisi ("CONNECTED 12ms" gibi) göstermek.
+
+## 9. Yerleşim
+
+Mevcut düzenin sorunları IMPROVEMENTS.md F11'de. Hedef: **bir rapor gibi yukarıdan aşağı okunan, tek kaydırma alanlı** sayfa. Kalıcı yan panel yok.
+
+### 9.1 Kabuk
+
+```
+┌───────────────────────────────────────────────────────────────┐
+│ PazarLab   Analiz · Benchmark · Tartışma · Personalar  ● API ◐│  üst bar (sekmeli nav)
+├───────────────────────────────────────────────────────────────┤
+│                    içerik  (max-w 1180px, ortalı)             │  tek sayfa kaydırması
+└───────────────────────────────────────────────────────────────┘
+```
+
+- Sidebar kalkar; görünümler üst bardaki sekmelere taşınır. Mobilde sekmeler yatay kaydırılır.
+- Sağ üstte API durumu (gerçek `/api/health` sonucu, yeşil/kırmızı nokta) ve tema düğmesi.
+- `h-screen overflow-hidden` ve iç `overflow-y-auto` alanları kaldırılır; sayfa doğal olarak kayar.
+- İçerik genişliği 1180 px'de sınırlanır (yaz-planı'ndaki `.wrap` gibi). Geniş ekranda satırlar gereksiz uzamaz.
+
+### 9.2 Form görünümü (simülasyon öncesi)
+
+```
+┌ h1 Ürününü test et ───────────────────────── em: 500 sentetik tüketici · 12 persona ┐
+├──────────────────────────────┬───────────────────────────────────────────────────────┤
+│ 1 · Link ile doldur  [____][Oku]                                                     │
+├──────────────────────────────┼───────────────────────────────────────────────────────┤
+│ 2 · Temel bilgiler           │ 3 · Kategoriye özel özellikler                        │
+│   kategori, motivasyon       │   (kumaş / RAM / ekran …)                             │
+│   ad, fiyat, açıklama        │ 4 · Hedef kitle                                       │
+│   görseller (6 kutu)         │ 5 · Satış koşulları (kargo, iade, garanti)            │
+├──────────────────────────────┴───────────────────────────────────────────────────────┤
+│ ▸ yapışkan alt çubuk:  eksik alan sayısı · tahmini süre ~20 sn      [Simülasyonu başlat] │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+- Masaüstünde iki sütun (`lg:grid-cols-[1fr_1fr]`), mobilde tek sütun. Bölümler numaralı mono rozetle (`1 ·`) başlar.
+- Gönderme düğmesi `position: sticky; bottom: 0` olan bir çubukta; her zaman görünür.
+- "Neden simülasyon?" bilgi kartı formun üstünde tek satırlık bir `.note` kutusuna dönüşür.
+- Yükleme sırasında form yerinde kalır, üstte ilerleme adımları görünür (input analizi → araştırma → benchmark → simülasyon → tartışma).
+
+### 9.3 Sonuç görünümü (Analiz sekmesi)
+
+```
+┌─ KARAR ──────────────────────────────┬─ NE YAPMALI? ────────────────────────────────┐
+│   ◯ segmentli halka                  │ Özet (aiInsights.summary, Fraunces 20px)       │
+│     57  GENEL SKOR                   │ 1  ilk aksiyon                                 │
+│   ■ Aldı 306  ■ Kararsız 96  ■ 98    │ 2  ikinci aksiyon                              │
+│                                      │ 3  üçüncü aksiyon                              │
+│                                      │ ⚠ kritik risk (note kutusu)                    │
+│                                      │ [Yeni simülasyon]  [Raporu indir]              │
+├──────────┬──────────┬──────────┬─────┴──────┐                                      │
+│ Pazar    │ Niyet    │ Problem  │ Tahmini    │   4 KPI: ince bar + mono yüzde        │
+│ genişliği│ dönüşümü │ uyumu    │ alıcı      │                                       │
+├──────────┴──────────┴──────────┴────────────┴──────────────────────────────────────┤
+│ PERSONALAR  ◯ ◯ ◯ ◯ ◯ ◯  (12 halka kartı, auto-fit minmax(150px,1fr))                │
+│             ◯ ◯ ◯ ◯ ◯ ◯  tıklayınca → Tartışma sekmesinde o persona                  │
+├──────────────────────────────────────────┬──────────────────────────────────────────┤
+│ Zayıflıklar (renkli başlıklı kart)       │ Kanal önerileri (renkli başlıklı kart)    │
+├──────────────────────────────────────────┴──────────────────────────────────────────┤
+│ Ürün parametreleri: 11 ince bar, iki sütun (fiyat uyumu, kalite, trend …)            │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│ İyileştirilmiş açıklama (kopyala düğmeli)  ·  görseller şeridi                       │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+Kurallar:
+- **En önemli şey en üstte:** karar (halka) ve ne yapılacağı (aksiyonlar) ilk ekranda, kaydırmadan görünür.
+- Izgaralar içerik sayısına göre kurulur; boş hücre kalmaz (2 kart = 2 sütun, 4 KPI = 4 sütun).
+- Kart içi kaydırma yok; uzun listeler "Tümünü göster" ile açılır.
+- Mobil: her satır tek sütuna iner; KPI'lar 2×2; persona halkaları yatay kaydırılır.
+- Benchmark ve Tartışma sekmeleri aynı 1180 px okuma düzenini kullanır. Tartışma: solda konuşan persona halkası, sağda mesaj (`slot` kalıbı).
+
+## 10. Değerlendirilen alternatif stiller
+
+Seçilen yön editoryal defter (§1). Karşılaştırma için değerlendirilen diğer yönler:
+
+| Yön | Kısaca | Artısı | Eksisi |
+|---|---|---|---|
+| **A. Editoryal defter** (seçili) | Kâğıt/mürekkep, Fraunces, halka grafikler | Ayırt edici; "araştırma raporu" hissi verisine güven katar; açık/koyu tema dengeli | Serif başlıklar teknik kitleye ilk anda alışılmadık gelebilir |
+| B. İsviçre veri tasarımı | Beyaz zemin, siyah ızgara, büyük grotesk rakamlar (Inter Tight), tek vurgu rengi | Çok okunaklı, yoğun veriyi en iyi taşır, yazdırılabilir rapora çok uygun | Soğuk ve kurumsal; markayı daha az hatırlatır |
+| C. Terminal / Bloomberg | Koyu zemin, mono ağırlıklı, amber/yeşil veri renkleri, yoğun tablolar | Mevcut koyu temadan en az geçiş eforu; "güç kullanıcısı" hissi | Yeni başlayan satıcıyı korkutur; mevcut neon görünümün sorunlarını tekrarlama riski |
+| D. Yumuşak SaaS (Linear/Vercel çizgisi) | Nötr griler, ince kenarlar, tek marka rengi, bol boşluk | Tanıdık, güvenli, shadcn ile en hızlı uygulanır | Sıradan; PazarLab'ı diğer AI araçlarından ayırmaz |
+| E. Sıcak pazar yeri | Toprak tonları, el çizimi ikonlar, hafif doku | Türk e-ticaret satıcısına samimi, akılda kalıcı | İllüstrasyon üretimi gerekir; veri yoğun ekranlarda dağınık görünebilir |
+
+**Öneri:** A ile devam. Benchmark ve rapor dışa aktarımı (Faz 5a) için B'nin ızgara ve rakam disiplini A'nın içine alınabilir (yazdırma CSS'i). C ve D yalnızca kullanıcı testinde A beğenilmezse yeniden değerlendirilir.

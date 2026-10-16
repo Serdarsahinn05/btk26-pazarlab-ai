@@ -1,12 +1,9 @@
 from __future__ import annotations
 
-import ipaddress
 import json
 import logging
 import os
-import random
 import re
-import socket
 import time
 import urllib.error
 import urllib.parse
@@ -17,19 +14,20 @@ from enum import Enum
 from html.parser import HTMLParser
 from typing import Any, Dict, List, Optional, Set, Tuple
 
+import requests
+
+from app.services.prompt_safety import UNTRUSTED_DATA_RULE
+from app.services.safe_http import UnsafeURLError, get_following_redirects, validate_url
+
 try:
     import cloudscraper
 except ImportError:
     cloudscraper = None
 
-# ---------------------------------------------------------------------------
-# Logging
-# ---------------------------------------------------------------------------
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
-)
 logger = logging.getLogger("product_scraper")
+
+PUBLIC_URL_ERROR = "Bu link okunamadi. Herkese acik bir http/https urun sayfasi girin."
+FETCH_FAILED_MESSAGE = "Urun sayfasi su anda okunamadi. Bilgileri elle girebilirsiniz."
 
 
 # ---------------------------------------------------------------------------
@@ -39,13 +37,11 @@ logger = logging.getLogger("product_scraper")
 class ScraperConfig:
     max_html_bytes: int = 5_000_000
     ai_html_max_bytes: int = 300_000
-    request_timeout: float = 25.0
-    fallback_timeout: float = 15.0
+    request_timeout: float = 10.0
+    total_fetch_budget: float = 15.0
     gemini_timeout: float = 20.0
-    max_retries: int = 3
-    retry_backoff_base: float = 1.5
-    retry_jitter: bool = True
-    rate_limit_rpm: int = 15
+    gemini_max_output_tokens: int = 2048
+    max_ai_models: int = 2
     user_agent_bot: str = (
         "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
     )
@@ -120,50 +116,6 @@ class BotProtectionError(ScrapingError):
 
 class AIQuotaError(ScrapingError):
     pass
-
-
-class AIRateLimitError(ScrapingError):
-    pass
-
-
-def _is_private_address(address: Any) -> bool:
-    return (
-        address.is_private
-        or address.is_loopback
-        or address.is_link_local
-        or address.is_reserved
-        or address.is_multicast
-        or address.is_unspecified
-    )
-
-
-# ---------------------------------------------------------------------------
-# Rate Limiter
-# ---------------------------------------------------------------------------
-class RateLimiter:
-    def __init__(self, max_requests: int, window_seconds: float = 60.0):
-        self.max_requests = max_requests
-        self.window = window_seconds
-        self._tokens: float = float(max_requests)
-        self._last_update = time.monotonic()
-
-    def acquire(self) -> bool:
-        now = time.monotonic()
-        elapsed = now - self._last_update
-        self._tokens = min(
-            self.max_requests,
-            self._tokens + elapsed * (self.max_requests / self.window),
-        )
-        self._last_update = now
-        if self._tokens >= 1.0:
-            self._tokens -= 1.0
-            return True
-        return False
-
-    def wait_time(self) -> float:
-        if self._tokens >= 1.0:
-            return 0.0
-        return (1.0 - self._tokens) * (self.window / self.max_requests)
 
 
 # ---------------------------------------------------------------------------
@@ -971,21 +923,14 @@ class GeminiAIExtractor:
 
     def __init__(self, config: ScraperConfig):
         self.config = config
-        self._rate_limiter = RateLimiter(config.rate_limit_rpm)
         self._available_models: Optional[List[str]] = None
 
     def extract(self, html: str) -> Dict[str, Any]:
         if not self.config.gemini_api_key:
             return {}
 
-        if not self._rate_limiter.acquire():
-            wait = self._rate_limiter.wait_time()
-            time.sleep(wait)
-            if not self._rate_limiter.acquire():
-                raise AIRateLimitError("Gemini API rate limit exceeded")
-
         cleaned_html = HTMLCleaner.clean(html, self.config.ai_html_max_bytes)
-        models = self._get_models()
+        models = self._get_models()[: self.config.max_ai_models]
 
         last_error: Optional[Exception] = None
         quota_errors_count = 0
@@ -1016,15 +961,13 @@ class GeminiAIExtractor:
         if self._available_models is not None:
             return self._available_models
 
-        key = self.config.gemini_api_key
-        if key:
-            masked_key = f"{key[:4]}...{key[-4:]}" if len(key) > 8 else "****"
-            logger.info(f"Initializing Gemini with API Key: {masked_key}")
-
         default = self.config.default_gemini_model
         try:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models?key={self.config.gemini_api_key}"
-            with urllib.request.urlopen(url, timeout=5) as resp:
+            req = urllib.request.Request(
+                "https://generativelanguage.googleapis.com/v1beta/models",
+                headers={"x-goog-api-key": self.config.gemini_api_key or ""},
+            )
+            with urllib.request.urlopen(req, timeout=5) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
 
             models = []
@@ -1055,27 +998,25 @@ class GeminiAIExtractor:
             return self._available_models
 
     def _call_model(self, model_name: str, cleaned_html: str) -> Dict[str, Any]:
-        url = (
-            f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}"
-            f":generateContent?key={self.config.gemini_api_key}"
-        )
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent"
 
         body = {
-            "systemInstruction": {"parts": [{"text": self.SYSTEM_PROMPT}]},
+            "systemInstruction": {"parts": [{"text": self.SYSTEM_PROMPT + UNTRUSTED_DATA_RULE}]},
             "contents": [{
                 "role": "user",
-                "parts": [{"text": f"Extract product info from this HTML:\n\n{cleaned_html}"}]
+                "parts": [{"text": f"<data>\n{cleaned_html}\n</data>"}]
             }],
             "generationConfig": {
                 "responseMimeType": "application/json",
                 "temperature": 0.1,
+                "maxOutputTokens": self.config.gemini_max_output_tokens,
             },
         }
 
         req = urllib.request.Request(
             url,
             data=json.dumps(body).encode("utf-8"),
-            headers={"Content-Type": "application/json"},
+            headers={"Content-Type": "application/json", "x-goog-api-key": self.config.gemini_api_key or ""},
             method="POST",
         )
 
@@ -1141,74 +1082,55 @@ class GeminiAIExtractor:
 # HTTP Fetcher with Retry & Backoff
 # ---------------------------------------------------------------------------
 class HTTPFetcher:
+    """Fetches a product page: cloudscraper first, plain requests as fallback.
+
+    All traffic goes through ``safe_http`` (public IPs only, ports 80/443,
+    re-validated redirects). Errors are logged in detail but surfaced to the
+    caller only as a generic message, so the endpoint cannot be used to probe
+    internal hosts or ports.
+    """
+
     def __init__(self, config: ScraperConfig):
         self.config = config
 
     def fetch(self, url: str) -> Tuple[str, str, List[str]]:
-        warnings: List[str] = []
-
+        deadline = time.monotonic() + self.config.total_fetch_budget
+        attempts = []
         if cloudscraper:
-            for attempt in range(self.config.max_retries):
-                try:
-                    html = self._fetch_cloudscraper(url)
-                    return html, "cloudscraper", warnings
-                except Exception as e:
-                    logger.warning(f"Cloudscraper attempt {attempt + 1} failed: {e}")
-                    if attempt < self.config.max_retries - 1:
-                        self._backoff(attempt)
-                    else:
-                        warnings.append(f"Cloudscraper failed after {self.config.max_retries} attempts")
+            attempts.append(("cloudscraper", cloudscraper.create_scraper, self.config.user_agent_bot))
+        attempts.append(("requests", requests.Session, self.config.user_agent_browser))
 
-        for attempt in range(self.config.max_retries):
+        blocked = False
+        for source, make_session, user_agent in attempts:
+            remaining = deadline - time.monotonic()
+            if remaining <= 1:
+                break
             try:
-                html = self._fetch_urllib(url)
-                return html, "urllib", warnings
-            except urllib.error.HTTPError as he:
-                if he.code == 403:
-                    raise BotProtectionError("Access blocked by bot protection (403).") from he
-                if he.code in (429, 502, 503, 504):
-                    if attempt < self.config.max_retries - 1:
-                        self._backoff(attempt)
-                        continue
-                raise ScrapingError(f"HTTP Error {he.code}: {he.reason}") from he
-            except Exception as e:
-                if attempt < self.config.max_retries - 1:
-                    self._backoff(attempt)
-                    continue
-                raise ScrapingError(f"Fetch failed ({type(e).__name__}): {e}") from e
+                return self._get(make_session(), url, user_agent, min(remaining, self.config.request_timeout)), source, []
+            except BotProtectionError:
+                blocked = True
+            except UnsafeURLError as exc:
+                logger.warning("Blocked unsafe fetch target: %s", exc)
+                raise URLValidationError(PUBLIC_URL_ERROR) from exc
+            except Exception as exc:
+                logger.warning("%s fetch failed: %r", source, exc)
 
-        raise ScrapingError("All fetch attempts exhausted")
+        if blocked:
+            raise BotProtectionError("Site bot korumasi nedeniyle sayfayi paylasmadi.")
+        raise ScrapingError(FETCH_FAILED_MESSAGE)
 
-    def _backoff(self, attempt: int) -> None:
-        delay = (self.config.retry_backoff_base ** attempt) + (random.random() if self.config.retry_jitter else 0)
-        time.sleep(delay)
-
-    def _fetch_cloudscraper(self, url: str) -> str:
-        scraper = cloudscraper.create_scraper()
+    def _get(self, session: Any, url: str, user_agent: str, timeout: float) -> str:
         headers = {
-            "User-Agent": self.config.user_agent_bot,
+            "User-Agent": user_agent,
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             "Accept-Language": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
         }
-        response = scraper.get(url, headers=headers, timeout=self.config.request_timeout)
-
+        with session:
+            response = get_following_redirects(session, url, timeout=timeout, headers=headers)
         if response.status_code == 403:
-            raise BotProtectionError("Cloudscraper received 403 Forbidden.")
+            raise BotProtectionError("403")
         response.raise_for_status()
         return response.text[: self.config.max_html_bytes]
-
-    def _fetch_urllib(self, url: str) -> str:
-        req = urllib.request.Request(
-            url,
-            headers={
-                "User-Agent": self.config.user_agent_browser,
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            },
-            method="GET",
-        )
-        with urllib.request.urlopen(req, timeout=self.config.fallback_timeout) as response:
-            raw = response.read(self.config.max_html_bytes + 1)
-            return raw.decode("utf-8", errors="ignore")[: self.config.max_html_bytes]
 
 
 # ---------------------------------------------------------------------------
@@ -1229,8 +1151,8 @@ class ProductLinkReader:
         try:
             raw_html, source, fetch_warnings = self.fetcher.fetch(normalized_url)
             warnings.extend(fetch_warnings)
-        except BotProtectionError as e:
-            return ProductLinkReadResponse(url=normalized_url, source=SourceType.FALLBACK.value, warnings=[str(e)])
+        except URLValidationError:
+            raise
         except ScrapingError as e:
             return ProductLinkReadResponse(url=normalized_url, source=SourceType.FALLBACK.value, warnings=[str(e)])
 
@@ -1246,8 +1168,8 @@ class ProductLinkReader:
         try:
             parser.feed(raw_html)
         except Exception as e:
-            logger.error(f"HTML parsing failed: {e}")
-            warnings.append(f"HTML parsing error: {e}")
+            logger.error("HTML parsing failed: %r", e)
+            warnings.append("Sayfanin bir kismi islenemedi.")
 
         # Extract from all sources
         metadata = self.metadata_extractor.extract(parser, normalized_url)
@@ -1281,11 +1203,9 @@ class ProductLinkReader:
                 if ai_data:
                     merged = self._merge_ai_data(merged, ai_data)
                     ai_applied = True
-            except (AIQuotaError, AIRateLimitError) as e:
-                warnings.append(str(e))
             except Exception as e:
-                logger.error(f"AI extraction failed: {e}")
-                warnings.append(f"AI analysis error: {e}")
+                logger.error("AI extraction failed: %r", e)
+                warnings.append("AI ile zenginlestirme yapilamadi; sayfadaki veriler kullanildi.")
 
         # --- IMAGE EXTRACTION (Surgical & Clean) ---
         # 1. Collect trusted references from Structured Data, AI and JS Variables
@@ -1311,7 +1231,8 @@ class ProductLinkReader:
         html_img_sources = parser._all_images
         
         # Extract using clustering (Gold Standard first)
-        final_images = ImageProcessor.extract_product_images(html_img_sources, trusted_refs, max_images=12)
+        # SimulationRequest accepts at most 6 images.
+        final_images = ImageProcessor.extract_product_images(html_img_sources, trusted_refs, max_images=6)
         main_image = final_images[0] if final_images else None
 
         # Price finalization
@@ -1380,29 +1301,11 @@ class ProductLinkReader:
 
     @staticmethod
     def _validate_url(url: str) -> str:
-        parsed = urllib.parse.urlparse(url.strip())
-        if parsed.scheme not in {"http", "https"} or not parsed.netloc:
-            raise URLValidationError("Only http/https product links are supported.")
-
-        hostname = parsed.hostname
-        if hostname:
-            blocked_hosts = {"localhost", "0.0.0.0"}
-            if hostname.lower() in blocked_hosts or hostname.lower().endswith(".local"):
-                raise URLValidationError("Private/localhost URLs are not allowed.")
-            try:
-                ip = ipaddress.ip_address(hostname)
-                if _is_private_address(ip):
-                    raise URLValidationError("Private/localhost URLs are not allowed.")
-            except ValueError:
-                try:
-                    for info in socket.getaddrinfo(hostname, None):
-                        resolved_ip = ipaddress.ip_address(info[4][0])
-                        if _is_private_address(resolved_ip):
-                            raise URLValidationError("Private/localhost URLs are not allowed.")
-                except socket.gaierror as exc:
-                    raise URLValidationError("Product link domain could not be resolved.") from exc
-
-        return urllib.parse.urlunparse(parsed)
+        try:
+            return validate_url(url)
+        except UnsafeURLError as exc:
+            logger.info("Rejected product link: %s", exc)
+            raise URLValidationError(PUBLIC_URL_ERROR) from exc
 
     def _needs_ai_enhancement(self, data: Dict[str, Any]) -> bool:
         """Determines if we need AI to fill missing gaps."""
@@ -1496,7 +1399,7 @@ class ProductLinkReader:
 
     @staticmethod
     def _map_category(raw_category: Optional[str], title: Optional[str]) -> str:
-        """Maps raw marketplace categories to our 15 supported categories."""
+        """Maps raw marketplace categories to the 10 categories accepted by SimulationRequest."""
         text = f"{raw_category or ''} {title or ''}".lower()
         
         # Mapping rules
@@ -1511,9 +1414,6 @@ class ProductLinkReader:
             "mont": ["mont", "ceket", "kaban", "parka", "jacket"],
             "elbise": ["elbise", "dress"],
             "etek": ["etek", "skirt"],
-            "ayakkabi": ["ayakkabı", "shoe", "sneaker", "bot", "çizme"],
-            "canta": ["çanta", "bag", "backpack"],
-            "kozmetik": ["kozmetik", "parfüm", "makyaj", "bakım", "shampoo", "krem"]
         }
         
         for target, keywords in mappings.items():

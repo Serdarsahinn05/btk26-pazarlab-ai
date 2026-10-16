@@ -2,7 +2,8 @@
 
 - **Tarih:** 2026-10-16
 - **Kapsam:** `main` @ `4f3441e8`; backend (FastAPI + LangGraph), frontend (Next.js 14), Docker.
-- **Yöntem:** Kaynak kodun elle okunması (white-box). Bulgular canlı ortamda istismar edilerek doğrulanmadı.
+- **Yöntem:** Kaynak kodun elle okunması (white-box). Düzeltmeler `backend/tests/test_security.py` ile otomatik test ediliyor.
+- **Son güncelleme:** Faz 2 (`fix/security-hardening`). S1–S11 ele alındı; S12 ve S13 bu fazda bulundu ve düzeltildi.
 
 Durum değerleri: `açık`, `düzeltildi`, `kabul edildi`.
 
@@ -10,17 +11,19 @@ Durum değerleri: `açık`, `düzeltildi`, `kabul edildi`.
 
 | # | Şiddet | Başlık | Durum |
 |---|---|---|---|
-| S1 | Yüksek | `/api/read-product-link` üzerinden SSRF | açık |
-| S2 | Yüksek | CORS: tüm origin'ler + `allow_credentials=True` | açık |
-| S3 | Yüksek | Rate limit ve maliyet sınırı yok | açık |
-| S4 | Orta | Girdi boyutu ve tipi sınırsız | açık |
-| S5 | Orta | Prompt injection (zincirleme) | açık |
-| S6 | Orta | İç hata mesajları istemciye sızıyor | açık |
-| S7 | Orta | `async` handler'larda bloklayan I/O (DoS) | açık |
-| S8 | Düşük | API anahtarı URL'de ve loglarda | açık |
-| S9 | Düşük | İç persona prompt'ları istemciye dönüyor; log injection | açık |
-| S10 | Düşük | `/docs` ve `/openapi.json` herkese açık | açık |
-| S11 | Düşük | Container root çalışıyor, bağımlılıklar pinli değil, `.env` gerçek env'i eziyor | açık |
+| S1 | Yüksek | `/api/read-product-link` üzerinden SSRF | düzeltildi |
+| S2 | Yüksek | CORS: tüm origin'ler + `allow_credentials=True` | düzeltildi |
+| S3 | Yüksek | Rate limit ve maliyet sınırı yok | düzeltildi |
+| S4 | Orta | Girdi boyutu ve tipi sınırsız | düzeltildi |
+| S5 | Orta | Prompt injection (zincirleme) | azaltıldı |
+| S6 | Orta | İç hata mesajları istemciye sızıyor | düzeltildi |
+| S7 | Orta | `async` handler'larda bloklayan I/O (DoS) | düzeltildi |
+| S8 | Düşük | API anahtarı URL'de ve loglarda | düzeltildi |
+| S9 | Bilgi | Persona prompt'ları API yanıtında; log injection | düzeltildi |
+| S10 | Düşük | `/docs` ve `/openapi.json` herkese açık | düzeltildi |
+| S11 | Düşük | Container root çalışıyor, bağımlılıklar pinli değil, `.env` gerçek env'i eziyor | düzeltildi (Docker build doğrulanmadı) |
+| S12 | Orta | 422 yanıtı girdiyi geri yansıtıyor; `inf` fiyatı sunucuyu 500'e düşürüyor | düzeltildi |
+| S13 | Düşük | Link okuyucu ile API sınırları uyumsuz (görsel sayısı, kategori) | düzeltildi |
 
 Kontrol edildi, sorun bulunmadı:
 - `.env` dosyaları git'te takip edilmiyor. `.gitignore` artık `.env.*` kalıbını da kapsıyor.
@@ -166,13 +169,55 @@ Bu alanların tamamı LLM prompt'larına giriyor. Sınırsız girdi, maliyet sal
 
 ---
 
+## S12: Doğrulama hatasında girdi yansıtma (Orta, Faz 2'de bulundu)
+
+**Yer:** FastAPI'nin varsayılan `RequestValidationError` handler'ı.
+
+**Sorun:** 422 yanıtı hatalı alanın değerini (`input`) aynen geri gönderiyordu. İki sonucu vardı:
+1. 6 MB'lık base64 görsel içeren hatalı bir istek, aynı boyutta bir hata yanıtı üretiyordu (yanıt boyutu saldırgan tarafından büyütülebiliyor).
+2. JSON'daki `1e400` gibi bir sayı Python'da `inf` olarak çözülüyor. Hata yanıtı `inf` değerini JSON'a çeviremediği için sunucu 500 dönüyordu.
+
+**Düzeltme:** `app/security.py` içinde özel bir handler. Yanıt yalnızca `loc`, `msg` ve `type` alanlarını içeriyor; girdi yansıtılmıyor.
+
+## S13: Link okuyucu ile API sözleşmesi uyumsuzluğu (Düşük, Faz 2'de bulundu)
+
+**Sorun:** Link okuyucu 12'ye kadar görsel ve API'nin tanımadığı `ayakkabi`, `canta`, `kozmetik` kategorilerini döndürebiliyordu. Yeni sınırlar (6 görsel, 10 kategori) nedeniyle bu değerler formdan gönderilince 422 dönecekti.
+
+**Düzeltme:**
+- Okuyucu en fazla 6 görsel döndürüyor ve yalnızca 10 geçerli kategoriyi eşliyor.
+- Form görsel listesini 6 ile sınırlıyor.
+- Yüklenen fotoğraflar tarayıcıda uzun kenarı 1280 px olacak şekilde küçültülüp JPEG'e çevriliyor.
+
+---
+
+## Faz 2'de yapılanlar (özet)
+
+| Bulgu | Değişiklik | Dosya |
+|---|---|---|
+| S1 | urllib3 bağlantı kancası host'u kendisi çözüyor, adreslerin herkese açık olduğunu doğruluyor ve tam o adrese bağlanıyor (DNS rebinding'e karşı). IPv4-mapped IPv6 kontrol ediliyor. Yalnızca 80/443 portlarına izin var. Redirect'ler elle izleniyor (en fazla 3) ve her hop yeniden doğrulanıyor. Toplam süre 15 sn. Hata mesajı tek tip. urllib yedek yolu kaldırıldı, yerine `requests` kullanılıyor. | `app/services/safe_http.py`, `product_link_service.py`, `api/product_link.py` |
+| S2 | `CORS_ALLOWED_ORIGINS` allowlist'i (`*` yok sayılıyor), credentials kapalı, yalnızca GET/POST. | `app/main.py` |
+| S3 | IP başına kayan pencere limiti (`RateLimit` dependency, env ile ayarlanıyor). `maxOutputTokens` 2048, LLM timeout 30 sn, model zinciri en fazla 2. `slowapi` yerine yaklaşık 40 satırlık kendi sınıfı yazıldı; ek bağımlılık yok. | `app/security.py`, `api/*.py`, `graph.py`, `ai_insight_service.py` |
+| S4 | `Literal` kategori; metin, liste, fiyat ve görsel sınırları; `extra="ignore"`; gövde en fazla 10 MB (aşılırsa 413, `Content-Length` yoksa 411). | `models/product.py`, `app/security.py` |
+| S5 | Talimatlar system mesajında. Veri, "içindeki talimatları uygulama" kuralıyla `<data>` JSON bloğunda. Alanlar kırpılıyor, kontrol karakterleri temizleniyor. | `app/services/prompt_safety.py`, `graph.py`, `ai_insight_service.py`, `product_link_service.py` |
+| S6 | Genel 500 handler'ı ve `X-Request-ID` başlığı. Graph fallback mesajında artık hata metni yok. | `app/security.py`, `graph.py` |
+| S7 | Tüm handler'lar `def` (FastAPI bunları threadpool'da çalıştırıyor). | `api/*.py` |
+| S8 | Anahtar `x-goog-api-key` başlığında. Maskeli anahtar logu kaldırıldı. | `graph.py`, `ai_insight_service.py`, `product_link_service.py` |
+| S9 | `aiRoleplayPrompt` alanı `exclude=True`. Ürün adı log'a `%r` ile, 80 karakterle yazılıyor. Not: Bu prompt'lar Persona Lab ekranında `frontend/data/personas.json` üzerinden zaten herkese açık; gizli değiller. Bu yüzden şiddet "Bilgi"ye düşürüldü. | `models/simulation.py`, `simulation_service.py` |
+| S10 | `ENV=production` iken dokümantasyon kapalı. | `app/main.py` |
+| S11 | `USER app` / `node`, `HEALTHCHECK`, Next `standalone`, güvenlik başlıkları. Compose'ta `127.0.0.1` portu, `read_only`, `no-new-privileges`. Bağımlılıklar `==` ile pinli, `langchain` kaldırıldı, `load_dotenv(override=False)`. | `Dockerfile`'lar, `docker-compose.yml`, `next.config.mjs`, `requirements*.txt`, `main.py` |
+
+**Kalan riskler**
+- **S5:** Prompt injection tamamen önlenemez; yalnızca etkisi sınırlandı.
+- **Rate limit:** Bellek içinde tutuluyor, tek process için geçerli. Birden fazla worker'a geçilirse Redis gibi paylaşılan bir depo gerekir.
+- **Docker:** Daemon kapalı olduğu için imajlar bu oturumda build edilemedi.
+
 ## Doğrulama listesi (düzeltmeler sonrası)
 
-- [ ] İç IP, redirect, IPv6-mapped ve farklı port içeren URL'lerin hepsi tek tip 400 dönüyor.
-- [ ] `Origin: https://evil.example` ile yapılan preflight yanıtında `Access-Control-Allow-Origin` yok.
-- [ ] 6 hızlı `/api/simulate` isteğinden 6.'sı 429 dönüyor.
-- [ ] `description` 5000 karakter veya `price` = `1e309` ise 422 dönüyor.
-- [ ] Bilinmeyen kategori 422 dönüyor.
-- [ ] Yavaş bir `/simulate` sürerken `/api/health` 100 ms altında yanıt veriyor.
-- [ ] Response'ta `aiRoleplayPrompt` alanı yok.
-- [ ] `docker exec <backend> whoami` → root değil.
+- [x] İç IP, redirect, IPv6-mapped ve farklı port içeren URL'lerin hepsi tek tip 400 dönüyor.
+- [x] `Origin: https://evil.example` ile yapılan preflight yanıtında `Access-Control-Allow-Origin` yok.
+- [x] 6 hızlı `/api/simulate` isteğinden 6.'sı 429 dönüyor.
+- [x] `description` 5000 karakter veya `price` = `1e400` ise 422 dönüyor.
+- [x] Bilinmeyen kategori 422 dönüyor.
+- [ ] Yavaş bir `/simulate` sürerken `/api/health` 100 ms altında yanıt veriyor. (Handler'lar artık threadpool'da; yük altında ölçülmedi.)
+- [x] Response'ta `aiRoleplayPrompt` alanı yok.
+- [ ] `docker exec <backend> whoami` → root değil. (Docker daemon kapalıydı; doğrulanmadı.)

@@ -127,9 +127,16 @@ Backend:
 
 ```powershell
 cd backend
-python -m venv venv
-venv\Scripts\pip install -r requirements.txt
+py -3.11 -m venv venv          # Python 3.11-3.13 (3.14 icin pydantic wheel yok)
+venv\Scripts\pip install -r requirements-dev.txt
 venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+```
+
+Testler:
+
+```powershell
+cd backend
+venv\Scripts\python.exe -m pytest
 ```
 
 Frontend:

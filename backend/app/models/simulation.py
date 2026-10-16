@@ -18,7 +18,8 @@ class PersonaResult(BaseModel):
     micro_feedback: str = Field(default="", alias="microFeedback")
     ai_comment: Optional[str] = Field(default=None, alias="aiComment")
     personality_type: Optional[str] = Field(default=None, alias="personalityType")
-    ai_roleplay_prompt: Optional[str] = Field(default=None, alias="aiRoleplayPrompt")
+    # Internal persona prompt: used server-side for the debate, never sent to clients.
+    ai_roleplay_prompt: Optional[str] = Field(default=None, alias="aiRoleplayPrompt", exclude=True)
     personality_traits: Dict[str, Any] = Field(default_factory=dict, alias="personalityTraits")
 
     model_config = ConfigDict(populate_by_name=True)

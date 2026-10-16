@@ -10,7 +10,7 @@
 |---|---|---|---|---|
 | 0 | – | Repo senkronizasyonu | 15 dk | ✅ |
 | 1 | `chore/docs-roadmap` | Dokümanlar, repo temizliği | 0,5 gün | ✅ |
-| 2 | `fix/security-hardening` | S1–S11 | 1–1,5 gün | ⬜ |
+| 2 | `fix/security-hardening` | S1–S13 | 1–1,5 gün | ✅ |
 | 3 | `fix/core-bugs` | B1–B7, F1–F7, temel testler | 1 gün | ⬜ |
 | 4 | `feat/editorial-redesign` | DESIGN.md uygulaması, F8–F10 | 2–3 gün | ⬜ |
 | 5a | `feat/history-share` | Geçmiş, paylaşım, export | 1 gün | ⬜ |
@@ -34,23 +34,28 @@ Sıralamanın gerekçesi: Önce güvenlik geliyor, çünkü açık CORS ve SSRF 
 - [x] README düzeltmeleri: bot sayısı, kişisel dosya yolu, venv adı, ortam değişkenleri, doküman linkleri.
 - [x] Temizlik: `frontend/build_error.txt` ve kopya `pp_icons/` silindi; `.gitignore` artık `.env.*` kalıbını da kapsıyor.
 
-## Faz 2: Güvenlik sertleştirmesi
-Kabul kriteri: SECURITY_AUDIT.md'deki doğrulama listesinin tamamı geçer.
+## Faz 2: Güvenlik sertleştirmesi ✅
+Kabul kriteri: SECURITY_AUDIT.md'deki doğrulama listesi geçer. Sonuç: 8 maddeden 6'sı otomatik testle doğrulandı. Kalan 2 madde (yük altında health yanıt süresi, Docker'da root olmayan kullanıcı) ölçülemedi.
 
-- [ ] **S2** CORS allowlist: `CORS_ALLOWED_ORIGINS`, credentials kapalı. (`main.py`)
-- [ ] **S11a** `load_dotenv(override=False)`.
-- [ ] **S7** Handler'lar `def` olur. (`api/*.py`)
-- [ ] **S4** Pydantic sınırları, kategori Enum'u, gövde boyutu middleware'i. (`models/product.py`)
-- [ ] **S1** SSRF: redirect kapalı, IP pinleme, port kısıtı, tek tip hata, toplam süre ≤ 15 sn. (`product_link_service.py`)
-- [ ] **S3** `slowapi` rate limit, `maxOutputTokens`, model zinciri ≤ 2.
-- [ ] **S5** Prompt'lar system + `<data>` JSON yapısına geçer, Serper başlıkları kırpılır. (`graph.py`)
-- [ ] **S6** Genel hata mesajları + `X-Request-ID`.
-- [ ] **S8** `x-goog-api-key` başlığı, anahtar logu kaldırılır.
-- [ ] **S9** `aiRoleplayPrompt` response'tan çıkar, log injection düzeltilir.
-- [ ] **S10** Prod'da `/docs` kapalı.
-- [ ] **S11b** Dockerfile'larda `USER` ve `HEALTHCHECK`; bağımlılıklar pinlenir; `langchain` kaldırılır; compose portları `127.0.0.1`'e bağlanır.
-- [ ] `.env.example` güncellenir: `CORS_ALLOWED_ORIGINS`, `GEMINI_MODEL`, `ENV`, `RATE_LIMIT_*`.
-- [ ] `backend/tests/test_security.py`: SSRF vakaları, CORS, 422 sınırları, 429.
+- [x] **S2** CORS allowlist: `CORS_ALLOWED_ORIGINS`, credentials kapalı. (`main.py`)
+- [x] **S11a** `load_dotenv(override=False)`.
+- [x] **S7** Handler'lar `def` oldu. (`api/*.py`)
+- [x] **S4** Pydantic sınırları, `Literal` kategori, gövde boyutu kontrolü. (`models/product.py`, `security.py`)
+- [x] **S1** SSRF: IP pinleme (urllib3 kancası), port kısıtı, redirect'ler elle izlenip doğrulanıyor, tek tip hata, toplam süre ≤ 15 sn. (`safe_http.py`)
+- [x] **S3** Rate limit (kendi `RateLimit` sınıfı, `slowapi` yerine), `maxOutputTokens`, LLM timeout, model zinciri ≤ 2.
+- [x] **S5** Prompt'lar system mesajı + `<data>` JSON yapısına geçti, alanlar kırpılıyor. (`prompt_safety.py`)
+- [x] **S6** Genel hata mesajları + `X-Request-ID`.
+- [x] **S8** `x-goog-api-key` başlığı, anahtar logu kaldırıldı.
+- [x] **S9** `aiRoleplayPrompt` response'tan çıkarıldı, log injection düzeltildi.
+- [x] **S10** Prod'da `/docs` kapalı.
+- [x] **S11b** `USER`, `HEALTHCHECK`, Next `standalone` + güvenlik başlıkları, pinli bağımlılıklar, `langchain` kaldırıldı, compose sertleştirildi.
+- [x] **S12** (yeni) 422 yanıtları girdiyi yansıtmıyor; `inf` kaynaklı 500 düzeltildi.
+- [x] **S13** (yeni) Link okuyucu ve form API sınırlarına uyduruldu; yüklenen görseller tarayıcıda küçültülüyor.
+- [x] `.env.example` güncellendi. `requirements-dev.txt` ve `pytest.ini` eklendi.
+- [x] `backend/tests/test_security.py`: 32 test geçiyor.
+- [ ] Docker imajlarının build'i ve `whoami` kontrolü. Daemon kapalı olduğu için yapılamadı; `docker compose up --build` ile elle denenmeli.
+
+Ölü kod temizliğinden iki parça bu fazda yapıldı, çünkü değişen kodla çakışıyordu: `MOCK_SIMULATION_RESPONSE` ve `debate_node` v1.
 
 ## Faz 3: Çekirdek hatalar
 Kabul kriteri: Gerçek bir anahtarla `/api/simulate` yanıtında `aiInsights` şablon değil, gerçek LLM çıktısı (log'da `ai_used=true`). Backend kapalıyken UI görünür bir hata gösterir.
@@ -58,7 +63,8 @@ Kabul kriteri: Gerçek bir anahtarla `/api/simulate` yanıtında `aiInsights` ş
 - [ ] **B1** `llm_client.py`: tek Gemini istemcisi; üç çağrı yolu buna taşınır.
 - [ ] **B2** Çift input analizi kaldırılır.
 - [ ] **B3** Ortak kategori Enum'u.
-- [ ] **B4–B6** Graph bir kez derlenir, ölü kod ve kopya modeller temizlenir.
+- [ ] **B4–B6** Graph bir kez derlenir, kalan ölü kod (`graph.py:~480` çift log doğrulaması, `build_ai_insights`, `scoring_utils`) ve kopya modeller temizlenir.
+- [ ] **B8–B9** Geliştirme ortamı: bozuk `backend/venv` yeniden kurulur, Python sürümü README'de netleştirilir.
 - [ ] **F1** Hata toast'u + "Tekrar dene"; analiz hatası simülasyonu bloklamaz; axios timeout.
 - [ ] **F2–F3** Tailwind v4 sınıfları v3'e çevrilir, geçersiz `rgba(var())` düzeltilir, `@tailwindcss/typography` eklenir.
 - [ ] **F4** Landing kaydırması ve çift padding düzeltilir.
@@ -69,6 +75,7 @@ Kabul kriteri: Gerçek bir anahtarla `/api/simulate` yanıtında `aiInsights` ş
 ## Faz 4: Editoryal yeniden tasarım
 Kabul kriteri: DESIGN.md'deki tüm kalıplar uygulanmış; bileşenlerde ham renk sınıfı kalmamış (`rg "zinc-|violet-|text-white|rgba\(" frontend/components frontend/app` boş döner, `ui/` hariç); her iki tema ve 375 px genişlik kontrol edilmiş; `impeccable audit` ardından `ponytail-review` çalıştırılmış.
 
+0. [ ] **Yerleşim:** DESIGN.md §9'daki yeni dashboard düzeni (rapor akışı, yan panel kaldırılır, tek kaydırma alanı, iki sütunlu form). Detaylar IMPROVEMENTS.md F11'de.
 1. [ ] **Token'lar:** `globals.css` (`:root` + `.dark`), `tailwind.config.ts` (renkler, `fontFamily`), `layout.tsx` (Fraunces, `defaultTheme="system"`), defter zemini. Neon, glass ve glow sınıfları silinir.
 2. [ ] **Kabuk:** `LayoutShell`, `Sidebar` ve `StatusBar` sade bir üst bara dönüşür: marka, sekmeli nav, tema düğmesi, gerçek API durumu. Mobilde sekmeler yatay kaydırılabilir.
 3. [ ] **Skor bileşenleri:** `RingChart` ve `SegmentRing` (saf SVG, ek kütüphane yok). `OverallScoreCard` ile `DecisionDistributionChart` birleşir. Persona halka kartları tıklanınca tartışmaya gider (flash efekti). Normalize skorlar ince barlarla gösterilir.
