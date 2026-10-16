@@ -1,14 +1,19 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from app.models.product_link import ProductLinkReadResponse, ProductLinkRequest
-from app.services.product_link_service import ScrapingError, read_product_link
+from app.security import RateLimit
+from app.services.product_link_service import PUBLIC_URL_ERROR, URLValidationError, read_product_link
 
 router = APIRouter(prefix="/api", tags=["product-link"])
 
 
-@router.post("/read-product-link", response_model=ProductLinkReadResponse)
-async def read_product_link_endpoint(payload: ProductLinkRequest) -> ProductLinkReadResponse:
+@router.post(
+    "/read-product-link",
+    response_model=ProductLinkReadResponse,
+    dependencies=[Depends(RateLimit("RATE_LIMIT_LINK_PER_MIN", 10))],
+)
+def read_product_link_endpoint(payload: ProductLinkRequest) -> ProductLinkReadResponse:
     try:
         return read_product_link(payload.url)
-    except (ValueError, ScrapingError) as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except URLValidationError as exc:
+        raise HTTPException(status_code=400, detail=PUBLIC_URL_ERROR) from exc

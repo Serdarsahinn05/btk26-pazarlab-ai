@@ -1,36 +1,50 @@
+import logging
 import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
+# Real environment variables (Docker, CI) win over the local .env file.
+load_dotenv(override=False)
+
+from app import security
 from app.api.analyze import router as analyze_router
 from app.api.health import router as health_router
 from app.api.product_link import router as product_link_router
 from app.api.simulate import router as simulate_router
 
-load_dotenv(override=True)
+logging.basicConfig(
+    level=os.getenv("LOG_LEVEL", "INFO"),
+    format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
+)
 
 
 def _get_allowed_origins() -> list[str]:
-
-    return ["*"]
+    raw = os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
+    return [origin.strip() for origin in raw.split(",") if origin.strip() and origin.strip() != "*"]
 
 
 def create_app() -> FastAPI:
+    is_production = os.getenv("ENV", "development").lower() == "production"
     app = FastAPI(
         title="PazarLab AI Backend",
         description="Sentetik e-ticaret pazar simulasyonu API servisi.",
         version="0.1.0",
+        docs_url=None if is_production else "/docs",
+        redoc_url=None if is_production else "/redoc",
+        openapi_url=None if is_production else "/openapi.json",
     )
 
     app.add_middleware(
         CORSMiddleware,
         allow_origins=_get_allowed_origins(),
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_credentials=False,
+        allow_methods=["GET", "POST"],
+        allow_headers=["Content-Type"],
+        expose_headers=["X-Request-ID", "Retry-After"],
     )
+    security.install(app)
 
     app.include_router(health_router)
     app.include_router(analyze_router)

@@ -11,6 +11,7 @@ from langgraph.graph import StateGraph, END
 
 from app.models.product import SimulationRequest
 from app.models.simulation import SimulationResponse
+from app.services.prompt_safety import UNTRUSTED_DATA_RULE, clip, wrap_data
 from app.services.simulation_service import run_simulation
 
 logger = logging.getLogger("graph_service")
@@ -46,8 +47,11 @@ class GeminiModelManager:
             return []
         
         try:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
-            with urllib.request.urlopen(url, timeout=10) as resp:
+            req = urllib.request.Request(
+                "https://generativelanguage.googleapis.com/v1beta/models",
+                headers={"x-goog-api-key": api_key},
+            )
+            with urllib.request.urlopen(req, timeout=10) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
             
             models = []
@@ -125,21 +129,32 @@ def get_safe_model_name() -> str:
 # ---------------------------------------------------------------------------
 # Robust LLM Caller with API-Driven Fallback
 # ---------------------------------------------------------------------------
+MAX_MODELS_PER_CALL = 2
+LLM_TIMEOUT_SECONDS = 30
+LLM_MAX_OUTPUT_TOKENS = 2048
+
+
 def invoke_llm_with_retry(
-    prompt: str,
+    instructions: str,
+    data: Any,
     temperature: float = 0.2,
-    max_retries: int = 3,
+    max_retries: int = 2,
     base_delay: float = 1.0
 ) -> str:
     """
-    Tries models in API-returned order.
-    No hardcoded list - purely API-driven.
+    Tries at most MAX_MODELS_PER_CALL models in API-returned order.
+    Instructions go in the system message; user/third-party data goes in the
+    user message inside a <data> block so it cannot act as instructions.
     """
-    models_to_try = _model_manager.get_available_models()
-    
+    models_to_try = _model_manager.get_available_models()[:MAX_MODELS_PER_CALL]
+
     if not models_to_try:
         raise RuntimeError("No available Gemini models! API key invalid or all quotas exhausted.")
 
+    messages = [
+        ("system", instructions + UNTRUSTED_DATA_RULE),
+        ("human", wrap_data(data)),
+    ]
     last_exception = None
 
     for model_name in models_to_try:
@@ -149,8 +164,10 @@ def invoke_llm_with_retry(
                     model=model_name,
                     temperature=temperature,
                     max_retries=0,
+                    timeout=LLM_TIMEOUT_SECONDS,
+                    max_output_tokens=LLM_MAX_OUTPUT_TOKENS,
                 )
-                response = llm.invoke(prompt)
+                response = llm.invoke(messages)
                 return response.content
 
             except Exception as e:
@@ -228,25 +245,24 @@ def benchmark_node(state: GraphState) -> Dict[str, Any]:
     if not competitors:
         return {"benchmark_analysis": "Yakın rakip verisi bulunamadı."}
 
-    competitor_text = "\n".join([
-        f"- {c['title']}: {c['price']} ({c['source']})" 
-        for c in competitors
-    ])
-    
-    prompt = f"""
-    Sen bir pazar analiz uzmanısın. Ürün: {state['product_name']}
-    Fiyat: {state['request'].price} | Kategori: {state['category']}
-    
-    Rakipler:
-    {competitor_text}
-    
-    1. Fiyat rekabetçiliği 2. Teknik fark 3. Pazar avantajı
-    Kısa ve öz, Türkçe.
-    """
-    
+    instructions = (
+        "Sen bir pazar analiz uzmanısın. Verilen ürünü rakipleriyle karşılaştır: "
+        "1. Fiyat rekabetçiliği 2. Teknik fark 3. Pazar avantajı. "
+        "Kısa ve öz, Türkçe, en fazla 250 kelime, Markdown."
+    )
+    data = {
+        "urun": clip(state["product_name"], 120),
+        "fiyat": state["request"].price,
+        "kategori": clip(state["category"], 40),
+        "rakipler": [
+            {"baslik": clip(c.get("title"), 120), "fiyat": clip(c.get("price"), 30), "kaynak": clip(c.get("source"), 60)}
+            for c in competitors[:5]
+        ],
+    }
+
     try:
-        content = invoke_llm_with_retry(prompt, temperature=0.2)
-        return {"benchmark_analysis": content}
+        content = invoke_llm_with_retry(instructions, data, temperature=0.2)
+        return {"benchmark_analysis": clip(content, 4000)}
     except Exception as e:
         logger.error(f"Benchmark failed: {e}")
         return {"benchmark_analysis": "Pazar analizi yapılamadı."}
@@ -356,61 +372,6 @@ def _sanitize_debate_logs(raw_logs: Any, personas: List[Any]) -> List[Dict[str, 
     return sanitized
 
 
-def debate_node(state: GraphState) -> Dict[str, Any]:
-    logger.info("Generating A2A debate...")
-    
-    if not state.get("simulation_response"):
-        return {"debate_logs": [{"name": "Sistem", "text": "Simülasyon verisi yok."}]}
-
-    all_personas = state["simulation_response"].all_personas
-    if not all_personas:
-        return {"debate_logs": []}
-
-    personas = [all_personas[0], all_personas[len(all_personas)//2], all_personas[-1]] if len(all_personas) >= 3 else all_personas
-        
-    persona_context = "\n".join([
-        f"- {p.name} (%{int(p.purchase_probability*100)}): {p.reason}" 
-        for p in personas
-    ])
-    
-    prompt = f"""
-    Ürün: {state['product_name']} | Fiyat: {state['request'].price}
-    Pazar: {state['benchmark_analysis']}
-    
-    Personalar:
-    {persona_context}
-    
-    Kurallar: A2A tartışma, 6-8 mesaj, Türkçe, satın alma ihtimaline göre tutum.
-    Format: [{{"name":"...","text":"..."}}]
-    """
-
-    try:
-        content = invoke_llm_with_retry(prompt, temperature=0.7)
-        content = content.replace("```json", "").replace("```", "").strip()
-        debate_logs = json.loads(content)
-        
-        validated = []
-        for log in debate_logs:
-            if isinstance(log, dict) and "name" in log and "text" in log:
-                validated.append({"name": str(log["name"])[:50], "text": str(log["text"])[:500]})
-        
-        return {"debate_logs": validated}
-        
-    except json.JSONDecodeError:
-        # Regex extract attempt
-        try:
-            start, end = content.find("["), content.rfind("]") + 1
-            if start != -1 and end > start:
-                logs = json.loads(content[start:end])
-                return {"debate_logs": [{"name": str(l.get("name",""))[:50], "text": str(l.get("text",""))[:500]} for l in logs if isinstance(l, dict)]}
-        except Exception:
-            pass
-        return {"debate_logs": [{"name": "Sistem", "text": "Format hatası."}]}
-    except Exception as e:
-        logger.error(f"Debate error: {e}")
-        return {"debate_logs": [{"name": "Sistem", "text": "Tartışma oluşturulamadı."}]}
-
-
 def debate_node_v2(state: GraphState) -> Dict[str, Any]:
     logger.info("Generating persona-only A2A debate...")
 
@@ -424,31 +385,14 @@ def debate_node_v2(state: GraphState) -> Dict[str, Any]:
 
     personas = [all_personas[0], all_personas[len(all_personas) // 2], all_personas[-1]] if len(all_personas) >= 3 else all_personas
     allowed_names = ", ".join([p.name for p in personas])
-    persona_context = "\n".join([
-        (
-            f"- {p.name} (%{int(p.purchase_probability * 100)}, karar: {p.decision_label}): "
-            f"{p.reason} | karakter: {p.personality_type or p.ai_roleplay_prompt or 'persona'} | "
-            f"kritik not: {p.micro_feedback}"
-        )
-        for p in personas
-    ])
-
-    prompt = f"""
-    Urun: {state['product_name']} | Fiyat: {state['request'].price}
-    Kategori: {state['category']}
-    Genel skor: {response.overall_score}/100
-    Pazar: {state['benchmark_analysis']}
-
-    Personalar:
-    {persona_context}
-
-    Gorev: Bu 3 persona kendi aralarinda urunu tartissin. Satici, musteri temsilcisi,
+    instructions = f"""
+    Gorev: Verideki 3 persona kendi aralarinda urunu tartissin. Satici, musteri temsilcisi,
     moderator, buyer/seller veya assistant rolu yazma.
 
     Kurallar:
     - 6-8 mesaj uret.
     - name alani SADECE su isimlerden biri olabilir: {allowed_names}
-    - Her persona kendi karar ihtimaline gore konussun; hepsi ayni fikirde olmasin.
+    - Her persona kendi karar ihtimaline ve karakterine gore konussun; hepsi ayni fikirde olmasin.
     - Mesajlar kisa, dogal ve somut olsun: fiyat, guven, ozellik, aciklama veya kanal riskine deginsin.
     - "Ben bir asistan olarak", "assistant 1", "alici", "satici" gibi ifadeler yasak.
     - Son mesaj mutlaka bir personanin saticiya net bir iyilestirme onerisiyle bitsin.
@@ -456,9 +400,27 @@ def debate_node_v2(state: GraphState) -> Dict[str, Any]:
 
     Format: [{{"name":"{personas[0].name}","text":"..."}}]
     """
+    data = {
+        "urun": clip(state["product_name"], 120),
+        "fiyat": state["request"].price,
+        "kategori": clip(state["category"], 40),
+        "genelSkor": response.overall_score,
+        "pazarAnalizi": clip(state["benchmark_analysis"], 1500),
+        "personalar": [
+            {
+                "ad": p.name,
+                "satinAlmaIhtimali": int(p.purchase_probability * 100),
+                "karar": p.decision_label,
+                "gerekce": clip(p.reason, 300),
+                "karakter": clip(p.personality_type or p.ai_roleplay_prompt or "persona", 400),
+                "kritikNot": clip(p.micro_feedback, 300),
+            }
+            for p in personas
+        ],
+    }
 
     try:
-        content = invoke_llm_with_retry(prompt, temperature=0.7)
+        content = invoke_llm_with_retry(instructions, data, temperature=0.7)
         content = content.replace("```json", "").replace("```", "").strip()
         debate_logs = json.loads(content)
         validated = _sanitize_debate_logs(debate_logs, personas)
@@ -545,11 +507,11 @@ def run_agentic_simulation(request: SimulationRequest) -> SimulationResponse:
              
         return response
         
-    except Exception as e:
-        logger.error(f"Agentic simulation failed: {e}")
+    except Exception:
+        logger.exception("Agentic simulation failed")
         fallback_response = run_simulation(request)
         fallback_response.debate_logs = [
-            {"name": "Sistem", "text": f"Ajanlar meşgul: {str(e)[:50]}..."},
+            {"name": "Sistem", "text": "AI ajanlarına şu anda ulaşılamadı."},
             {"name": "Sistem", "text": "Standart simülasyon sonuçları hazırlandı."}
         ]
         return fallback_response

@@ -10,6 +10,31 @@ import { readProductLink } from "@/lib/api";
 import { Image as ImageIcon, Link2, Loader2, Plus, Shirt, Smartphone, Sparkles, Trash2, Upload } from "lucide-react";
 import { motion, type Variants } from "framer-motion";
 
+// Backend accepts at most 6 images of ~1.5 MB each (see SimulationRequest.images).
+const MAX_IMAGES = 6;
+const MAX_IMAGE_EDGE = 1280;
+
+/** Re-encode an uploaded photo as a JPEG no larger than MAX_IMAGE_EDGE on its long side. */
+function downscaleImage(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new window.Image();
+    img.onload = () => {
+      const scale = Math.min(1, MAX_IMAGE_EDGE / Math.max(img.width, img.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext("2d")?.drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+      resolve(canvas.toDataURL("image/jpeg", 0.85));
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("image decode failed"));
+    };
+    img.src = url;
+  });
+}
 
 interface ProductFormProps {
   onSubmit: (data: SimulationRequest) => void;
@@ -471,7 +496,7 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
       
       // Yeni link okundugunda eskileri temizle ve yenileri ekle
       if (result.images && result.images.length > 0) {
-        setImages(result.images);
+        setImages(result.images.slice(0, MAX_IMAGES));
       } else if (result.image) {
         setImages([result.image]);
       } else {
@@ -490,17 +515,14 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
   const handleFileUpload = (files: FileList | null) => {
     if (!files) return;
     
-    Array.from(files).forEach((file) => {
+    Array.from(files).forEach(async (file) => {
       if (!file.type.startsWith("image/")) return;
-      
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        if (result && !images.includes(result)) {
-          setImages((prev) => [...prev, result]);
-        }
-      };
-      reader.readAsDataURL(file);
+      try {
+        const result = await downscaleImage(file);
+        setImages((prev) => (prev.includes(result) ? prev : [...prev, result].slice(0, MAX_IMAGES)));
+      } catch {
+        setLinkStatus("Gorsel okunamadi.");
+      }
     });
   };
 
@@ -616,7 +638,7 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
                     type="button" variant="outline" size="icon"
                     onClick={() => {
                       const url = prompt("Gorsel URL'si girin:");
-                      if (url && !images.includes(url)) setImages(prev => [...prev, url]);
+                      if (url && !images.includes(url)) setImages(prev => [...prev, url].slice(0, MAX_IMAGES));
                     }}
                     className="aspect-square h-auto rounded-xl border-dashed border-primary/20 bg-background/40"
                   >

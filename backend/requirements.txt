@@ -2,7 +2,8 @@ fastapi==0.115.6
 uvicorn[standard]==0.34.0
 pydantic==2.10.4
 python-dotenv==1.0.1
+requests==2.34.2
 cloudscraper==1.2.71
-langgraph>=0.2.0
-langchain>=0.3.0
-langchain-google-genai>=2.0.0
+langgraph==1.2.15
+langchain-core==1.6.11
+langchain-google-genai==4.3.7

@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Mapping, Optional
 
 from app.models.product import PurchaseMotivation, SimulationRequest
 from app.models.simulation import AiInsights, NormalizedProduct, PersonaFeedback, PersonaResult
+from app.services.prompt_safety import UNTRUSTED_DATA_RULE, wrap_data
 from app.utils.scoring_utils import infer_product_type, recommend_channels
 
 logger = logging.getLogger("ai_insights")
@@ -105,18 +106,19 @@ def _call_gemini_generate_content(system_prompt: str, user_payload: Mapping[str,
         raise RuntimeError("GEMINI_API_KEY missing")
 
     model = os.getenv("GEMINI_MODEL", "gemini-1.5-flash-latest")
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
     body = {
         "systemInstruction": {
-            "parts": [{"text": system_prompt}]
+            "parts": [{"text": system_prompt + UNTRUSTED_DATA_RULE}]
         },
         "contents": [{
             "role": "user",
-            "parts": [{"text": json.dumps(user_payload, ensure_ascii=False)}]
+            "parts": [{"text": wrap_data(user_payload)}]
         }],
         "generationConfig": {
             "responseMimeType": "application/json",
-            "temperature": 0.4
+            "temperature": 0.4,
+            "maxOutputTokens": 2048,
         }
     }
 
@@ -125,6 +127,7 @@ def _call_gemini_generate_content(system_prompt: str, user_payload: Mapping[str,
         data=json.dumps(body).encode("utf-8"),
         headers={
             "Content-Type": "application/json",
+            "x-goog-api-key": api_key,
         },
         method="POST",
     )

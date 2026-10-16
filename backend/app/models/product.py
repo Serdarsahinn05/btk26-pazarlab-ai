@@ -1,9 +1,20 @@
 from enum import Enum
-from typing import Any, Optional
+from typing import Annotated, Any, Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 from app.models.input_analysis import InputAnalysisResponse
+
+
+Category = Literal[
+    "tisort", "pantolon", "mont", "elbise", "etek",
+    "telefon", "laptop", "kulaklik", "tablet", "akilli_saat",
+]
+
+ShortText = Annotated[str, StringConstraints(strip_whitespace=True, max_length=200)]
+Label = Annotated[str, StringConstraints(strip_whitespace=True, max_length=40)]
+# An image is either a URL or a base64 data URL (up to ~1.1 MB of image data).
+ImageRef = Annotated[str, StringConstraints(max_length=1_500_000)]
 
 
 class PurchaseMotivation(str, Enum):
@@ -17,61 +28,61 @@ class PurchaseMotivation(str, Enum):
 
 
 class TargetAudience(BaseModel):
-    age_range: str = Field(alias="ageRange")
-    gender: str
-    income_level: str = Field(alias="incomeLevel")
+    age_range: Label = Field(alias="ageRange")
+    gender: Label
+    income_level: Label = Field(alias="incomeLevel")
 
     model_config = ConfigDict(populate_by_name=True)
 
 
 class ProductFeatures(BaseModel):
-    fabric: Optional[str] = None
-    inner_filling: Optional[str] = Field(default=None, alias="innerFilling")
+    fabric: Optional[ShortText] = None
+    inner_filling: Optional[ShortText] = Field(default=None, alias="innerFilling")
     waterproof: Optional[bool] = None
     windproof: Optional[bool] = None
-    season: Optional[str] = None
-    colors: Optional[list[str]] = None
-    sizes: Optional[list[str]] = None
-    size_range: Optional[str] = Field(default=None, alias="sizeRange")
-    print_type: Optional[str] = Field(default=None, alias="printType")
-    collar_type: Optional[str] = Field(default=None, alias="collarType")
-    sleeve_length: Optional[str] = Field(default=None, alias="sleeveLength")
-    waist_type: Optional[str] = Field(default=None, alias="waistType")
-    leg_type: Optional[str] = Field(default=None, alias="legType")
+    season: Optional[ShortText] = None
+    colors: Optional[Annotated[list[ShortText], Field(max_length=20)]] = None
+    sizes: Optional[Annotated[list[ShortText], Field(max_length=20)]] = None
+    size_range: Optional[ShortText] = Field(default=None, alias="sizeRange")
+    print_type: Optional[ShortText] = Field(default=None, alias="printType")
+    collar_type: Optional[ShortText] = Field(default=None, alias="collarType")
+    sleeve_length: Optional[ShortText] = Field(default=None, alias="sleeveLength")
+    waist_type: Optional[ShortText] = Field(default=None, alias="waistType")
+    leg_type: Optional[ShortText] = Field(default=None, alias="legType")
     stretch: Optional[bool] = None
     hood: Optional[bool] = None
-    pocket_count: Optional[str] = Field(default=None, alias="pocketCount")
-    brand: Optional[str] = None
-    ram: Optional[str] = None
-    storage: Optional[str] = None
-    processor: Optional[str] = None
-    camera: Optional[str] = None
-    battery: Optional[str] = None
-    refresh_rate: Optional[str] = Field(default=None, alias="refreshRate")
-    screen_size: Optional[str] = Field(default=None, alias="screenSize")
-    display_type: Optional[str] = Field(default=None, alias="displayType")
-    gpu: Optional[str] = None
-    weight: Optional[str] = None
-    operating_system: Optional[str] = Field(default=None, alias="operatingSystem")
-    connectivity: Optional[str] = None
-    sensors: Optional[str] = None
-    connection_type: Optional[str] = Field(default=None, alias="connectionType")
+    pocket_count: Optional[ShortText] = Field(default=None, alias="pocketCount")
+    brand: Optional[ShortText] = None
+    ram: Optional[ShortText] = None
+    storage: Optional[ShortText] = None
+    processor: Optional[ShortText] = None
+    camera: Optional[ShortText] = None
+    battery: Optional[ShortText] = None
+    refresh_rate: Optional[ShortText] = Field(default=None, alias="refreshRate")
+    screen_size: Optional[ShortText] = Field(default=None, alias="screenSize")
+    display_type: Optional[ShortText] = Field(default=None, alias="displayType")
+    gpu: Optional[ShortText] = None
+    weight: Optional[ShortText] = None
+    operating_system: Optional[ShortText] = Field(default=None, alias="operatingSystem")
+    connectivity: Optional[ShortText] = None
+    sensors: Optional[ShortText] = None
+    connection_type: Optional[ShortText] = Field(default=None, alias="connectionType")
     noise_cancellation: Optional[bool] = Field(default=None, alias="noiseCancellation")
-    microphone: Optional[str] = None
-    water_resistance: Optional[str] = Field(default=None, alias="waterResistance")
-    latency: Optional[str] = None
-    material: Optional[str] = None
-    style: Optional[str] = None
-    fit: Optional[str] = None
-    use_case: Optional[str] = Field(default=None, alias="useCase")
-    upholstery: Optional[str] = None
-    frame_material: Optional[str] = Field(default=None, alias="frameMaterial")
-    load_capacity: Optional[str] = Field(default=None, alias="loadCapacity")
-    compatible_model: Optional[str] = Field(default=None, alias="compatibleModel")
-    dimensions: Optional[str] = None
-    installation_ease: Optional[str] = Field(default=None, alias="installationEase")
+    microphone: Optional[ShortText] = None
+    water_resistance: Optional[ShortText] = Field(default=None, alias="waterResistance")
+    latency: Optional[ShortText] = None
+    material: Optional[ShortText] = None
+    style: Optional[ShortText] = None
+    fit: Optional[ShortText] = None
+    use_case: Optional[ShortText] = Field(default=None, alias="useCase")
+    upholstery: Optional[ShortText] = None
+    frame_material: Optional[ShortText] = Field(default=None, alias="frameMaterial")
+    load_capacity: Optional[ShortText] = Field(default=None, alias="loadCapacity")
+    compatible_model: Optional[ShortText] = Field(default=None, alias="compatibleModel")
+    dimensions: Optional[ShortText] = None
+    installation_ease: Optional[ShortText] = Field(default=None, alias="installationEase")
 
-    model_config = ConfigDict(populate_by_name=True, extra="allow")
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
 
 class CommerceInfo(BaseModel):
@@ -84,16 +95,16 @@ class CommerceInfo(BaseModel):
 
 
 class SimulationRequest(BaseModel):
-    category: str = Field(min_length=1)
+    category: Category
     purchase_motivation: PurchaseMotivation = Field(alias="purchaseMotivation")
-    product_name: str = Field(alias="productName", min_length=4)
-    product_url: Optional[str] = Field(default=None, alias="productUrl")
-    price: float = Field(gt=0)
-    description: str = Field(min_length=40)
+    product_name: str = Field(alias="productName", min_length=4, max_length=120)
+    product_url: Optional[str] = Field(default=None, alias="productUrl", max_length=2048)
+    price: float = Field(gt=0, le=10_000_000, allow_inf_nan=False)
+    description: str = Field(min_length=40, max_length=4000)
     target_audience: TargetAudience = Field(alias="targetAudience")
     features: ProductFeatures = Field(default_factory=ProductFeatures)
     commerce: CommerceInfo
-    images: list[str] = Field(default_factory=list)
+    images: list[ImageRef] = Field(default_factory=list, max_length=6)
     input_analysis: Optional[InputAnalysisResponse] = Field(default=None, alias="inputAnalysis")
 
     model_config = ConfigDict(populate_by_name=True)

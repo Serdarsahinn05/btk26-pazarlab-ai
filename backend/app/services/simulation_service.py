@@ -30,7 +30,7 @@ def load_persona_data() -> dict[str, Any]:
 
 
 def run_simulation(request: SimulationRequest) -> SimulationResponse:
-    logger.info(f"Simülasyon başlatıldı: {request.product_name}")
+    logger.info("Simülasyon başlatıldı: %r", request.product_name[:80])
     input_analysis = request.input_analysis or analyze_input(request)
     normalized = normalize_product(request, input_analysis.signals)
     persona_data = load_persona_data()
