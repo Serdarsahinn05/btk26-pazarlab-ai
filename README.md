@@ -38,7 +38,7 @@ PazarLab AI, girişimciler, e-ticaret satıcıları ve ürün ekipleri için gel
                         v               v
         +---------------+----+   +------+----------------+
         |  Simulation Core   |   |      Agentic AI       |
-        |  500 bots/persona  |   |  Gemini + fallback   |
+        | 500 bot, 12 persona|   |  Gemini + fallback   |
         +---------------+----+   +------+----------------+
                         |               |
                         |               |
@@ -94,7 +94,8 @@ Demo kapsami bilincli olarak dar tutuldu. Amac cok kategori gostermek degil, sec
 ## Docker ile Calistirma
 
 ```powershell
-cd C:\Users\42osm\btk26-pazarlab-ai
+git clone https://github.com/Serdarsahinn05/btk26-pazarlab-ai.git
+cd btk26-pazarlab-ai
 Copy-Item backend\.env.example backend\.env
 notepad backend\.env
 docker compose up --build
@@ -126,7 +127,9 @@ Backend:
 
 ```powershell
 cd backend
-.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+python -m venv venv
+venv\Scripts\pip install -r requirements.txt
+venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
 Frontend:
@@ -143,10 +146,19 @@ npm run dev
 
 `backend/.env`
 
-```env
-GEMINI_API_KEY=your_gemini_api_key_here
-SERPER_API_KEY=your_serper_api_key_here
-```
+| Degisken | Zorunlu | Aciklama |
+|---|---|---|
+| `GEMINI_API_KEY` | Evet | Google Gemini API anahtari. Yoksa AI yorumlari sablon metne duser. |
+| `SERPER_API_KEY` | Hayir | Rakip/pazar aramasi (google.serper.dev). Yoksa benchmark adimi atlanir. |
+| `GEMINI_MODEL` | Hayir | Kullanilacak model adi. Bos birakilirsa eski bir varsayilan kullaniliyor; guncel bir model girilmesi onerilir (bkz. [B1](docs/IMPROVEMENTS.md)). |
+
+`frontend/.env.local`
+
+| Degisken | Varsayilan |
+|---|---|
+| `NEXT_PUBLIC_API_URL` | `http://localhost:8000` |
+
+> `.env` dosyalari git'e eklenmez. Guvenlik notlari icin [docs/SECURITY_AUDIT.md](docs/SECURITY_AUDIT.md).
 
 ---
 
@@ -159,6 +171,10 @@ SERPER_API_KEY=your_serper_api_key_here
 | [API Contract](docs/api-contract.md) | Backend/frontend response sozlesmesi |
 | [AI Output](docs/ai-output.md) | AI tarafindan beklenen cikti formati |
 | [Demo Script](docs/demo-script.md) | Sunumda izlenecek demo akisi |
+| [Tasarim Sistemi](DESIGN.md) | Renk, tipografi ve bilesen kurallari |
+| [Yol Haritasi](docs/ROADMAP.md) | Fazlar, kabul kriterleri, durum |
+| [Guvenlik Denetimi](docs/SECURITY_AUDIT.md) | Bulgular ve duzeltmeler |
+| [Iyilestirmeler](docs/IMPROVEMENTS.md) | Hatalar, teknik borc ve yeni ozellikler |
 
 ---
 

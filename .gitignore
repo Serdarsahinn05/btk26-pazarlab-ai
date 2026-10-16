@@ -5,7 +5,8 @@ __pycache__/
 .ruff_cache/
 
 .env
-.env.local
+.env.*
+!.env.example
 backend/.env
 BTK'26/
 
