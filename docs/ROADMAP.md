@@ -29,8 +29,9 @@
 | 10a | `feat/ai-budget` | AI önbelleği, IP başına günlük AI kotası | 0,5 gün | ✅ |
 | 10b | `feat/offline-persona-chat` | AI'sız (kural tabanlı) persona sohbeti | 0,5 gün | ✅ |
 | 11 | `feat/mcp-connector` | PazarLab MCP sunucusu (Claude connector) | 1–1,5 gün | ✅ (Claude.ai denemesi bekliyor) |
-| 11b | `spike/claude-artifact` | Claude-powered artifact araştırması | 0,5 gün | ⬜ |
+| 11b | `spike/claude-artifact` | Claude-powered artifact araştırması | 0,5 gün | ✅ karar: Motor v2'den sonra |
 | 12 | `feat/engine-v2-town` | Motor v2 + AI kasabası + Big Five | 3–4 gün | ⬜ |
+| 12b | `feat/claude-artifact` | Claude içinde bağımsız PazarLab sayfası (11b, seçenek B) | 1,5 gün | ⬜ isteğe bağlı |
 | 13 | `feat/product-entry-v2` | Ürün ekleme ekranı: link öncelikli akış + yeni yerleşim | 2 gün | ⬜ |
 | 14 | `feat/link-reader-v2` | Site okuyucuları, kayıtlı HTML testleri, "HTML ver" ucu | 2 gün | ⬜ |
 | 15 | `feat/layout-pass` | Diğer ekranların yerleşimi (audit → critique → ponytail-review) | 1,5 gün | ⬜ |
@@ -211,8 +212,8 @@ Kabul kriteri: DESIGN.md'deki tüm kalıplar uygulanmış; bileşenlerde ham ren
 
 ## Şu an neredeyiz
 
-- **Son tamamlanan:** Faz 11 (MCP connector; kod ve testler bitti, Claude.ai'de gerçek deneme kullanıcıyla yapılacak). Tüm dallar `main`'e merge edildi ve `origin`'e push'landı.
-- **Sıradaki:** Faz 11b → 12 …
+- **Son tamamlanan:** Faz 11b (artifact araştırması: karar verildi). Öncesinde Faz 11 (MCP connector; Claude.ai denemesi ertelendi). Tüm dallar `main`'e merge edildi ve `origin`'e push'landı.
+- **Sıradaki:** Faz 12 (Motor v2 + AI kasabası) …
 - **Ertelenen (kullanıcı kararı, 2026-10-17):** Faz 11'in Claude.ai denemesi sonra birlikte yapılacak. Gerekenler: `cloudflared` kurulumu (`winget install Cloudflare.cloudflared`), tünel adresinin `MCP_ALLOWED_HOSTS`'a yazılması, Claude'da connector eklenmesi; açık soru `?key=` sorgu dizesinin korunup korunmadığı. Adımlar: docs/mcp-connector.md. (sıra aşağıdaki tabloda). Her faz kendi dalında, bitince bu bölüm güncellenir.
 - **Bekleyen kararlar:** kategori genişletme (hangi aileler) Faz 13'e gelince konuşulacak; Faz 9 için API anahtarı yok.
 - **Ortam notları:** `backend/venv` bozuk (eski bir kullanıcı yolunu gösteriyor). Testler geçici bir venv ile koşuyor. Gemini sık sık 429 veriyor; arayüz testlerinde AI kapalı ya da sahte SSE kullanılıyor. `gh`, nginx ve Docker daemon yok.
@@ -253,10 +254,20 @@ Kabul kriteri: DESIGN.md'deki tüm kalıplar uygulanmış; bileşenlerde ham ren
 - Doğrulama: `tests/test_mcp.py` (9 test, toplam 139): araç listesi ve şema, kategori/persona araçları, sunucu AI'ı çağrılırsa test düşecek şekilde simülasyon + kayıt + `get_simulation`, fiyat eğrisi ve karşılaştırma, hatalı girdi / bilinmeyen kimlik / iç IP'nin araç hatası olması, ortak rate limit, HTTP'de API ile yan yana çalışma, erişim anahtarı ve bilinmeyen Host. Resmî `mcp` istemcisiyle gerçek uvicorn üzerinden uçtan uca deneme (anahtarlı/anahtarsız). `pip check` ve `pip-audit` temiz.
 - **Bekleyen:** Claude.ai'de kullanıcının aboneliğiyle gerçek deneme (tünel + `MCP_ALLOWED_HOSTS`). Belirsiz nokta: Claude'un connector URL'sindeki `?key=` sorgu dizesini koruyup korumadığı; korumuyorsa geçici olarak anahtarsız denenir, uzun vadede OAuth.
 
-### Faz 11b: Claude-powered artifact (araştırma)
-- [ ] Artifact'ın dış API'ye (PazarLab backend'i) erişip erişemediği kontrol edilir.
-- [ ] Erişiyorsa hafif bir demo (form → sonuç → persona sohbeti, AI çağrıları görüntüleyenin hesabından); erişemiyorsa çekirdeğin JS'e taşınması için efor notu.
-- Kabul: karar ve gerekçe bu dosyaya yazılır.
+### Faz 11b: Claude-powered artifact (araştırma) ✅
+Kaynak: claude.ai yayınlanmış artifact çalışma zamanı sözleşmesi 0.2.84'ün tip tanımları (`sample.d.ts`, `mcp.d.ts`, `claude.d.ts`).
+
+**Bulgular**
+- **Sayfanın ağ erişimi engelli.** Artifact, PazarLab backend'ine `fetch` ile doğrudan ulaşamaz (sözleşme: "its network is blocked").
+- **`sample` yeteneği:** sayfa, **açan kişinin Claude hesabıyla** Claude'a soru sorabiliyor; kullanım izleyicinin planından düşüyor, ilk çağrıda izin isteniyor, aynı istek 5 dk önbellekten dönüyor. AI yorumları ve persona sohbeti için birebir uygun.
+- **`mcp` yeteneği:** sayfa, **izleyicinin kendi connector'larını** onun kimliğiyle çağırabiliyor. İzleyici PazarLab connector'ını eklediyse simülasyon backend'de çalışabilir; eklemediyse `server_not_connected` döner. `mcp` beyan eden bir sayfa herkese açık linkle paylaşılamıyor.
+- Not: claude.ai sohbetinde üretilen "chat artifact"ların çalışma zamanı farklı (düz `window.claude`); bu araştırma yayınlanmış artifact'lar içindir.
+
+**Seçenekler**
+- **A. Connector'a dayanan sayfa:** `mcp` (PazarLab araçları) + `sample`. Tek motor (backend), ama izleyicinin connector'ı eklemiş olması, connector'ın internette yayında olması gerekir ve sayfa herkese açık paylaşılamaz.
+- **B. Bağımsız sayfa:** deterministik motor JavaScript'e taşınır ve sayfanın içine gömülür; AI kısmı `sample`. Connector gerekmez, herhangi bir Claude kullanıcısı açabilir, paylaşılabilir. Bedeli iki dilde motor; Python ile JS'nin aynı sonucu verdiğini ortak test girdileriyle (Python'un ürettiği referans çıktılar) denetlemek gerekir.
+
+**Karar:** Şimdi yapılmıyor. Faz 12 motoru baştan değiştireceği için bugün JS'e taşımak işi iki kez yapmak olur. Motor v2 oturduktan sonra **B** seçeneğiyle Faz 12b (isteğe bağlı). Motor v2, parametreleri veri dosyalarında (kurallar, personalar, kasaba nüfusu) ve algoritması küçük kalacak şekilde tasarlanacak; böylece JS'e taşımak kolaylaşır. A seçeneği, connector yayına alındığında hızlı bir demo olarak ayrıca denenebilir.
 
 ### Faz 12: Motor v2 + AI kasabası
 - [ ] **Ödeme isteği (WTP):** her sakine kategori fiyatı × persona/gelir çarpanıyla log-normal bir üst fiyat. Fiyat düştükçe alma ihtimali artar; "çok ucuz şüphesi" yalnızca kalite odaklı sakinlerde. B15 kapanır.
