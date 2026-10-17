@@ -41,7 +41,7 @@
 | 16 | `feat/insight-features` | İlan yeniden yazma, rakip kartı, segment grafiği, görsel analizi, paylaşım görseli | 2–3 gün | ✅ (pazar payı Faz 12'nin ertelenen rakipli seçimine bağlı) |
 | 17 | `chore/cleanup-e2e` | Ölü kod temizliği, Playwright testleri CI'da | 1 gün | ✅ |
 | 18 | `feat/browser-extension` | "PazarLab'a gönder" tarayıcı eklentisi | 1–2 gün | ✅ (Web Mağazası'na yüklenmedi) |
-| 18b | `feat/debate-avatars` | Tartışmadaki konuşmacılara avatar (kullanıcı isteği) | 0,25 gün | ⬜ |
+| 18b | `feat/debate-avatars` | Tartışmadaki konuşmacılara avatar (kullanıcı isteği) | 0,25 gün | ✅ |
 | 19 | `feat/bring-your-population` | Kendi nüfusunu yükle + kalibrasyon (hesap sistemi, KVKK) | 3+ gün | ⬜ |
 | 20 | `feat/claude-artifact` | Claude içinde bağımsız PazarLab sayfası (11b, seçenek B) | 1,5 gün | ⬜ isteğe bağlı |
 
@@ -223,7 +223,8 @@ Kabul kriteri: DESIGN.md'deki tüm kalıplar uygulanmış; bileşenlerde ham ren
 - **Ara iş (2026-10-17, `chore/deploy-vercel-render`):** Vercel (website) + Render (API) ile yayın hazırlığı: `render.yaml` Blueprint, [deployment.md §6](deployment.md#6-vercel--render) (adımlar, ücretsiz planın kısıtları, ne zaman VPS), `CLIENT_IP_HEADER` (platform proxy'sinin yazdığı IP başlığı; Render'da `CF-Connecting-IP`, ilk deploy'da `/api/health`'teki `clientIp` ile doğrulanacak). 2 test (toplam 257). Gerçek bir Render/Vercel hesabında denenmedi.
 - **Önceki:** Faz 16 (yeni özellikler) dört adımıyla bitti ve main'e merge edildi: ilan yeniden yazma + öncesi/sonrası, rakip fiyat kartı, AI görsel analizi, paylaşım görseli.
 - **Son biten:** Faz 17 (temizlik ve CI testleri): ölü kod ve 2 paket silindi, veri kopyaları tek kaynağa bağlandı, LangGraph kaldırıldı, Playwright testleri repoda ve CI'da, Docker imajları doğrulandı, README yenilendi.
-- **Sıradaki:** Faz 18b (kullanıcı isteği): tartışmadaki konuşmacılara da sakin kartlarındaki gibi avatar. Sonra Faz 19. Açık karar: görsel puanı simülasyona girsin mi (F29); pazar payı için rakipli seçim (multinomial logit) ne zaman. 12'nin ertelenen maddeleri (rakipli seçim, belirli bir sakinle sohbet) Faz 16'da değerlendirilebilir.
+- **Son biten:** Faz 18 (tarayıcı eklentisi) ve 18b (tartışmada avatarlar).
+- **Sıradaki:** Faz 19 (kendi nüfusunu yükle; hesap sistemi ve KVKK gerektiriyor, kapsamı kullanıcıyla netleşmeli) ya da isteğe bağlı Faz 20. Eklenti ikonu şimdilik favicon; kalıcı ikon kullanıcıyla seçilecek. Açık karar: görsel puanı simülasyona girsin mi (F29); pazar payı için rakipli seçim (multinomial logit) ne zaman. 12'nin ertelenen maddeleri (rakipli seçim, belirli bir sakinle sohbet) Faz 16'da değerlendirilebilir.
 - **Kullanıcıdan beklenen (isteğe bağlı):** Trendyol, Hepsiburada, Amazon TR, n11, Çiçeksepeti'den birer ürün sayfasını tarayıcıda "Farklı kaydet → Yalnızca HTML" ile kaydedip `backend/tests/fixtures/links/` altına koymak; siteye özel okuma kuralları bu gerçek sayfalara göre yazılır.
 - **Ertelenen (kullanıcı kararı, 2026-10-17):** Faz 11'in Claude.ai denemesi sonra birlikte yapılacak. Gerekenler: `cloudflared` kurulumu (`winget install Cloudflare.cloudflared`), tünel adresinin `MCP_ALLOWED_HOSTS`'a yazılması, Claude'da connector eklenmesi; açık soru `?key=` sorgu dizesinin korunup korunmadığı. Adımlar: docs/mcp-connector.md. (sıra aşağıdaki tabloda). Her faz kendi dalında, bitince bu bölüm güncellenir.
 - **Bekleyen kararlar:** Faz 9 için API anahtarı yok. Süpermarket/gıda, pet shop, otomotiv, kitap/kırtasiye aileleri bilerek dışarıda ("Diğer"e düşüyorlar); talep olursa eklenecek.
@@ -404,6 +405,12 @@ Dört alt faza bölündü (12a–12d); her biri ayrı dalda, ayrı testlerle. A�
 - [x] Belgeler: [extension/README.md](../extension/README.md) (kurulum, akış, gizlilik).
 - **Doğrulama:** `frontend/e2e/extension.spec.ts` (4 test; e2e toplam 13): taklit mağaza sayfasında `snapshotPage` (dış script ve stil atılıyor, JSON-LD kalıyor) → **gerçek** API → `importUrl` → form doldu, link alanı, kategori notu, hash silindi; büyük sayfada JSON verisi korunarak kırpma ve aşırı küçük sınırda `too_large`; sahte link (javascript: adresi, eksi fiyat, 1000 karakter ad, bozuk özellik anahtarları) temizleniyor; bozuk hash yok sayılıyor. `--repeat-each=2` ile 26/26; tsc/eslint temiz. **Gerçek eklenti** Playwright'ın Chromium'unda (markalı Chrome 137+ `--load-extension` kabul etmiyor) uçtan uca: manifest hatası yok, popup `chrome.action.openPopup` ile açıldı ve DevTools protokolüyle düğmeye basıldı → sayfa okundu → yeni sekmede form doldu ("Saten Midi Elbise Siyah", 1299,9 TL, 7 alan, ★ 4,6 · 1.284, Giyim / Elbise), hash silindi. Programla açılan popup `activeTab` iznini almadığı için bu denemede eklentinin geçici bir kopyasında test sayfasının adresi manifeste yazıldı (ikona gerçekten tıklamanın verdiği izinle aynı etki); repodaki manifest değişmedi.
 - Yapılmadı: Chrome Web Mağazası paketi ve yayını; Firefox.
+
+### Faz 18b ✅: Tartışmada avatarlar (`feat/debate-avatars`, kullanıcı isteği)
+- [x] Tartışma satırlarındaki harf rozeti yerine sakin kartlarındaki çizim kediler (`public/pp_icons`), 40 px, kenarı persona renginde. "Sistem" gibi persona olmayan konuşmacılar harf rozetinde kalıyor.
+- [x] Avatar personanın `personas.json` sırasından sabit (sıra % 10), yani aynı persona tartışmada ve **Personaya sor** cevabında (28 px) aynı yüzle görünüyor. 12 persona ve 10 çizim olduğu için bir tartışmada iki konuşmacı aynı kediye düşerse sıradaki boş kedi veriliyor; konuşmacılar avatar paylaşmıyor.
+- [x] Seçim mantığı `lib/avatars.ts`'de tek yerde (`pickAvatars`); sakin kartları da artık bunu kullanıyor (davranış aynı). DESIGN.md §4 "Konuşma satırı" güncellendi; README'deki tartışma ekran görüntüleri yenilendi (diğer görüntüler birebir aynı çıktı).
+- **Doğrulama:** tsc/eslint temiz; e2e 13/13 (tartışma testi artık her persona konuşmacısında `pp_icons` avatarı olduğunu ve konuşmacıların avatar paylaşmadığını denetliyor). Açık/koyu temada tartışma ve kural tabanlı sohbet cevabı ekran görüntüsüyle kontrol edildi.
 
 ### Faz 19: Kendi nüfusunu yükle + kalibrasyon
 - [ ] Satıcı kendi sipariş dökümünden (Trendyol satıcı paneli, Shopify vb.) **anonim/toplu segmentler** yükler (JSON/CSV şeması); kasaba bu dağılımlara göre üretilir.

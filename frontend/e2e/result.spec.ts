@@ -28,6 +28,15 @@ test("debate reveals messages one by one, and at once with reduced motion", asyn
   await expect(showAll).toBeHidden();
   expect(await page.locator("ol > li").count()).toBeGreaterThan(before);
 
+  // Every persona speaker has a drawn avatar, and no two speakers share one.
+  const speakers = await page.locator("ol > li").evaluateAll((items) =>
+    items.map((li) => [li.querySelector("b")?.textContent, li.querySelector("img")?.getAttribute("src")] as const),
+  );
+  const avatarBySpeaker = new Map(speakers.filter(([name]) => name !== "Sistem"));
+  expect(avatarBySpeaker.size).toBeGreaterThan(1);
+  expect([...avatarBySpeaker.values()].every((src) => src?.includes("pp_icons"))).toBeTruthy();
+  expect(new Set(avatarBySpeaker.values()).size).toBe(avatarBySpeaker.size);
+
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.reload();
   await expect(page.locator("ol > li").first()).toBeVisible();

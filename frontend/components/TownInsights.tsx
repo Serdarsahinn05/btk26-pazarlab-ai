@@ -5,6 +5,7 @@ import Image from "next/image";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { Improvement, SegmentRate, SimulationResponse, TownRepresentative } from "@/types";
 import { DECISION_LABEL, DECISION_TEXT_CLASS, personaColor } from "@/lib/personas";
+import { avatarSrc, pickAvatars } from "@/lib/avatars";
 import { cn } from "@/lib/utils";
 
 /* Town views of the v2 engine (Faz 12c data): what-ifs, word of mouth, segments and residents.
@@ -223,21 +224,9 @@ function SegmentTable({ groups }: { groups: Array<{ key: string; title: string; 
 
 /* ------------------------------ residents ------------------------------ */
 
-// Drawn avatars in public/pp_icons (1–10). Each resident keeps the same one; the cast on screen never repeats one.
-const AVATAR_COUNT = 10;
-
-function pickAvatars(residents: TownRepresentative[]): number[] {
-  const used = new Set<number>();
-  return residents.map((r) => {
-    let n = (Number(r.id.replace(/\D/g, "")) || 0) % AVATAR_COUNT;
-    while (used.has(n) && used.size < AVATAR_COUNT) n = (n + 1) % AVATAR_COUNT;
-    used.add(n);
-    return n + 1;
-  });
-}
-
 export function TownCast({ residents }: { residents: TownRepresentative[] }) {
-  const avatars = pickAvatars(residents);
+  // Each resident keeps the same avatar; the five on screen never share one.
+  const avatars = pickAvatars(residents.map((r) => Number(r.id.replace(/\D/g, "")) || 0));
   return (
     <section className="flex flex-col gap-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -266,7 +255,7 @@ function ResidentCard({ resident: r, avatar }: { resident: TownRepresentative; a
       <div className="flex items-start gap-3">
         {/* Decorative: the name next to it says who this is. */}
         <Image
-          src={`/pp_icons/${avatar}.jpeg`}
+          src={avatarSrc(avatar)}
           alt=""
           width={56}
           height={56}
