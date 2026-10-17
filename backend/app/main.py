@@ -18,6 +18,7 @@ from app.api.product_link import router as product_link_router
 from app.api.simulate import router as simulate_router
 from app.api.whatif import router as whatif_router
 from app.api.draft import router as draft_router
+from app.api.images import router as images_router
 from app.api.stream import router as stream_router
 
 configure_logging()
@@ -69,6 +70,7 @@ def create_app() -> FastAPI:
     app.include_router(simulate_router)
     app.include_router(whatif_router)
     app.include_router(draft_router)
+    app.include_router(images_router)
     app.include_router(stream_router)
     # Last, so every API route wins; the MCP app itself only answers /mcp (Faz 11).
     app.mount("/", mcp_app)

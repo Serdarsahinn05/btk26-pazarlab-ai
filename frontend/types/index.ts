@@ -274,6 +274,11 @@ export interface StoredSimulation {
   request?: SimulationRequest | null; // images stripped; null for rows saved before v2
 }
 
+/** POST /api/analyze-images (optional, needs AI) */
+export type ImageAnalysis =
+  | { available: false; reason: string }
+  | { available: true; score: number; strengths: string[]; issues: string[]; suggestions: string[]; missingShots: string[]; imagesUsed: number };
+
 /** POST /api/draft-check */
 export interface DraftGain {
   /** Form input name ("fit", "colorsText") or "warranty" | "returnAvailable" | "shippingDays" | "description". */

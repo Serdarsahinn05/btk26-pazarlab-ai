@@ -3,6 +3,7 @@ import { SseError, postSse } from "@/lib/sse";
 import {
   CompareResponse,
   DraftCheckResponse,
+  ImageAnalysis,
   HealthStatus,
   PriceSweepResponse,
   InputAnalysisResponse,
@@ -96,6 +97,12 @@ export const compareVariants = async (base: SimulationRequest, variant: Simulati
 /** POST /api/read-product-page: the same fields from page HTML or copied page text; the server fetches nothing. */
 export const readProductPage = async (page: { html?: string; text?: string; url?: string }): Promise<ProductLinkReadResponse> => {
   const response = await client.post("/api/read-product-page", page, { timeout: 60_000 });
+  return response.data;
+};
+
+/** POST /api/analyze-images: AI review of the product photos; { available: false, reason } without AI. */
+export const analyzeImages = async (images: string[], category: string, productName: string): Promise<ImageAnalysis> => {
+  const response = await client.post("/api/analyze-images", { images: images.slice(0, 4), category, productName }, { timeout: 60_000 });
   return response.data;
 };
 
