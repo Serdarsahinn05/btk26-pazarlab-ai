@@ -430,7 +430,8 @@ Dört alt faza bölündü (12a–12d); her biri ayrı dalda, ayrı testlerle. A�
 - [x] **F31 (yeni, ciddi):** frontend Docker build'i Faz 18'den beri kırıktı (e2e testi build bağlamı dışındaki `extension/`'ı import ediyor). `.dockerignore` + CI'da iki imajı build eden `docker` işi.
 - [x] Ölü kod: `_looks_like_noise`, `ImageProcessor.clean`. IMPROVEMENTS.md'de güncel olmayan 13 satırın durumu koddan doğrulanarak düzeltildi.
 - **Doğrulama:** pytest 280/280, ruff temiz; tsc/eslint temiz; e2e 15/15 (`--repeat-each=2` ile 30/30); `docker compose build frontend` + healthy.
-- Açık kalan küçükler: B12 (AI çağrıları ardışık), B13 (Serper zaman aşımı bilgisi), F23, F25.
+- [x] **B13** (`fix/serper-timeout`): rakip araması 15 sn tek deneme yerine 8 sn + 1 tekrar (4xx tekrar edilmez). Boş sonucun sebebi ayrılıyor; Benchmark sekmesi "arama anahtarı tanımlı değil", "zaman aşımına uğradı, biraz sonra yeniden dene", "şu an yanıt vermedi" ya da "yakın rakip bulunamadı" diyor (önceden hepsi "Yakın rakip verisi bulunamadı."). `tests/test_serper.py` (8 test; toplam 288) ikinci denemede başarılı olunca eski hata işaretinin kaldığı bir hatayı yakaladı, düzeltildi.
+- Açık kalan küçükler: B12 (AI çağrıları ardışık; karar kullanıcıda), F23, F25.
 
 ### Faz 19: Kendi nüfusunu yükle + kalibrasyon
 - [ ] Satıcı kendi sipariş dökümünden (Trendyol satıcı paneli, Shopify vb.) **anonim/toplu segmentler** yükler (JSON/CSV şeması); kasaba bu dağılımlara göre üretilir.

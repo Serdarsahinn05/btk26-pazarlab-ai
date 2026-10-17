@@ -14,34 +14,49 @@ from typing import Any, Dict, List
 logger = logging.getLogger("product_scraper")
 
 
+# One retry: a slow search usually answers the second time, and two short tries beat one long wait.
+TIMEOUT_SECONDS = 8
+ATTEMPTS = 2
+
+
 class SerperShoppingService:
     def __init__(self):
         self.api_key = os.getenv("SERPER_API_KEY")
         self.url = "https://google.serper.dev/shopping"
+        # Why the last search returned nothing: "no_key", "timeout", "error"; None when it answered.
+        self.problem: str | None = None
 
     def search(self, q: str, gl: str = "tr", hl: str = "tr") -> List[Dict[str, Any]]:
+        self.problem = None
         if not self.api_key:
             logger.warning("SERPER_API_KEY is missing. Skipping benchmark.")
+            self.problem = "no_key"
             return []
 
-        payload = json.dumps({
-            "q": q,
-            "gl": gl,
-            "hl": hl
-        })
-        headers = {
-            'X-API-KEY': self.api_key,
-            'Content-Type': 'application/json'
-        }
-
-        try:
-            req = urllib.request.Request(self.url, data=payload.encode(), headers=headers, method="POST")
-            with urllib.request.urlopen(req, timeout=15) as response:
-                data = json.loads(response.read().decode())
-                return data.get("shopping", [])
-        except Exception as e:
-            logger.error(f"Serper API Error: {e}")
-            return []
+        payload = json.dumps({"q": q, "gl": gl, "hl": hl}).encode()
+        headers = {"X-API-KEY": self.api_key, "Content-Type": "application/json"}
+        for attempt in range(1, ATTEMPTS + 1):
+            try:
+                req = urllib.request.Request(self.url, data=payload, headers=headers, method="POST")
+                with urllib.request.urlopen(req, timeout=TIMEOUT_SECONDS) as response:
+                    results = json.loads(response.read().decode()).get("shopping", [])
+                self.problem = None  # an earlier failed attempt no longer matters
+                return results
+            except urllib.error.HTTPError as e:
+                # 4xx (bad key, no credit) will not change on a retry.
+                self.problem = "error"
+                logger.warning("Serper HTTP %s (attempt %d)", e.code, attempt)
+                if e.code < 500:
+                    return []
+            except (TimeoutError, urllib.error.URLError) as e:
+                timed_out = isinstance(e, TimeoutError) or isinstance(getattr(e, "reason", None), TimeoutError)
+                self.problem = "timeout" if timed_out else "error"
+                logger.warning("Serper %s (attempt %d): %r", self.problem, attempt, e)
+            except ValueError as e:  # not JSON
+                self.problem = "error"
+                logger.warning("Serper returned an unreadable answer: %r", e)
+                return []
+        return []
 
     @staticmethod
     def filter_competitors(results: List[Dict[str, Any]], target_product_name: str) -> List[Dict[str, Any]]:
