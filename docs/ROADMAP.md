@@ -233,7 +233,7 @@ Kabul kriteri: DESIGN.md'deki tüm kalıplar uygulanmış; bileşenlerde ham ren
   3. Kullanıcıda: eklentiyi Chrome Web Mağazası'na yüklemek ([LISTING.md](../extension/store/LISTING.md)), kalıcı eklenti ikonu.
   Sonra: Faz 19 (kapsam kullanıcıyla netleşmeli), Faz 9 (API anahtarı gelince), Faz 20 (isteğe bağlı).
 - **Kullanıcıdan beklenen (isteğe bağlı):** Trendyol, Hepsiburada, Amazon TR, n11, Çiçeksepeti'den birer ürün sayfasını tarayıcıda "Farklı kaydet → Yalnızca HTML" ile kaydedip `backend/tests/fixtures/links/` altına koymak; siteye özel okuma kuralları bu gerçek sayfalara göre yazılır.
-- **Ertelenen (kullanıcı kararı, 2026-10-17):** Faz 11'in Claude.ai denemesi sonra birlikte yapılacak. Gerekenler: `cloudflared` kurulumu (`winget install Cloudflare.cloudflared`), tünel adresinin `MCP_ALLOWED_HOSTS`'a yazılması, Claude'da connector eklenmesi; açık soru `?key=` sorgu dizesinin korunup korunmadığı. Adımlar: docs/mcp-connector.md. (sıra aşağıdaki tabloda). Her faz kendi dalında, bitince bu bölüm güncellenir.
+- **Ertelenen (kullanıcı kararı, 2026-10-17):** Faz 11 Claude.ai denemesi, sıradaki oturumun ilk işi (yukarıda). API artık Render'da yayında olduğu için `cloudflared` tüneli gerekmiyor; açık soru hâlâ Claude'un connector URL'sindeki `?key=` sorgu dizesini koruyup korumadığı.
 - **Bekleyen kararlar:** Faz 9 için API anahtarı yok. Süpermarket/gıda, pet shop, otomotiv, kitap/kırtasiye aileleri bilerek dışarıda ("Diğer"e düşüyorlar); talep olursa eklenecek.
 - **Ortam notları:** `backend/venv` Python 3.13 ile yeniden kuruldu (2026-10-17). Gemini sık sık 429 veriyor; arayüz testlerinde AI kapalı ya da sahte SSE kullanılıyor. `gh` ve nginx yok; Docker Desktop açıldığında çalışıyor (29.6, Faz 17).
 
