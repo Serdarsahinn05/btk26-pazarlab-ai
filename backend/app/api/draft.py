@@ -40,6 +40,8 @@ class DraftRequest(BaseModel):
     price: Optional[float] = Field(default=None, gt=0, le=10_000_000, allow_inf_nan=False)
     market_price: Optional[float] = Field(default=None, alias="marketPrice", gt=0, le=10_000_000, allow_inf_nan=False)
     description: str = Field(default="", max_length=4000)
+    rating: Optional[float] = Field(default=None, ge=0, le=5, allow_inf_nan=False)
+    review_count: Optional[int] = Field(default=None, alias="reviewCount", ge=0, le=100_000_000)
     target_audience: TargetAudience = Field(
         default_factory=lambda: TargetAudience(ageRange="genel", gender="unisex", incomeLevel="middle"), alias="targetAudience"
     )

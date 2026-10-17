@@ -11,6 +11,8 @@ export const EMPTY_VALUES: Values = {
   productName: "",
   price: "",
   marketPrice: "",
+  rating: "",
+  reviewCount: "",
   description: "",
   // Honest defaults: "everyone" sends no targeting; only the seller's own choices narrow the town.
   ageRange: "genel",
@@ -42,6 +44,17 @@ export function featuresFrom(values: Values, fields: FormField[]): Features {
   return features as Features;
 }
 
+/** Rating 0–5 and a whole count; anything else is left out rather than sent and rejected. */
+function socialProof(values: Values): { rating?: number; reviewCount?: number } {
+  const rating = Number(String(values.rating ?? "").replace(",", "."));
+  const count = Number(String(values.reviewCount ?? "").replace(/[.\s]/g, ""));
+  const hasRating = String(values.rating ?? "").trim() !== "" && rating >= 0 && rating <= 5;
+  return {
+    rating: hasRating ? rating : undefined,
+    reviewCount: hasRating && Number.isInteger(count) && count >= 0 && String(values.reviewCount ?? "").trim() !== "" ? count : undefined,
+  };
+}
+
 function audienceAndCommerce(values: Values) {
   return {
     targetAudience: {
@@ -67,6 +80,7 @@ export function toRequest(
     productUrl: text(values.productUrl),
     price: toNumber(values.price) ?? 0,
     marketPrice: toNumber(values.marketPrice),
+    ...socialProof(values),
     description: String(values.description ?? "").trim(),
     features: featuresFrom(values, fields),
     ...audienceAndCommerce(values),
@@ -82,6 +96,7 @@ export function toDraft(category: string, motivation: PurchaseMotivation, values
     productName: String(values.productName ?? "").slice(0, 120),
     price: toNumber(values.price),
     marketPrice: toNumber(values.marketPrice),
+    ...socialProof(values),
     description: String(values.description ?? "").slice(0, 4000),
     features: featuresFrom(values, fields),
     ...audienceAndCommerce(values),
@@ -96,6 +111,8 @@ export function fromRequest(request: SimulationRequest): Values {
   values.price = request.price ? String(request.price) : "";
   values.marketPrice = request.marketPrice ? String(request.marketPrice) : "";
   values.description = request.description ?? "";
+  values.rating = request.rating != null ? String(request.rating) : "";
+  values.reviewCount = request.reviewCount != null ? String(request.reviewCount) : "";
   values.ageRange = request.targetAudience?.ageRange || "genel";
   values.gender = request.targetAudience?.gender || "unisex";
   values.incomeLevel = request.targetAudience?.incomeLevel || "middle";

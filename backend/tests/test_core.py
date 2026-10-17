@@ -122,7 +122,7 @@ def test_graph_uses_llm_debate_and_skips_duplicate_analysis(monkeypatch):
 # --- contracts -----------------------------------------------------------
 
 def test_link_reader_only_returns_accepted_categories():
-    from app.services.product_link_service import ProductLinkReader
+    from app.services.link_reader import ProductLinkReader
 
     from app.services.categories import is_known
 

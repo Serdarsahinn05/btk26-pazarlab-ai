@@ -36,7 +36,7 @@ from app.services.labels import MOTIVATION_LABELS, persona_label
 from app.services import categories
 from app.services.categories import load_category_rules
 from app.services.normalization_service import load_persona_data
-from app.services.product_link_service import URLValidationError, read_product_link
+from app.services.link_reader import URLValidationError, read_product_link
 from app.services.simulation_service import run_simulation
 
 INSTRUCTIONS = """PazarLab AI, bir ürünü pazara çıkmadan önce 500 sentetik tüketiciyle (12 alışveriş personası) test eder.
@@ -71,6 +71,8 @@ class ProductInput(BaseModel):
         description="Benzer ürünlerin ortalama fiyatı (TL). 'diger' kategorisinde verilmesi önerilir; diğerlerinde kategori ortalamasını ezer.",
     )
     description: str = Field(min_length=40, max_length=4000, description="Ürün açıklaması; en az 40 karakter.")
+    rating: Optional[float] = Field(default=None, ge=0, le=5, description="Mağaza puanı (5 üzerinden), satıştaki ürünler için; read_product_link döndürür.")
+    review_count: Optional[int] = Field(default=None, alias="reviewCount", ge=0, description="Değerlendirme sayısı; puanın güvene etkisini büyütür.")
     target_audience: TargetAudience = Field(
         alias="targetAudience",
         description='ageRange ("18-34", "genel"…), gender ("unisex", "kadin", "erkek"), incomeLevel ("low", "middle", "high")',

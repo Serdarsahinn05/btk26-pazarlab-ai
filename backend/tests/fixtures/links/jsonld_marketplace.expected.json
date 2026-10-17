@@ -1,0 +1,15 @@
+{
+  "url": "https://www.example.com/saten-midi-elbise-p-123",
+  "expect": {
+    "title": "Saten Midi Elbise Siyah",
+    "price": 1299.9,
+    "currency": "TRY",
+    "brand": "Moda Atölye",
+    "category": "elbise",
+    "category_confidence": "high",
+    "category_source": "breadcrumb",
+    "rating": 4.6,
+    "review_count": 1284,
+    "features": {"fabric": "Saten", "fit": "Regular"}
+  }
+}
