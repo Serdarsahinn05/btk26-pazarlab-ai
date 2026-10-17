@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { Improvement, SegmentRate, SimulationResponse, TownRepresentative } from "@/types";
 import { DECISION_LABEL, DECISION_TEXT_CLASS, personaColor } from "@/lib/personas";
@@ -222,7 +223,21 @@ function SegmentTable({ groups }: { groups: Array<{ key: string; title: string; 
 
 /* ------------------------------ residents ------------------------------ */
 
+// Drawn avatars in public/pp_icons (1–10). Each resident keeps the same one; the cast on screen never repeats one.
+const AVATAR_COUNT = 10;
+
+function pickAvatars(residents: TownRepresentative[]): number[] {
+  const used = new Set<number>();
+  return residents.map((r) => {
+    let n = (Number(r.id.replace(/\D/g, "")) || 0) % AVATAR_COUNT;
+    while (used.has(n) && used.size < AVATAR_COUNT) n = (n + 1) % AVATAR_COUNT;
+    used.add(n);
+    return n + 1;
+  });
+}
+
 export function TownCast({ residents }: { residents: TownRepresentative[] }) {
+  const avatars = pickAvatars(residents);
   return (
     <section className="flex flex-col gap-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -231,25 +246,33 @@ export function TownCast({ residents }: { residents: TownRepresentative[] }) {
       </div>
       {/* Wrapping flex rather than a grid: 5 cards leave no empty cell, the last row stretches. */}
       <div className="flex flex-wrap gap-4 *:min-w-0 *:grow *:basis-[300px]">
-        {residents.map((r) => (
-          <ResidentCard key={r.id} resident={r} />
+        {residents.map((r, i) => (
+          <ResidentCard key={r.id} resident={r} avatar={avatars[i]} />
         ))}
       </div>
     </section>
   );
 }
 
-function ResidentCard({ resident: r }: { resident: TownRepresentative }) {
+function ResidentCard({ resident: r, avatar }: { resident: TownRepresentative; avatar: number }) {
   return (
     <article className="card-paper flex flex-col gap-3 p-4! md:p-5!">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex flex-col">
+      <div className="flex items-start gap-3">
+        {/* Decorative: the name next to it says who this is. */}
+        <Image
+          src={`/pp_icons/${avatar}.jpeg`}
+          alt=""
+          width={56}
+          height={56}
+          className="h-14 w-14 shrink-0 rounded-blob border-2 border-border object-cover"
+        />
+        <div className="flex min-w-0 grow flex-col">
           <h3 className="font-display text-lg font-bold leading-tight">{r.name}</h3>
           <span className="text-sm text-muted-foreground">
             {r.age} · {r.city} · {r.occupation}
           </span>
         </div>
-        <span className={cn("chip shrink-0", DECISION_TEXT_CLASS[r.decision])}>{DECISION_LABEL[r.decision]}</span>
+        <span className={cn("chip shrink-0 self-start", DECISION_TEXT_CLASS[r.decision])}>{DECISION_LABEL[r.decision]}</span>
       </div>
       <span className="inline-flex items-center gap-2 text-sm font-bold text-foreground-2">
         <span aria-hidden className="h-3 w-3 rounded-full border border-foreground/30" style={{ background: personaColor(r.persona) }} />
