@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="420" viewBox="0 0 1280 420" role="img" aria-labelledby="t d">
+  <title id="t">PazarLab AI</title>
+  <desc id="d">Ürününü pazarlamadan önce 500 kişilik sentetik bir kasabada test et.</desc>
+  <style>
+    :root { --bg:#eaeee8; --card:#fafbf8; --ink:#1b2220; --ink2:#343f3c; --muted:#56625d; --border:#cad3c9; --shadow:#cad3c9;
+            --primary:#2f7a4c; --accent:#2f7896; --buy:#3f8a5a; --watch:#c99a1a; --skip:#c4574a; --track:#dfe5de; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg:#141819; --card:#1c2123; --ink:#e6ebe8; --ink2:#c6cfcb; --muted:#97a29d; --border:#333b3d; --shadow:#0b0d0e;
+              --primary:#6cc490; --accent:#6bb8d6; --buy:#6cc490; --watch:#e8c14a; --skip:#e88a7c; --track:#212729; }
+    }
+    .bg { fill: var(--bg); } .card { fill: var(--card); stroke: var(--border); stroke-width: 2; } .shadow { fill: var(--shadow); }
+    .ink { fill: var(--ink); } .ink2 { fill: var(--ink2); } .muted { fill: var(--muted); } .primary { fill: var(--primary); }
+    .display { font-family: 'Bricolage Grotesque', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; font-weight: 800; letter-spacing: -1.5px; }
+    .body { font-family: 'Nunito', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; }
+    .hand { font-family: 'Caveat', 'Segoe Print', 'Bradley Hand', cursive; }
+    .wave { fill: none; stroke: var(--accent); stroke-width: 4; stroke-linecap: round; }
+    .seg { fill: none; stroke-width: 30; }
+  </style>
+
+  <rect class="bg" width="1280" height="420" rx="28"/>
+
+  <!-- town: scattered persona dots -->
+  <g opacity=".55">
+    <circle cx="1210" cy="52" r="9" fill="#2f7896"/><circle cx="1240" cy="96" r="6" fill="#6a55b8"/>
+    <circle cx="1176" cy="368" r="8" fill="#1a8f84"/><circle cx="1222" cy="336" r="5" fill="#a0509a"/>
+    <circle cx="720" cy="44" r="6" fill="#3a64c8"/><circle cx="752" cy="378" r="7" fill="#6f8f2a"/>
+    <circle cx="44" cy="384" r="7" fill="#2fa070"/><circle cx="1250" cy="214" r="6" fill="#2a90c8"/>
+    <circle cx="690" cy="356" r="4" fill="#5f7480"/><circle cx="36" cy="40" r="5" fill="#c99a1a"/>
+  </g>
+
+  <!-- logo + title -->
+  <g transform="translate(72 74)">
+    <circle cx="26" cy="29" r="26" fill="var(--ink)"/>
+    <circle cx="24" cy="26" r="24" fill="#c99a1a" stroke="var(--ink)" stroke-width="3"/>
+    <circle cx="24" cy="26" r="10" fill="var(--card)" stroke="var(--ink)" stroke-width="2.5"/>
+    <path d="M24 16 a10 10 0 0 0 0 20 z" fill="var(--ink)"/>
+    <text x="64" y="40" class="display ink" font-size="34">PazarLab <tspan class="primary">AI</tspan></text>
+  </g>
+
+  <text x="72" y="196" class="display ink" font-size="58">Ürününü satmadan önce</text>
+  <text x="72" y="262" class="display primary" font-size="58">bir kasabaya sor.</text>
+  <path class="wave" d="M74 286 q14 -10 28 0 t28 0 t28 0 t28 0"/>
+  <text x="72" y="330" class="body ink2" font-size="21">500 sentetik sakin · 12 alışveriş personası · Big Five kişilik · ağızdan ağıza yayılma</text>
+
+  <!-- counters -->
+  <g class="body" font-size="15" font-weight="700">
+    <g transform="translate(72 352)"><rect class="shadow" x="3" y="4" width="150" height="40" rx="20"/><rect class="card" width="150" height="40" rx="20"/>
+      <text x="75" y="26" text-anchor="middle" class="ink">⚡ AI'sız çalışır</text></g>
+    <g transform="translate(238 352)"><rect class="shadow" x="3" y="4" width="182" height="40" rx="20"/><rect class="card" width="182" height="40" rx="20"/>
+      <text x="91" y="26" text-anchor="middle" class="ink">🔌 Claude connector</text></g>
+    <g transform="translate(436 352)"><rect class="shadow" x="3" y="4" width="150" height="40" rx="20"/><rect class="card" width="150" height="40" rx="20"/>
+      <text x="75" y="26" text-anchor="middle" class="ink">🔗 Linkten okur</text></g>
+  </g>
+
+  <!-- result card -->
+  <g transform="translate(864 64) rotate(1.5)">
+    <rect class="shadow" x="5" y="7" width="330" height="296" rx="22"/>
+    <rect class="card" width="330" height="296" rx="22"/>
+    <text x="28" y="44" class="display ink" font-size="21" letter-spacing="0">Karar</text>
+    <path class="wave" stroke-width="3" d="M28 56 q9 -6 18 0 t18 0 t18 0"/>
+    <text x="300" y="40" text-anchor="end" class="hand ink2" font-size="24" transform="rotate(5 300 40)">satışa yakın!</text>
+    <g transform="translate(165 158)">
+      <circle r="82" fill="none" stroke="var(--track)" stroke-width="30"/>
+      <!-- buy 60% / watch 20% / skip 20% (gaps of 1.5%) ; circumference ≈ 515.2 -->
+      <circle class="seg" r="82" stroke="var(--buy)" stroke-dasharray="301.4 515.2" transform="rotate(-90)"/>
+      <circle class="seg" r="82" stroke="var(--watch)" stroke-dasharray="95.3 515.2" transform="rotate(130)"/>
+      <circle class="seg" r="82" stroke="var(--skip)" stroke-dasharray="95.3 515.2" transform="rotate(202)"/>
+      <text y="14" text-anchor="middle" class="display ink" font-size="54" letter-spacing="-1">57</text>
+      <text y="38" text-anchor="middle" class="body muted" font-size="13" font-weight="700">genel skor / 100</text>
+    </g>
+    <g class="body" font-size="13" font-weight="700">
+      <circle cx="32" cy="276" r="6" fill="var(--buy)"/><text x="43" y="281" class="ink">Aldı 300</text>
+      <circle cx="122" cy="276" r="6" fill="var(--watch)"/><text x="133" y="281" class="ink">Kararsız 100</text>
+      <circle cx="230" cy="276" r="6" fill="var(--skip)"/><text x="241" y="281" class="ink">Almadı 100</text>
+    </g>
+  </g>
+</svg>

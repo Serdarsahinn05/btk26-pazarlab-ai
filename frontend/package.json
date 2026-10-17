@@ -10,11 +10,9 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@base-ui/react": "^1.4.1",
     "@radix-ui/react-select": "^2.2.6",
     "axios": "^1.16.0",
     "canvas-confetti": "^1.9.4",
-    "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.38.0",
     "lucide-react": "^1.14.0",
