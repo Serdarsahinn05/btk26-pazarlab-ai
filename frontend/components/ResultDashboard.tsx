@@ -14,6 +14,7 @@ import WhatIf from "@/components/WhatIf";
 import PersonaChat from "@/components/PersonaChat";
 import { SegmentRing, Ring } from "@/components/ui/ring";
 import { DebateLogs } from "@/components/DebateLogs";
+import { ImprovementsCard, LegacyEngineNote, SegmentsCard, TownCast, WordOfMouthCard } from "@/components/TownInsights";
 import {
   DECISION_LABEL,
   DECISION_TEXT_CLASS,
@@ -61,12 +62,16 @@ export default function ResultDashboard({ data, view, productName, request, onRe
 
   return (
     <div className="space-y-6">
+      {!data.engineVersion && <LegacyEngineNote />}
       <div className="grid gap-6 lg:grid-cols-[5fr_7fr]">
         <DecisionCard data={data} />
         <ActionCard data={data} productName={productName} onReset={onReset} />
       </div>
       <KpiRow data={data} />
+      <TownRow data={data} />
       <PersonaGrid personas={sortedPersonas(data)} resultId={data.simulationId} />
+      {data.representatives?.length ? <TownCast residents={data.representatives} /> : null}
+      {data.segments && <SegmentsCard segments={data.segments} />}
       <div className="grid items-start gap-6 md:grid-cols-2">
         <ListCard title="Zayıflıklar" items={data.weaknesses} empty="Belirgin bir zayıflık bulunmadı." />
         <ListCard
@@ -208,23 +213,46 @@ function ActionCard({ data, productName, onReset }: { data: SimulationResponse; 
   );
 }
 
+/** What-ifs next to word of mouth; one card takes the full row when the other is missing. */
+function TownRow({ data }: { data: SimulationResponse }) {
+  const improvements = data.improvements ? <ImprovementsCard items={data.improvements} /> : null;
+  const curve = data.adoptionCurve?.length ? <WordOfMouthCard curve={data.adoptionCurve} /> : null;
+  if (!improvements && !curve) return null;
+  return (
+    <div className={cn("grid items-start gap-6", improvements && curve && "md:grid-cols-2")}>
+      {improvements}
+      {curve}
+    </div>
+  );
+}
+
 function KpiRow({ data }: { data: SimulationResponse }) {
   const buyerShare = data.simulatedConsumers ? Math.round((data.estimatedBuyers / data.simulatedConsumers) * 100) : 0;
-  const kpis = [
+  const range = data.buyersRange;
+  const kpis: Array<{ label: string; value: number; display?: string; range?: string; hint: string; title?: string; stripe: string }> = [
     { label: "Pazar genişliği", value: data.marketBreadthScore, hint: "Ürünü ilgilendiren kitle", stripe: "border-t-buy" },
     { label: "Niyet dönüşümü", value: data.intentConversionScore, hint: "İlgilenenin alıma dönme payı", stripe: "border-t-accent" },
     { label: "Problem uyumu", value: data.problemSolutionFit, hint: "İhtiyaca ne kadar cevap veriyor", stripe: "border-t-watch" },
-    { label: "Tahmini alıcı", value: buyerShare, display: `${data.estimatedBuyers}`, hint: `${data.simulatedConsumers} botun %${buyerShare}'i`, stripe: "border-t-violet" },
+    {
+      label: "Tahmini alıcı",
+      value: buyerShare,
+      display: `${data.estimatedBuyers}`,
+      range: range && range.high > range.low ? `${range.low}–${range.high}` : undefined,
+      hint: `${data.simulatedConsumers} sakinin %${buyerShare}'i`,
+      title: range ? `${range.runs} turun %80'inde alıcı sayısı ${range.low} ile ${range.high} arasında` : undefined,
+      stripe: "border-t-violet",
+    },
   ];
 
   return (
     <section aria-label="Temel göstergeler" className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-5">
       {kpis.map((kpi) => (
-        <div key={kpi.label} className={cn("card-paper grid content-start gap-2.5 border-t-[5px] p-4! md:p-5!", kpi.stripe)}>
+        <div key={kpi.label} title={kpi.title} className={cn("card-paper grid content-start gap-2.5 border-t-[5px] p-4! md:p-5!", kpi.stripe)}>
           <span className="text-sm font-bold text-foreground-2">{kpi.label}</span>
           <span className="font-display text-[32px] font-extrabold leading-none tracking-tight">
             {kpi.display ?? kpi.value}
             {!kpi.display && <small className="ml-0.5 text-sm font-semibold text-muted-foreground">/100</small>}
+            {kpi.range && <small className="mt-1 block whitespace-nowrap text-sm font-semibold tracking-normal text-muted-foreground sm:ml-1.5 sm:mt-0 sm:inline">({kpi.range})</small>}
           </span>
           <div className="bar-track" aria-hidden>
             <div className="bar-fill" style={{ width: `${Math.max(2, kpi.value)}%` }} />

@@ -2,9 +2,12 @@ import personasData from "@/data/personas.json";
 
 // Colour identity follows the order in personas.json (same order as the backend),
 // so all 12 personas get a distinct --persona-N token and renames don't break it.
-const order = new Map(personasData.personaTypes.map((p, index) => [p.name, index]));
+// Keyed by both id and Turkish label: town residents arrive with the label only.
+const order = new Map(
+  personasData.personaTypes.flatMap((p, index) => [[p.name, index] as const, [p.displayName, index] as const])
+);
 
-/** CSS colour for a persona name; neutral for unknown speakers such as "Sistem". */
+/** CSS colour for a persona id or label; neutral for unknown speakers such as "Sistem". */
 export function personaColor(name: string): string {
   const index = order.get(name);
   return index === undefined ? "hsl(var(--muted-foreground))" : `hsl(var(--persona-${(index % 12) + 1}))`;
