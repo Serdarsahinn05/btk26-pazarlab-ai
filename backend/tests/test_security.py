@@ -203,3 +203,10 @@ def test_rate_limit_counts_by_configured_header(monkeypatch):
     limiter(request("198.51.100.2"))  # another visitor behind the same proxy has its own budget
     with pytest.raises(HTTPException):
         limiter(request("198.51.100.1"))
+
+
+def test_cors_origin_tolerates_trailing_slash(monkeypatch):
+    from app.main import _get_allowed_origins
+
+    monkeypatch.setenv("CORS_ALLOWED_ORIGINS", " https://pazarlab.vercel.app/ , *, https://ornek.com.tr")
+    assert _get_allowed_origins() == ["https://pazarlab.vercel.app", "https://ornek.com.tr"]
