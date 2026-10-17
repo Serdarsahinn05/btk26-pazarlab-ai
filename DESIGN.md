@@ -111,7 +111,7 @@ Persona kartı zemini: kendi renginin %7'si kart rengine karışır. Etiket (chi
 | **Konuşma satırı** | 6px sol kenar persona rengi, `4px 16px 16px 4px` köşe, sticker gölge | Tartışma mesajları |
 | **Numara rozeti** | Sarı blob, Bricolage 800 | Aksiyon listesi, form adımları |
 | **Tek serili grafik** | Tek ton `--accent`; değer ve etiketler metin renginde (seri renginde değil); başlık seriyi adlandırır, lejant yok; hover/odakta değer; "Tablo olarak göster" | Ağızdan ağıza (haftalık çubuk), Kim alıyor? (yatay çubuk), fiyat eğrisi |
-| **Sakin kartı** | Ad (Bricolage), yaş · şehir · meslek, persona noktası + adı (metin renginde), karar chip'i, gerekçe, katlanabilir "Hikâyesi"; satır `flex-wrap` + `basis-[300px]` (boş hücre kalmaz) | Kasabadan 5 sakin |
+| **Sakin kartı** | Solda 56 px çizim avatar (`public/pp_icons/1–10`, `rounded-blob`, 2px kenar; sakinin kimliğinden sabit, ekrandaki kartlarda tekrarsız, dekoratif `alt=""`), ad (Bricolage), yaş · şehir · meslek, persona noktası + adı (metin renginde), karar chip'i, gerekçe, katlanabilir "Hikâyesi"; satır `flex-wrap` + `basis-[300px]` (boş hücre kalmaz) | Kasabadan 5 sakin |
 | **Kazanç rozeti** | Chip, `--buy-text`; "+5,5 puan" (Türkçe ondalık), boş alanın etiket satırının sağında | Ürün formu, Hazırlık paneli |
 | **Öneri satırı** | Tam genişlik düğme, 44 px, 2px kenar; solda alan adı, sağda Bricolage kazanç; tıklayınca alana kayar ve odaklar | Hazırlık paneli |
 | **Durum toast'u** | Alt-orta, tam yuvarlak, sticker gölge; `info` / `error` + "Tekrar dene" | API hataları |
