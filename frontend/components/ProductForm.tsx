@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import ReadinessPanel, { ReadinessBar, formatGain } from "@/components/ReadinessPanel";
 import { DraftCheckResponse, ImageAnalysis, ProductLinkReadResponse, PurchaseMotivation, SimulationRequest } from "@/types";
 import { analyzeImages, apiErrorMessage, draftCheck, readProductLink, readProductPage } from "@/lib/api";
-import { FAMILIES, OTHER, type FormField, categoryInfo, categoryLabel, isKnownCategory } from "@/lib/categories";
+import { FAMILIES, OTHER, type FormField, categoryInfo, categoryLabel, detectCategory, isKnownCategory } from "@/lib/categories";
 import { readImportHash } from "@/lib/extensionImport";
 import { type HistoryEntry, loadHistory } from "@/lib/history";
 import {
@@ -83,6 +83,13 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
   const info = useMemo(() => categoryInfo(category), [category]);
   const family = FAMILIES.find((f) => f.id === info.family) ?? FAMILIES[0];
   const fields = info.form.fields;
+  // F23: with "Genel" the family's average price is the reference (Giyim 800 TL for a 350 TL t-shirt); offer the subtype the name says.
+  const productName = String(values.productName ?? "");
+  const nameGuess = useMemo(() => {
+    if (category !== info.family) return null;
+    const guess = detectCategory(productName);
+    return guess && guess !== info.family && categoryInfo(guess).family === info.family ? guess : null;
+  }, [category, info.family, productName]);
 
   // Browser-only state (draft, history) is read after mount so the server render matches the first client render.
   useEffect(() => {
@@ -376,7 +383,13 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
                 </Select>
               </FieldLabel>
               {family.subtypes.length > 0 && (
-                <FieldLabel htmlFor="subtype" label="Ürün türü">
+                <FieldLabel
+                  htmlFor="subtype"
+                  label="Ürün türü"
+                  hint={category === info.family && info.averagePrice
+                    ? `Seçmezsen ${info.familyLabel.toLocaleLowerCase("tr")} ortalaması (${info.averagePrice.toLocaleString("tr-TR")} TL) referans alınır.`
+                    : undefined}
+                >
                   <Select value={category} onValueChange={pickCategory}>
                     <SelectTrigger id="subtype" className="field h-11">
                       <SelectValue />
@@ -388,6 +401,16 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
                       <SelectItem value={family.id}>Genel / emin değilim</SelectItem>
                     </SelectContent>
                   </Select>
+                  {nameGuess && (
+                    // Only the subtype changes; the motivation and filled fields stay.
+                    <button
+                      type="button"
+                      onClick={() => setCategory(nameGuess)}
+                      className="inline-flex min-h-11 items-center gap-1.5 self-start rounded-full border-2 border-accent/40 px-3.5 text-sm font-bold text-accent hover:bg-accent/10"
+                    >
+                      <Sparkles className="h-4 w-4" aria-hidden /> Ürün adına göre: {categoryInfo(nameGuess).label} · seç
+                    </button>
+                  )}
                 </FieldLabel>
               )}
             </div>
