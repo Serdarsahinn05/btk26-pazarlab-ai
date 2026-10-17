@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -23,9 +24,21 @@ export default function TopBar() {
   // Keep an opened/shared result (?r=) while switching tabs.
   const resultId = params.get("r");
   const hrefFor = (view: string) => `/dashboard?view=${view}${resultId ? `&r=${encodeURIComponent(resultId)}` : ""}`;
+  const ref = useRef<HTMLElement>(null);
+
+  // --topbar-h: where sticky bars below the header start (the header wraps to two rows on phones).
+  useEffect(() => {
+    const header = ref.current;
+    if (!header) return;
+    const update = () => document.documentElement.style.setProperty("--topbar-h", `${header.offsetHeight}px`);
+    const observer = new ResizeObserver(update);
+    observer.observe(header);
+    update();
+    return () => observer.disconnect();
+  }, []);
 
   return (
-    <header className="no-print sticky top-0 z-40 border-b-2 border-dashed border-border bg-background/95 backdrop-blur-xs">
+    <header ref={ref} className="no-print sticky top-0 z-40 border-b-2 border-dashed border-border bg-background/95 backdrop-blur-xs">
       <div className="mx-auto flex min-h-[66px] max-w-page flex-wrap items-center gap-x-5 gap-y-2 px-4 py-2 md:px-6">
         <PazarLabBrand />
         <nav aria-label="Görünümler" className="order-3 -mx-1 flex w-full gap-1.5 overflow-x-auto px-1 pb-1 sm:order-0 sm:w-auto sm:pb-0">

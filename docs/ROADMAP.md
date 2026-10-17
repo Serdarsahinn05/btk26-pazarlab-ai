@@ -37,7 +37,7 @@
 | 13a | `feat/category-families` | 12 kategori ailesi + alt türler + Diğer, tek veri dosyası, linkten kategori tanıma | 1 gün | ✅ |
 | 13b | `feat/product-entry-v2` | Ürün ekleme ekranı: link öncelikli akış, canlı Hazırlık paneli, taslak | 1,5 gün | ✅ |
 | 14 | `feat/link-reader-v2` | Okuyucu paketi, "HTML/metin ver" ucu, puan ve değerlendirme (sosyal kanıt), kayıtlı sayfa testleri | 2 gün | ✅ (siteye özel kurallar gerçek sayfa geldikçe) |
-| 15 | `feat/layout-pass` | Diğer ekranların yerleşimi (audit → critique → ponytail-review) | 1,5 gün | ⬜ |
+| 15 | `feat/layout-pass` | Sonuç sayfası: yapışkan sonuç çubuğu, gruplar, katlanır bölümler; Personalar mobil | 1,5 gün | ✅ |
 | 16 | `feat/insight-features` | İlan yeniden yazma, rakip kartı, segment grafiği, görsel analizi | 2–3 gün | ⬜ |
 | 17 | `chore/cleanup-e2e` | Ölü kod temizliği, Playwright testleri CI'da | 1 gün | ⬜ |
 | 18 | `feat/browser-extension` | "PazarLab'a gönder" tarayıcı eklentisi | 1–2 gün | ⬜ |
@@ -216,10 +216,11 @@ Kabul kriteri: DESIGN.md'deki tüm kalıplar uygulanmış; bileşenlerde ham ren
 
 ## Şu an neredeyiz
 
-- **Son tamamlanan:** Faz 14 (link okuma v2): okuyucu `app/services/link_reader/` paketine bölündü, tek yanıt modeli (MCP'nin link aracı artık çökmüyor), `POST /api/read-product-page` (sayfa HTML'i veya kopyalanmış metin; sunucu hiçbir yere istek atmaz), mağaza puanı + değerlendirme sayısı okunuyor ve simülasyonda güvene küçük bir etki yapıyor, kayıtlı sayfa test düzeneği. Siteye özel kurallar bilerek yazılmadı (aşağıda).
+- **Son tamamlanan:** Faz 15 (yerleşim): sonuç sayfası mobilde 7.908 → 5.154 px, masaüstünde 4.509 → 3.365 px; Personalar mobilde 5.788 → 3.952 px. Yapışkan sonuç çubuğu (skor + bölüm bağlantıları), "Neyi değiştirmeli?" grubu, katlanır ikincil bölümler, mobilde yana kayan sakin kartları.
+- **Önceki:** Faz 14 (link okuma v2): okuyucu `app/services/link_reader/` paketine bölündü, tek yanıt modeli (MCP'nin link aracı artık çökmüyor), `POST /api/read-product-page` (sayfa HTML'i veya kopyalanmış metin; sunucu hiçbir yere istek atmaz), mağaza puanı + değerlendirme sayısı okunuyor ve simülasyonda güvene küçük bir etki yapıyor, kayıtlı sayfa test düzeneği. Siteye özel kurallar bilerek yazılmadı (aşağıda).
 - **Ara iş (2026-10-17, `feat/resident-avatars`):** "Kasabadan 5 sakin" kartlarına repodaki kullanılmayan `public/pp_icons` çizimleri avatar olarak eklendi (sakin kimliğinden sabit, kartlarda tekrarsız, `next/image` ile küçültülmüş). Ayrıca dağıtım düzeltmeleri: `render.yaml`'da Dockerfile yolları `rootDir`'e göreli (`fix/render-blueprint`), CORS listesinde sondaki `/` tolere ediliyor ve liste açılışta loglanıyor (`fix/cors-origins`).
 - **Ara iş (2026-10-17, `chore/deploy-vercel-render`):** Vercel (website) + Render (API) ile yayın hazırlığı: `render.yaml` Blueprint, [deployment.md §6](deployment.md#6-vercel--render) (adımlar, ücretsiz planın kısıtları, ne zaman VPS), `CLIENT_IP_HEADER` (platform proxy'sinin yazdığı IP başlığı; Render'da `CF-Connecting-IP`, ilk deploy'da `/api/health`'teki `clientIp` ile doğrulanacak). 2 test (toplam 257). Gerçek bir Render/Vercel hesabında denenmedi.
-- **Sıradaki:** Faz 15 (diğer ekranların yerleşimi: sonuç sayfası mobilde çok uzun, benchmark/tartışma/personalar; sıra audit → critique → düzeltme → ponytail-review). 12'nin ertelenen maddeleri (rakipli seçim, belirli bir sakinle sohbet) Faz 16'da değerlendirilebilir.
+- **Sıradaki:** Faz 16 (yeni özellikler: ilan yeniden yazma + öncesi/sonrası simülasyonu, rakip kartı, görsel analizi). 12'nin ertelenen maddeleri (rakipli seçim, belirli bir sakinle sohbet) Faz 16'da değerlendirilebilir.
 - **Kullanıcıdan beklenen (isteğe bağlı):** Trendyol, Hepsiburada, Amazon TR, n11, Çiçeksepeti'den birer ürün sayfasını tarayıcıda "Farklı kaydet → Yalnızca HTML" ile kaydedip `backend/tests/fixtures/links/` altına koymak; siteye özel okuma kuralları bu gerçek sayfalara göre yazılır.
 - **Ertelenen (kullanıcı kararı, 2026-10-17):** Faz 11'in Claude.ai denemesi sonra birlikte yapılacak. Gerekenler: `cloudflared` kurulumu (`winget install Cloudflare.cloudflared`), tünel adresinin `MCP_ALLOWED_HOSTS`'a yazılması, Claude'da connector eklenmesi; açık soru `?key=` sorgu dizesinin korunup korunmadığı. Adımlar: docs/mcp-connector.md. (sıra aşağıdaki tabloda). Her faz kendi dalında, bitince bu bölüm güncellenir.
 - **Bekleyen kararlar:** Faz 9 için API anahtarı yok. Süpermarket/gıda, pet shop, otomotiv, kitap/kırtasiye aileleri bilerek dışarıda ("Diğer"e düşüyorlar); talep olursa eklenecek.
@@ -365,9 +366,15 @@ Dört alt faza bölündü (12a–12d); her biri ayrı dalda, ayrı testlerle. A�
 - **Doğrulama:** `tests/test_link_reader.py` (14 test; toplam 271): 4 kayıtlı sayfa, uç (HTML/metin, tam olarak bir kaynak, garip URL atılıyor), MCP link aracının sözlük dönmesi, sosyal kanıt eğrisi, puanın güvene ve uçtan uca alıcıya etkisi. ruff/tsc/eslint temiz. Puppeteer (gerçek backend, AI kapalı; yalnızca link hatası taklit): link hatasında yapıştırma alanı açılıyor, metinden ad/fiyat/puan/sayı doluyor, kategori tahmini notu, 1280 ve 375 px'te taşma yok, konsol hatası yok.
 - Not: pazar yerlerini sunucudan taramak çoğu zaman kullanım şartlarına aykırı; uzun vadeli yol eklenti (Faz 18) ve resmî API'ler.
 
-### Faz 15: Diğer ekranların yerleşimi
-- [ ] Sonuç sayfası mobilde ~5.800 px; sabit karar özeti, bölümler arası atlama menüsü, ikincil analizlerin katlanması. Benchmark, tartışma ve personalar ekranları.
-- [ ] Sıra: `impeccable audit` → `critique` → düzeltme → `ponytail-review`.
+### Faz 15 ✅: Diğer ekranların yerleşimi (`feat/layout-pass`)
+- **Denetim (önce):** dört sekme 375 ve 1280 px'te ölçüldü (eleştiri tek bağlamda; alt ajan açılmadı). Analiz mobilde **7.908 px** (kasaba kartlarıyla tahmin edilen 5.800'ü aşmıştı), masaüstünde 4.509 px; Personalar mobilde 5.788 px; Tartışma 1.073 px (sorun yok); Benchmark Serper anahtarı olmadan boş durum. Bulgular: **P1** gezinme yok, skor bölümlerde görünmüyor; **P1** "Ne yapmalı?" mobilde 910 px (4 düğme 3 satır); **P1** aynı soruya ("neyi değiştireyim?") cevap veren 3 kart sayfanın 3 ayrı yerinde; **P2** ikincil araçlar hep açık ve fiyat eğrisi kimse bakmasa da istek atıyor; **P2** 5 sakin mobilde alt alta 1.335 px; **P2** Personalar kartlarında her şey açık.
+- [x] **Yapışkan sonuç çubuğu** (`components/ResultLayout.tsx`): üst menünün hemen altında (TopBar yüksekliğini `--topbar-h` olarak yazıyor; mobilde 106, masaüstünde 68 px). Karar kartı ekrandan çıkınca skor ve alıcı (aralıkla) görünür; bölüm bağlantıları bulunulan bölümü gösterir, mobilde etkin bağlantı görünür tutulur.
+- [x] **Gruplar:** Karar (+KPI) → **Neyi değiştirmeli?** (En etkili 3 değişiklik, Zayıflıklar, Kanal önerileri yan yana) → **Kasaba** (Personalar, 5 sakin, Ağızdan ağıza | Kim alıyor?) → katlı **Ne olur?**, **İyileştirilmiş açıklama**, **Ürün parametreleri**. Katlı bölümler açılınca çiziliyor (fiyat eğrisi açılmadan 0 istek), yazdırırken kendiliğinden açılıyor.
+- [x] "Ne yapmalı?" düğmeleri kısaldı (Yeni simülasyon, Link, .md, PDF; açıklamaları `title`'da). Sakin kartları mobilde yana kayıyor. F21: meslek kısa ("Hemşire"). Personalar mobilde ayrıntılar düğmenin arkasında.
+- **Sonuç:** Analiz mobilde 7.908 → **5.154 px** (−%35), masaüstünde 4.509 → **3.365 px**; Personalar mobilde 5.788 → **3.952 px**.
+- **Fazlalık denetimi (sonra):** kesilecek bir şey bulunmadı; `TownRow` kaldırıldı, iki küçük bileşen eklendi.
+- **Doğrulama:** tsc/eslint temiz; backend değişmedi. Puppeteer (gerçek backend, AI kapalı): 375 ve 1280 px, açık/koyu; çubuk menünün altında, "Kasaba" bağlantısı bölümü çubuğun altına getiriyor ve etkin, katlı "Ne olur?" açılmadan fiyat isteği yok, Personalar'da ayrıntı açılıyor, konsol hatası yok.
+- Yeni bulgu: F28.
 
 ### Faz 16: Yeni özellikler
 - [ ] İlan yeniden yazma + öncesi/sonrası simülasyonu.
