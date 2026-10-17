@@ -2,8 +2,6 @@ import logging
 import re
 from typing import Any, Dict, Iterator, List, Optional, Set, TypedDict
 
-from langgraph.graph import StateGraph, END
-
 from app.models.product import SimulationRequest
 from app.models.simulation import Competitor, SimulationResponse
 from app.services import llm_client
@@ -269,32 +267,17 @@ def debate_node_v2(state: GraphState) -> Dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
-# Graph Construction
+# Pipeline: five steps in a fixed order, each returns the state keys it changes.
+# (A plain loop: there is no branching, retry or checkpointing that a graph library would add.)
 # ---------------------------------------------------------------------------
 
-def create_simulation_graph():
-    workflow = StateGraph(GraphState)
-    
-    for name, func in [
-        ("input_analysis", input_analysis_node),
-        ("research", research_node),
-        ("benchmark", benchmark_node),
-        ("simulate", simulation_node),
-        ("debate", debate_node_v2),
-    ]:
-        workflow.add_node(name, func)
-    
-    workflow.set_entry_point("input_analysis")
-    workflow.add_edge("input_analysis", "research")
-    workflow.add_edge("research", "benchmark")
-    workflow.add_edge("benchmark", "simulate")
-    workflow.add_edge("simulate", "debate")
-    workflow.add_edge("debate", END)
-    
-    return workflow.compile()
-
-
-_GRAPH = create_simulation_graph()
+PIPELINE = (
+    ("input_analysis", input_analysis_node),
+    ("research", research_node),
+    ("benchmark", benchmark_node),
+    ("simulate", simulation_node),
+    ("debate", debate_node_v2),
+)
 
 # Node name -> Turkish label shown in the live progress view.
 STEP_LABELS = {
@@ -307,7 +290,7 @@ STEP_LABELS = {
 
 
 def iter_agentic_simulation(request: SimulationRequest) -> Iterator[tuple[str, Any]]:
-    """Run the graph node by node.
+    """Run the pipeline step by step.
 
     Yields ("step", node_name) after every finished node and finally
     ("result", SimulationResponse). Falls back to the plain simulation on error.
@@ -323,11 +306,11 @@ def iter_agentic_simulation(request: SimulationRequest) -> Iterator[tuple[str, A
     }
 
     try:
-        for update in _GRAPH.stream(state, stream_mode="updates"):
-            for node, delta in update.items():
-                if delta:
-                    state.update(delta)
-                yield "step", node
+        for node, step in PIPELINE:
+            delta = step(state)
+            if delta:
+                state.update(delta)
+            yield "step", node
 
         response = state.get("simulation_response")
         if not response:

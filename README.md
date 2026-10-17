@@ -30,7 +30,7 @@ PazarLab AI, girişimciler, e-ticaret satıcıları ve ürün ekipleri için gel
                                 v
                 +---------------+---------------+
                 |            Backend            |
-                |        FastAPI + LangGraph    |
+                |       FastAPI + Pydantic      |
                 |             :8000             |
                 +-------+---------------+-------+
                         |               |
@@ -64,7 +64,7 @@ Urun bilgisi/link -> Input kontrolu -> 500 bot simulasyonu -> AI yorumlari -> Da
 | Frontend | Next.js, TypeScript, Tailwind | Form, dashboard, karar grafigi, persona tartismasi |
 | Backend API | FastAPI, Pydantic | Endpointler, veri modelleri, response sozlesmesi |
 | Simulation Core | Python | 500 bot davranisi, karar dagilimi, persona skorlamasi |
-| Agentic AI | LangGraph, Gemini | AI recete, benchmark yorumu, persona A2A tartismasi |
+| Agentic AI | Gemini (5 adımlı boru hattı) | AI recete, benchmark yorumu, persona A2A tartismasi |
 | Product Link Reader | Python scraping + AI fallback | Urun linkinden veri cekme ve forma tasima |
 | Runtime | Docker Compose | Frontend + backend'i birlikte ayaga kaldirma |
 
