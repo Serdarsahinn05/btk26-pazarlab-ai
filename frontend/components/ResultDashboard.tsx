@@ -5,11 +5,11 @@ import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import confetti from "canvas-confetti";
-import { Check, Copy, FileDown, Link2, Printer, RotateCcw } from "lucide-react";
+import { Check, Copy, FileDown, Link2, Loader2, Printer, RotateCcw, Sparkles } from "lucide-react";
 import { downloadBlob } from "@/lib/history";
 import { simulationToMarkdown } from "@/lib/report";
-import { NormalizedProduct, Persona, SimulationRequest, SimulationResponse } from "@/types";
-import { aiFallbackNote } from "@/lib/api";
+import { CompareResponse, NormalizedProduct, Persona, SimulationRequest, SimulationResponse } from "@/types";
+import { aiFallbackNote, compareVariants } from "@/lib/api";
 import WhatIf from "@/components/WhatIf";
 import PersonaChat from "@/components/PersonaChat";
 import { SegmentRing, Ring } from "@/components/ui/ring";
@@ -126,7 +126,7 @@ export default function ResultDashboard({ data, view, productName, request, onRe
         </Disclosure>
       )}
       <Disclosure id="aciklama" title="İyileştirilmiş açıklama" summary="İlana kopyalayabileceğin, eksikleri tamamlanmış açıklama.">
-        <ImprovedDescription text={data.aiInsights.improvedDescription} images={data.images} />
+        <ImprovedDescription text={data.aiInsights.improvedDescription} images={data.images} request={whatIfRequest} />
       </Disclosure>
       <Disclosure id="parametreler" title="Ürün parametreleri" summary="Skorun dayandığı 11 ölçü: fiyat uyumu, kalite, trend, güven…">
         <ParamBars product={data.normalizedProduct} />
@@ -409,7 +409,18 @@ function ParamBars({ product }: { product: NormalizedProduct }) {
   );
 }
 
-function ImprovedDescription({ text, images }: { text: string; images?: string[] }) {
+/** Markdown the model may answer with, as the plain text a listing takes (Faz 16). */
+function plainText(markdown: string): string {
+  return markdown
+    .replace(/^#+\s*/gm, "")
+    .replace(/^\s*[-*•]\s+/gm, "")
+    .replace(/\*\*|__|\*|`/g, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim()
+    .slice(0, 4000);
+}
+
+function ImprovedDescription({ text, images, request }: { text: string; images?: string[]; request: SimulationRequest | null }) {
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     try {
@@ -429,6 +440,7 @@ function ImprovedDescription({ text, images }: { text: string; images?: string[]
           {copied ? "Kopyalandı" : "Kopyala"}
         </button>
       </div>
+      {request && <BeforeAfter request={request} description={plainText(text)} />}
       {/* The LLM often answers in Markdown (bold, bullet lists); raw HTML stays escaped (no rehype-raw). */}
       <div className="prose prose-neutral max-w-none text-foreground-2 dark:prose-invert prose-strong:text-foreground prose-li:my-0.5">
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
@@ -463,4 +475,74 @@ function BenchmarkView({ markdown }: { markdown?: string }) {
 
 function EmptyState({ text }: { text: string }) {
   return <p className="rounded-wobble border-2 border-dashed border-border p-10 text-center text-muted-foreground">{text}</p>;
+}
+
+/** The rewritten description on the same 500 people: score, buyers and revenue before and after (Faz 16). */
+function BeforeAfter({ request, description }: { request: SimulationRequest; description: string }) {
+  const [result, setResult] = useState<CompareResponse | null>(null);
+  const [state, setState] = useState<"idle" | "busy" | "error">("idle");
+  const tooShort = description.length < 40;
+
+  const run = async () => {
+    setState("busy");
+    try {
+      // The stored AI analysis describes the old text, so both sides use the rule-based one (as in A/B).
+      const base: SimulationRequest = { ...request, inputAnalysis: undefined };
+      setResult(await compareVariants(base, { ...base, description }));
+      setState("idle");
+    } catch {
+      setState("error");
+    }
+  };
+
+  const rows: Array<[string, number, number, (n: number) => string]> = result
+    ? [
+        ["Genel skor", result.base.overallScore, result.variant.overallScore, String],
+        ["Alıcı", result.base.estimatedBuyers, result.variant.estimatedBuyers, String],
+        ["Tahmini ciro", result.base.estimatedBuyers * result.base.price, result.variant.estimatedBuyers * result.variant.price,
+          (n) => `${Math.round(n).toLocaleString("tr-TR")} TL`],
+      ]
+    : [];
+
+  return (
+    <div className="no-print flex flex-col gap-3 rounded-wobble border-2 border-dashed border-border bg-secondary px-4 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-foreground-2">
+          <b className="font-bold">Bu açıklama işe yarar mı?</b> Aynı 500 kişiyle eski ve yeni açıklamayı karşılaştır.
+        </p>
+        <button type="button" onClick={run} disabled={state === "busy" || tooShort} className="btn-sticker-primary min-h-11">
+          {state === "busy" ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Sparkles className="h-4 w-4" aria-hidden />}
+          Bu açıklamayla dene
+        </button>
+      </div>
+      {state === "error" && <p className="note-risk">Karşılaştırma şu an yapılamadı; biraz sonra tekrar dene.</p>}
+      {result && (
+        <table className="w-full text-sm" aria-live="polite">
+          <thead>
+            <tr className="text-left text-muted-foreground">
+              <th className="py-1 font-bold">Gösterge</th>
+              <th className="py-1 text-right font-bold">Önce</th>
+              <th className="py-1 text-right font-bold">Sonra</th>
+              <th className="py-1 text-right font-bold">Fark</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(([label, before, after, fmt]) => {
+              const delta = after - before;
+              return (
+                <tr key={label} className="border-t border-dashed border-border">
+                  <td className="py-1.5">{label}</td>
+                  <td className="py-1.5 text-right">{fmt(before)}</td>
+                  <td className="py-1.5 text-right font-bold">{fmt(after)}</td>
+                  <td className={cn("py-1.5 text-right font-bold", delta > 0 ? "text-buy-text" : delta < 0 ? "text-skip-text" : "text-muted-foreground")}>
+                    {delta > 0 ? "+" : delta < 0 ? "−" : ""}{fmt(Math.abs(delta))}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
 }

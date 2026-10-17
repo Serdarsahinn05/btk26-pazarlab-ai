@@ -220,7 +220,7 @@ Kabul kriteri: DESIGN.md'deki tüm kalıplar uygulanmış; bileşenlerde ham ren
 - **Önceki:** Faz 14 (link okuma v2): okuyucu `app/services/link_reader/` paketine bölündü, tek yanıt modeli (MCP'nin link aracı artık çökmüyor), `POST /api/read-product-page` (sayfa HTML'i veya kopyalanmış metin; sunucu hiçbir yere istek atmaz), mağaza puanı + değerlendirme sayısı okunuyor ve simülasyonda güvene küçük bir etki yapıyor, kayıtlı sayfa test düzeneği. Siteye özel kurallar bilerek yazılmadı (aşağıda).
 - **Ara iş (2026-10-17, `feat/resident-avatars`):** "Kasabadan 5 sakin" kartlarına repodaki kullanılmayan `public/pp_icons` çizimleri avatar olarak eklendi (sakin kimliğinden sabit, kartlarda tekrarsız, `next/image` ile küçültülmüş). Ayrıca dağıtım düzeltmeleri: `render.yaml`'da Dockerfile yolları `rootDir`'e göreli (`fix/render-blueprint`), CORS listesinde sondaki `/` tolere ediliyor ve liste açılışta loglanıyor (`fix/cors-origins`).
 - **Ara iş (2026-10-17, `chore/deploy-vercel-render`):** Vercel (website) + Render (API) ile yayın hazırlığı: `render.yaml` Blueprint, [deployment.md §6](deployment.md#6-vercel--render) (adımlar, ücretsiz planın kısıtları, ne zaman VPS), `CLIENT_IP_HEADER` (platform proxy'sinin yazdığı IP başlığı; Render'da `CF-Connecting-IP`, ilk deploy'da `/api/health`'teki `clientIp` ile doğrulanacak). 2 test (toplam 257). Gerçek bir Render/Vercel hesabında denenmedi.
-- **Sıradaki:** Faz 16 (yeni özellikler: ilan yeniden yazma + öncesi/sonrası simülasyonu, rakip kartı, görsel analizi). 12'nin ertelenen maddeleri (rakipli seçim, belirli bir sakinle sohbet) Faz 16'da değerlendirilebilir.
+- **Sıradaki:** Faz 16 adım 2: rakip kartı (benchmark fiyatları, pazar payı); sonra adım 3: görsel analizi. Adım 1 (ilan yeniden yazma + öncesi/sonrası) bitti, dal `feat/insight-features`. 12'nin ertelenen maddeleri (rakipli seçim, belirli bir sakinle sohbet) Faz 16'da değerlendirilebilir.
 - **Kullanıcıdan beklenen (isteğe bağlı):** Trendyol, Hepsiburada, Amazon TR, n11, Çiçeksepeti'den birer ürün sayfasını tarayıcıda "Farklı kaydet → Yalnızca HTML" ile kaydedip `backend/tests/fixtures/links/` altına koymak; siteye özel okuma kuralları bu gerçek sayfalara göre yazılır.
 - **Ertelenen (kullanıcı kararı, 2026-10-17):** Faz 11'in Claude.ai denemesi sonra birlikte yapılacak. Gerekenler: `cloudflared` kurulumu (`winget install Cloudflare.cloudflared`), tünel adresinin `MCP_ALLOWED_HOSTS`'a yazılması, Claude'da connector eklenmesi; açık soru `?key=` sorgu dizesinin korunup korunmadığı. Adımlar: docs/mcp-connector.md. (sıra aşağıdaki tabloda). Her faz kendi dalında, bitince bu bölüm güncellenir.
 - **Bekleyen kararlar:** Faz 9 için API anahtarı yok. Süpermarket/gıda, pet shop, otomotiv, kitap/kırtasiye aileleri bilerek dışarıda ("Diğer"e düşüyorlar); talep olursa eklenecek.
@@ -376,10 +376,10 @@ Dört alt faza bölündü (12a–12d); her biri ayrı dalda, ayrı testlerle. A�
 - **Doğrulama:** tsc/eslint temiz; backend değişmedi. Puppeteer (gerçek backend, AI kapalı): 375 ve 1280 px, açık/koyu; çubuk menünün altında, "Kasaba" bağlantısı bölümü çubuğun altına getiriyor ve etkin, katlı "Ne olur?" açılmadan fiyat isteği yok, Personalar'da ayrıntı açılıyor, konsol hatası yok.
 - Yeni bulgu: F28.
 
-### Faz 16: Yeni özellikler
-- [ ] İlan yeniden yazma + öncesi/sonrası simülasyonu.
+### Faz 16: Yeni özellikler (`feat/insight-features`, adım adım kaydediliyor)
+- [x] **İlan yeniden yazma + öncesi/sonrası (adım 1):** "İyileştirilmiş açıklama" bölümünde "Bu açıklamayla dene": açıklama Markdown'dan düz metne çevrilip (4.000 karakter) mevcut `/api/compare` ile aynı 500 kişide eski açıklamayla karşılaştırılıyor; skor, alıcı ve ciro önce/sonra/fark tablosu. Yeni backend ucu yok. İki taraf da kural tabanlı girdi analiziyle (A/B'deki gibi; kayıtlı AI analizi eski metni anlatır). Örnek (AI kapalı, tişört): 13 → 39 kelime, skor 52 → 55, alıcı 276 → 291. tsc/eslint temiz; API ile doğrulandı, tarayıcıda denenmedi.
 - [ ] Rakip kartı (benchmark fiyatları, pazar payı).
-- [ ] Segment grafiği (hangi yaş/gelir grubu alıyor).
+- [x] Segment grafiği (hangi yaş/gelir grubu alıyor): Faz 12d'de "Kim alıyor?" kartıyla yapıldı.
 - [ ] Görsel analizi (AI, isteğe bağlı), paylaşım görseli.
 
 ### Faz 17: Temizlik ve CI testleri
