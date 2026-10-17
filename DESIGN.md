@@ -112,6 +112,8 @@ Persona kartı zemini: kendi renginin %7'si kart rengine karışır. Etiket (chi
 | **Numara rozeti** | Sarı blob, Bricolage 800 | Aksiyon listesi, form adımları |
 | **Tek serili grafik** | Tek ton `--accent`; değer ve etiketler metin renginde (seri renginde değil); başlık seriyi adlandırır, lejant yok; hover/odakta değer; "Tablo olarak göster" | Ağızdan ağıza (haftalık çubuk), Kim alıyor? (yatay çubuk), fiyat eğrisi |
 | **Sakin kartı** | Ad (Bricolage), yaş · şehir · meslek, persona noktası + adı (metin renginde), karar chip'i, gerekçe, katlanabilir "Hikâyesi"; satır `flex-wrap` + `basis-[300px]` (boş hücre kalmaz) | Kasabadan 5 sakin |
+| **Kazanç rozeti** | Chip, `--buy-text`; "+5,5 puan" (Türkçe ondalık), boş alanın etiket satırının sağında | Ürün formu, Hazırlık paneli |
+| **Öneri satırı** | Tam genişlik düğme, 44 px, 2px kenar; solda alan adı, sağda Bricolage kazanç; tıklayınca alana kayar ve odaklar | Hazırlık paneli |
 | **Durum toast'u** | Alt-orta, tam yuvarlak, sticker gölge; `info` / `error` + "Tekrar dene" | API hataları |
 
 ## 5. Hareket
@@ -163,22 +165,32 @@ Mevcut düzenin sorunları IMPROVEMENTS.md F11'de. Hedef: **bir rapor gibi yukar
 
 ### 9.2 Form görünümü (simülasyon öncesi)
 
+Faz 13b'den beri: önce link, sonra kontrol; sağda canlı "Hazırlık" paneli.
+
 ```
-┌ h1 Ürününü test et ───────────────────────── em: 500 sentetik tüketici · 12 persona ┐
-├──────────────────────────────┬───────────────────────────────────────────────────────┤
-│ 1 · Link ile doldur  [____][Oku]                                                     │
-├──────────────────────────────┼───────────────────────────────────────────────────────┤
-│ 2 · Temel bilgiler           │ 3 · Kategoriye özel özellikler                        │
-│   kategori, motivasyon       │   (kumaş / RAM / ekran …)                             │
-│   ad, fiyat, açıklama        │ 4 · Hedef kitle                                       │
-│   görseller (6 kutu)         │ 5 · Satış koşulları (kargo, iade, garanti)            │
-├──────────────────────────────┴───────────────────────────────────────────────────────┤
-│ ▸ yapışkan alt çubuk:  eksik alan sayısı · tahmini süre ~20 sn      [Simülasyonu başlat] │
-└──────────────────────────────────────────────────────────────────────────────────────┘
+┌ h1 Ürününü test et ─────────────────────── 500 sentetik tüketici · 12 persona · 12 kategori ┐
+├ Linkten başla ──────────────────────────────────────────────────────────────────────────────┤
+│ [ ürün linki ........................................ ] [Linkten oku]                       │
+│ ✓ 5 alan dolduruldu, mavi işaretlileri kontrol et · kategori notu                          │
+│ Son ürününden başla: (↺ ürün A) (↺ ürün B)                                                  │
+├──────────────────────────────────────────────────────┬──────────────────────────────────────┤
+│ 1 Ürün  ✓ tamam                                       │ Hazırlık (yapışkan, top-24)          │
+│   kategori · ürün türü / ad · fiyat /                 │ 53 /100 tahmini skor   "cila lazım"  │
+│   benzerlerinin ortalama fiyatı · neden alınır /      │ ▬▬▬▬▬▬▬░░░░                          │
+│   açıklama (+1,1 puan) · görseller                    │ [skor en fazla 48: sebep] (varsa)    │
+│ 2 {Tür} özellikleri        "Doldurdukça skor değişir" │ En çok kazandıracaklar               │
+│   alanlar; boş alanda "+X puan" rozeti                │  Kalıp            +5,5  (tık → alan) │
+│ 3 Kitle ve satış koşulları                            │ Doldurulması gereken: …              │
+│   yaş · cinsiyet · segment · kargo / iade · garanti   │ [   Simülasyonu başlat   ]           │
+│                                                       │ Taslak saklanıyor · Formu temizle    │
+└──────────────────────────────────────────────────────┴──────────────────────────────────────┘
 ```
 
-- Masaüstünde iki sütun (`lg:grid-cols-[1fr_1fr]`), mobilde tek sütun. Bölümler sarı, eğri kenarlı numara rozetiyle başlar.
-- Gönderme düğmesi `position: sticky; bottom: 0` olan bir çubukta; her zaman görünür.
+- Masaüstünde `lg:grid-cols-[minmax(0,1fr)_340px]`; panel üst menünün altında yapışır (`lg:top-24`, menü 68 px). Mobilde panel formun sonunda, ekranın altında tek satırlık yapışkan çubuk: tahmini skor + öneri sayısı (panele atlar) + "Başlat".
+- **Canlı tahmin:** `/api/draft-check` (AI yok, ~350 ms), yazmayı bıraktıktan 700 ms sonra. Bütün denemeler aynı kalabalıkla koştuğu için "+X puan" o alanın kendi etkisi. Girdi zayıfsa skor tavanı (35/48/55) gösterilir ve tavan kalkana kadar alan önerisi verilmez (hepsi aynı "+0,7" görünürdü).
+- **Dürüst varsayılanlar:** özellik seçimleri "Seçin" ile başlar ve "Belirtilmedi" ile temizlenebilir; yaş "Tüm yaşlar", cinsiyet "Herkes". Kullanıcının seçmediği bir değer skora girmez.
+- **Linkten dolanlar** "linkten" chip'iyle (vurgu rengi) işaretlenir; kullanıcı alanı değiştirince işaret kalkar.
+- Taslak bu tarayıcıda otomatik saklanır (yüklenen fotoğraflar hariç, yalnızca web linkleri); "Formu temizle" siler. Son 3 simülasyonun girdisi "Son ürününden başla" ile forma alınır.
 - "Neden simülasyon?" bilgi kartı formun üstünde tek satırlık bir `.note` kutusuna dönüşür.
 - Yükleme sırasında form yerinde kalır, üstte ilerleme adımları görünür (input analizi → araştırma → benchmark → simülasyon → tartışma).
 

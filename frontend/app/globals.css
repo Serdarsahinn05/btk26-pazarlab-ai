@@ -170,7 +170,7 @@
 
 @utility field {
   /* Form inputs shared look */
-  @apply w-full rounded-xl border-2 border-border bg-card px-3.5 py-2.5 text-[15px] text-foreground placeholder:text-muted-foreground/80 focus-visible:border-accent focus-visible:outline-hidden;
+  @apply w-full rounded-xl border-2 border-border bg-card px-3.5 py-2.5 text-[15px] text-foreground placeholder:text-muted-foreground/80 focus-visible:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring;
 }
 
 @utility tilt-odd {

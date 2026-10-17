@@ -2,6 +2,7 @@ import axios from "axios";
 import { SseError, postSse } from "@/lib/sse";
 import {
   CompareResponse,
+  DraftCheckResponse,
   HealthStatus,
   PriceSweepResponse,
   InputAnalysisResponse,
@@ -89,6 +90,12 @@ export const priceSweep = async (data: SimulationRequest): Promise<PriceSweepRes
 
 export const compareVariants = async (base: SimulationRequest, variant: SimulationRequest): Promise<CompareResponse> => {
   const response = await client.post("/api/compare", { base, variant }, { timeout: 20_000 });
+  return response.data;
+};
+
+/** POST /api/draft-check: estimated score of a half-filled form and what each empty field would add. */
+export const draftCheck = async (draft: object, signal?: AbortSignal): Promise<DraftCheckResponse> => {
+  const response = await client.post("/api/draft-check", draft, { timeout: 15_000, signal });
   return response.data;
 };
 
