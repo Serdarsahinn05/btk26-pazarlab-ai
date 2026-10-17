@@ -3,7 +3,8 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Optional, Union
 
-from app.models.category import FASHION, SEASONAL, TECH
+from app.services import categories
+from app.services.categories import load_category_rules  # noqa: F401  (re-exported for older imports)
 from app.models.input_analysis import InputQualitySignals
 from app.models.product import PurchaseMotivation, SimulationRequest
 from app.models.simulation import NormalizedProduct
@@ -15,20 +16,13 @@ DATA_DIR = Path(__file__).resolve().parents[1] / "data"
 
 
 @lru_cache(maxsize=1)
-def load_category_rules() -> dict[str, Any]:
-    with (DATA_DIR / "category_rules.json").open(encoding="utf-8") as file:
-        return json.load(file)
-
-
-@lru_cache(maxsize=1)
 def load_persona_data() -> dict[str, Any]:
     with (DATA_DIR / "personas.json").open(encoding="utf-8") as file:
         return json.load(file)
 
 
 def get_category_rule(category: str) -> dict[str, Any]:
-    rules = load_category_rules()["categories"]
-    return rules.get(category, rules["tisort"])
+    return categories.rule_for(category)
 
 
 def get_motivation_modifier(motivation: PurchaseMotivation) -> int:
@@ -47,19 +41,18 @@ def get_normalized_weights(category: str, motivation: Optional[Union[PurchaseMot
 
 
 def normalize_product(request: SimulationRequest, ai_signals: Optional[InputQualitySignals] = None) -> NormalizedProduct:
-    category_rule = get_category_rule(request.category)
     features = request.features
     commerce = request.commerce
     description = fold_text(request.description)
 
-    average_price = float(category_rule["averagePrice"])
+    average_price = categories.reference_price(request.category, request.market_price, request.price)
     price_ratio = request.price / average_price if average_price else 1.0
     price_fit = clamp(1.0 - abs(price_ratio - 1.0) * 0.55)
     if price_ratio < 0.55:
         price_fit = clamp(price_fit - 0.12)
     price_risk = clamp(1.0 - price_fit)
 
-    quality_score = _score_quality(request.category, features, commerce)
+    quality_score = clamp(categories.quality_score(request.category, request.raw_features()) + (0.08 if commerce.warranty else 0))
     trend_fit = _score_trend(request.purchase_motivation, request.category, features, description)
     brand_trust = _score_brand_trust(features, commerce, description)
     description_completeness = _score_description(description, features)
@@ -110,74 +103,11 @@ def _blend(base_score: float, ai_score: float, ai_weight: float) -> float:
     return clamp(base_score * (1.0 - ai_weight) + ai_score * ai_weight)
 
 
-def _score_quality(category: str, features: Any, commerce: Any) -> float:
-    score = 0.45
-    if category == "mont":
-        score += 0.12 if features.fabric else 0
-        score += 0.10 if features.inner_filling else 0
-        score += 0.14 if features.waterproof else 0
-        score += 0.10 if features.windproof else 0
-        score += 0.05 if _feature(features, "hood") else 0
-    elif category in {"tisort", "pantolon", "elbise", "etek"}:
-        score += 0.14 if features.fabric else 0
-        score += 0.08 if features.fit else 0
-        score += 0.08 if _feature(features, "size_range") else 0
-        score += 0.06 if features.season else 0
-        score += 0.06 if _any_feature(features, "print_type", "collar_type", "waist_type", "leg_type", "use_case") else 0
-        score += 0.05 if _feature(features, "stretch") else 0
-    elif category in {"telefon", "laptop", "tablet", "akilli_saat"}:
-        score += 0.08 if features.brand else 0
-        score += 0.10 if features.ram else 0
-        score += 0.10 if features.storage else 0
-        score += 0.10 if features.processor else 0
-        score += 0.07 if features.battery else 0
-        score += 0.08 if _feature(features, "screen_size") else 0
-        score += 0.08 if category == "laptop" and _feature(features, "gpu") else 0
-        score += 0.08 if category == "tablet" and _feature(features, "connectivity") else 0
-        score += 0.08 if category == "akilli_saat" and _any_feature(features, "sensors", "water_resistance") else 0
-    elif category == "kulaklik":
-        score += 0.07 if features.brand else 0
-        score += 0.12 if _feature(features, "connection_type") else 0
-        score += 0.12 if features.battery else 0
-        score += 0.10 if _feature(features, "noise_cancellation") else 0
-        score += 0.08 if _feature(features, "microphone") else 0
-        score += 0.06 if _feature(features, "water_resistance") else 0
-        score += 0.06 if _feature(features, "latency") else 0
-    elif category == "ayakkabi":
-        score += 0.12 if features.material else 0
-        score += 0.12 if _feature(features, "sole_material") else 0
-        score += 0.08 if _feature(features, "size_range") else 0
-        score += 0.06 if features.fit else 0
-        score += 0.06 if features.waterproof else 0
-        score += 0.06 if _any_feature(features, "heel_height", "use_case") else 0
-    elif category == "canta":
-        score += 0.14 if features.material else 0
-        score += 0.12 if _feature(features, "dimensions") else 0
-        score += 0.10 if _feature(features, "compartments") else 0
-        score += 0.08 if _feature(features, "strap_type") else 0
-        score += 0.06 if features.waterproof else 0
-        score += 0.04 if features.use_case else 0
-    elif category == "kozmetik":
-        score += 0.10 if features.brand else 0
-        score += 0.14 if _feature(features, "ingredients") else 0
-        score += 0.10 if _feature(features, "skin_type") else 0
-        score += 0.08 if _feature(features, "volume") else 0
-        score += 0.12 if _feature(features, "certifications") else 0
-    else:
-        score += 0.10 if features.material else 0
-        score += 0.08 if features.style else 0
-    score += 0.08 if commerce.warranty else 0
-    return clamp(score)
-
-
 def _score_trend(motivation: PurchaseMotivation, category: str, features: Any, description: str) -> float:
     score = 0.35
     if motivation in {PurchaseMotivation.STYLE, PurchaseMotivation.TREND}:
         score += 0.30
-    if category in FASHION:
-        score += 0.12
-    if category in {"kulaklik", "akilli_saat"}:
-        score += 0.06
+    score += categories.rule_for(category).get("trendBoost", 0)
     if features.style or features.colors or features.fit or _feature(features, "print_type"):
         score += 0.10
     if any(word in description for word in ["oversize", "trend", "modern", "viral", "kombin", "minimal", "gaming"]):
@@ -248,14 +178,11 @@ def _score_visual_appeal(motivation: PurchaseMotivation, features: Any, descript
 
 
 def _score_season(category: str, features: Any) -> float:
-    if category not in SEASONAL:
+    if not categories.is_seasonal(category):
         return 0.70
-    if category == "mont" and features.season in {"winter", "kis"}:
-        return 0.90
-    if category == "tisort" and features.season in {"summer", "yaz"}:
-        return 0.88
-    if category in {"elbise", "etek"} and features.season in {"spring", "summer", "bahar", "yaz"}:
-        return 0.86
+    peak = categories.rule_for(category).get("seasonPeak")
+    if peak and features.season in peak["seasons"]:
+        return peak["score"]
     if features.season in {"all", "dort_mevsim"}:
         return 0.76
     if features.season:
@@ -280,7 +207,7 @@ def _score_target_audience(request: SimulationRequest, description: str) -> floa
     audience = request.target_audience
     features = request.features
 
-    if request.category in TECH:
+    if categories.has_trait(request.category, "tech"):
         score = 0.45
         score += 0.14 if audience.income_level in {"low", "middle", "high"} else 0
         score += 0.12 if features.storage or features.ram else 0

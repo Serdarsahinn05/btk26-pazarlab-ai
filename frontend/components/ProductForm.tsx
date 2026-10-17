@@ -2,9 +2,10 @@
 
 import { useMemo, useRef, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Category, PurchaseMotivation, SimulationRequest } from "@/types";
+import { Features, ProductLinkReadResponse, PurchaseMotivation, SimulationRequest } from "@/types";
 import { apiErrorMessage, readProductLink } from "@/lib/api";
-import { Link2, Loader2, Shirt, ShoppingBag, Smartphone, Sparkles, Trash2, Upload } from "lucide-react";
+import { FAMILIES, OTHER, categoryInfo, categoryLabel, isKnownCategory } from "@/lib/categories";
+import { Link2, Loader2, Sparkles, Trash2, Upload } from "lucide-react";
 
 // Backend accepts at most 6 images of ~1.5 MB each (see SimulationRequest.images).
 const MAX_IMAGES = 6;
@@ -37,372 +38,6 @@ interface ProductFormProps {
   isLoading: boolean;
 }
 
-type FieldType = "text" | "select" | "checkbox" | "number";
-type FamilyKey = "kiyafet" | "teknoloji" | "aksesuar";
-
-interface DynamicField {
-  name: string;
-  label: string;
-  type?: FieldType;
-  placeholder?: string;
-  required?: boolean;
-  options?: Array<{ value: string; label: string }>;
-}
-
-interface CategoryConfig {
-  family: FamilyKey;
-  label: string;
-  shortLabel: string;
-  defaultMotivation: PurchaseMotivation;
-  descriptionPlaceholder: string;
-  exampleName: string;
-  audience: "full" | "income";
-  fields: DynamicField[];
-}
-
-const seasonOptions = [
-  { value: "summer", label: "Yaz" },
-  { value: "winter", label: "Kış" },
-  { value: "spring", label: "Bahar" },
-  { value: "all", label: "Dört mevsim" }
-];
-
-const categoryConfig: Record<string, CategoryConfig> = {
-  tisort: {
-    family: "kiyafet",
-    label: "Kıyafet / Tişört",
-    shortLabel: "Tişört",
-    defaultMotivation: "stil_begeni",
-    audience: "full",
-    exampleName: "Oversize Pamuklu Baskılı Tişört",
-    descriptionPlaceholder: "Kumaş, kalıp, yaka tipi, baskı kalitesi, beden aralığı ve kombin/kullanım senaryosunu yazın.",
-    fields: [
-      { name: "fabric", label: "Kumaş içeriği", placeholder: "%100 pamuk, modal, polyester karışım...", required: true },
-      { name: "fit", label: "Kalıp", type: "select", options: [
-        { value: "regular", label: "Regular" },
-        { value: "oversize", label: "Oversize" },
-        { value: "slim", label: "Slim" }
-      ] },
-      { name: "sizeRange", label: "Beden aralığı", placeholder: "XS-XXL", required: true },
-      { name: "collarType", label: "Yaka tipi", type: "select", options: [
-        { value: "bisiklet", label: "Bisiklet yaka" },
-        { value: "v_yaka", label: "V yaka" },
-        { value: "polo", label: "Polo yaka" }
-      ] },
-      { name: "sleeveLength", label: "Kol tipi", type: "select", options: [
-        { value: "kisa", label: "Kısa kol" },
-        { value: "uzun", label: "Uzun kol" }
-      ] },
-      { name: "printType", label: "Baskı / desen", placeholder: "Nakış, dijital baskı, düz renk..." },
-      { name: "colorsText", label: "Renk seçenekleri", placeholder: "Siyah, beyaz, lacivert..." },
-      { name: "season", label: "Sezon", type: "select", options: seasonOptions }
-    ]
-  },
-  pantolon: {
-    family: "kiyafet",
-    label: "Kıyafet / Pantolon",
-    shortLabel: "Pantolon",
-    defaultMotivation: "ihtiyac",
-    audience: "full",
-    exampleName: "Regular Fit Keten Pantolon",
-    descriptionPlaceholder: "Kumaş, bel tipi, paça formu, esneklik, beden/ölçü ve kullanım alanını yazın.",
-    fields: [
-      { name: "fabric", label: "Kumaş içeriği", placeholder: "Denim, keten, gabardin...", required: true },
-      { name: "fit", label: "Kalıp", type: "select", options: [
-        { value: "regular", label: "Regular" },
-        { value: "slim", label: "Slim" },
-        { value: "wide", label: "Wide leg" }
-      ] },
-      { name: "waistType", label: "Bel tipi", type: "select", options: [
-        { value: "normal", label: "Normal bel" },
-        { value: "yuksek", label: "Yüksek bel" },
-        { value: "lastikli", label: "Lastikli bel" }
-      ] },
-      { name: "legType", label: "Paça tipi", type: "select", options: [
-        { value: "duz", label: "Düz paça" },
-        { value: "dar", label: "Dar paça" },
-        { value: "bol", label: "Bol paça" }
-      ] },
-      { name: "stretch", label: "Esneklik var", type: "checkbox" },
-      { name: "sizeRange", label: "Beden/ölçü aralığı", placeholder: "30-38 veya S-XL", required: true },
-      { name: "useCase", label: "Kullanım alanı", placeholder: "Ofis, günlük, spor..." },
-      { name: "season", label: "Sezon", type: "select", options: seasonOptions }
-    ]
-  },
-  mont: {
-    family: "kiyafet",
-    label: "Kıyafet / Mont",
-    shortLabel: "Mont",
-    defaultMotivation: "stil_begeni",
-    audience: "full",
-    exampleName: "Su Geçirmez Oversize Kışlık Mont",
-    descriptionPlaceholder: "Kumaş, iç dolgu, sezon, su/rüzgar koruması, kapüşon, cep ve beden bilgisini yazın.",
-    fields: [
-      { name: "fabric", label: "Dış kumaş", placeholder: "Polyester, softshell...", required: true },
-      { name: "innerFilling", label: "İç dolgu", placeholder: "Elyaf, kaz tüyü, polar...", required: true },
-      { name: "season", label: "Sezon", type: "select", options: seasonOptions },
-      { name: "fit", label: "Kalıp", type: "select", options: [
-        { value: "regular", label: "Regular" },
-        { value: "oversize", label: "Oversize" },
-        { value: "slim", label: "Slim" }
-      ] },
-      { name: "sizeRange", label: "Beden aralığı", placeholder: "S-XXL" },
-      { name: "waterproof", label: "Su geçirmez", type: "checkbox" },
-      { name: "windproof", label: "Rüzgar geçirmez", type: "checkbox" },
-      { name: "hood", label: "Kapüşon var", type: "checkbox" },
-      { name: "pocketCount", label: "Cep sayısı", type: "number", placeholder: "4" }
-    ]
-  },
-  elbise: {
-    family: "kiyafet",
-    label: "Kıyafet / Elbise",
-    shortLabel: "Elbise",
-    defaultMotivation: "stil_begeni",
-    audience: "full",
-    exampleName: "Midi Boy Keten Elbise",
-    descriptionPlaceholder: "Kumaş, kesim, astar, boy, beden aralığı, sezon ve hangi ortamda kullanılacağını yazın.",
-    fields: [
-      { name: "fabric", label: "Kumaş içeriği", placeholder: "Keten, viskon, saten...", required: true },
-      { name: "fit", label: "Kesim / kalıp", type: "select", options: [
-        { value: "regular", label: "Regular" },
-        { value: "slim", label: "Slim" },
-        { value: "oversize", label: "Rahat kesim" }
-      ] },
-      { name: "sizeRange", label: "Beden aralığı", placeholder: "XS-XL", required: true },
-      { name: "sleeveLength", label: "Kol / askılı tipi", type: "select", options: [
-        { value: "askili", label: "Askılı" },
-        { value: "kisa", label: "Kısa kol" },
-        { value: "uzun", label: "Uzun kol" }
-      ] },
-      { name: "legType", label: "Boy / kesim", placeholder: "Mini, midi, maksi, yırtmaçlı..." },
-      { name: "colorsText", label: "Renk seçenekleri", placeholder: "Siyah, yeşil, ekru..." },
-      { name: "useCase", label: "Kullanım alanı", placeholder: "Günlük, ofis, davet, tatil..." },
-      { name: "season", label: "Sezon", type: "select", options: seasonOptions }
-    ]
-  },
-  etek: {
-    family: "kiyafet",
-    label: "Kıyafet / Etek",
-    shortLabel: "Etek",
-    defaultMotivation: "stil_begeni",
-    audience: "full",
-    exampleName: "Yüksek Bel Midi Etek",
-    descriptionPlaceholder: "Kumaş, bel tipi, etek boyu, kalıp, beden aralığı, kombin ve sezon bilgisini yazın.",
-    fields: [
-      { name: "fabric", label: "Kumaş içeriği", placeholder: "Denim, keten, saten...", required: true },
-      { name: "waistType", label: "Bel tipi", type: "select", options: [
-        { value: "normal", label: "Normal bel" },
-        { value: "yuksek", label: "Yüksek bel" },
-        { value: "lastikli", label: "Lastikli bel" }
-      ] },
-      { name: "legType", label: "Boy / kesim", placeholder: "Mini, midi, maksi, kalem, pileli..." },
-      { name: "fit", label: "Kalıp", type: "select", options: [
-        { value: "regular", label: "Regular" },
-        { value: "slim", label: "Dar" },
-        { value: "wide", label: "Bol" }
-      ] },
-      { name: "sizeRange", label: "Beden aralığı", placeholder: "XS-XL", required: true },
-      { name: "colorsText", label: "Renk seçenekleri", placeholder: "Siyah, bej, lacivert..." },
-      { name: "useCase", label: "Kullanım alanı", placeholder: "Ofis, günlük, davet..." },
-      { name: "season", label: "Sezon", type: "select", options: seasonOptions }
-    ]
-  },
-  telefon: {
-    family: "teknoloji",
-    label: "Teknoloji / Telefon",
-    shortLabel: "Telefon",
-    defaultMotivation: "ihtiyac",
-    audience: "income",
-    exampleName: "128 GB 5G Akıllı Telefon",
-    descriptionPlaceholder: "Marka/model, RAM, depolama, kamera, batarya, ekran ve garanti durumunu yazın.",
-    fields: [
-      { name: "brand", label: "Marka / model", placeholder: "Marka ve model", required: true },
-      { name: "ram", label: "RAM", placeholder: "8 GB", required: true },
-      { name: "storage", label: "Depolama", placeholder: "128 GB", required: true },
-      { name: "processor", label: "İşlemci", placeholder: "Snapdragon / A serisi..." },
-      { name: "camera", label: "Kamera", placeholder: "50 MP OIS, 4K video..." },
-      { name: "battery", label: "Batarya", placeholder: "5000 mAh" },
-      { name: "screenSize", label: "Ekran", placeholder: "6.5 inch AMOLED" },
-      { name: "refreshRate", label: "Yenileme hızı", placeholder: "120 Hz" }
-    ]
-  },
-  laptop: {
-    family: "teknoloji",
-    label: "Teknoloji / Laptop",
-    shortLabel: "Laptop",
-    defaultMotivation: "profesyonel_kullanim",
-    audience: "income",
-    exampleName: "16 GB RAM İş Laptopu",
-    descriptionPlaceholder: "İşlemci, RAM, depolama, ekran, GPU, batarya, ağırlık ve hangi iş için uygun olduğunu yazın.",
-    fields: [
-      { name: "brand", label: "Marka / model", placeholder: "Marka ve model", required: true },
-      { name: "processor", label: "İşlemci", placeholder: "i5, Ryzen 7, M serisi...", required: true },
-      { name: "ram", label: "RAM", placeholder: "16 GB", required: true },
-      { name: "storage", label: "Depolama", placeholder: "512 GB SSD", required: true },
-      { name: "gpu", label: "Ekran kartı", placeholder: "RTX 4050, entegre..." },
-      { name: "screenSize", label: "Ekran", placeholder: "14 inch IPS, 2K..." },
-      { name: "battery", label: "Batarya / süre", placeholder: "8 saat, 60 Wh..." },
-      { name: "weight", label: "Ağırlık", placeholder: "1.4 kg" },
-      { name: "useCase", label: "Kullanım amacı", placeholder: "Ofis, yazılım, oyun, tasarım..." }
-    ]
-  },
-  kulaklik: {
-    family: "teknoloji",
-    label: "Teknoloji / Kulaklık",
-    shortLabel: "Kulaklık",
-    defaultMotivation: "ihtiyac",
-    audience: "income",
-    exampleName: "ANC Bluetooth Kulaklık",
-    descriptionPlaceholder: "Bağlantı tipi, pil, ANC, mikrofon, su dayanımı, gecikme ve kullanım alanını yazın.",
-    fields: [
-      { name: "brand", label: "Marka / model", placeholder: "Marka ve model" },
-      { name: "connectionType", label: "Bağlantı", type: "select", options: [
-        { value: "bluetooth", label: "Bluetooth" },
-        { value: "kablolu", label: "Kablolu" },
-        { value: "dongle", label: "2.4 GHz dongle" }
-      ] },
-      { name: "battery", label: "Pil süresi", placeholder: "30 saat" },
-      { name: "noiseCancellation", label: "Aktif gürültü engelleme", type: "checkbox" },
-      { name: "microphone", label: "Mikrofon kalitesi", placeholder: "ENC, çift mikrofon..." },
-      { name: "waterResistance", label: "Su/ter dayanımı", placeholder: "IPX4, IP54..." },
-      { name: "latency", label: "Gecikme", placeholder: "45 ms, düşük gecikme modu..." },
-      { name: "useCase", label: "Kullanım amacı", placeholder: "Müzik, oyun, toplantı, spor..." }
-    ]
-  },
-  tablet: {
-    family: "teknoloji",
-    label: "Teknoloji / Tablet",
-    shortLabel: "Tablet",
-    defaultMotivation: "ihtiyac",
-    audience: "income",
-    exampleName: "10.9 inç Kalem Destekli Tablet",
-    descriptionPlaceholder: "Marka/model, ekran, RAM, depolama, kalem/klavye desteği, batarya ve kullanım amacını yazın.",
-    fields: [
-      { name: "brand", label: "Marka / model", placeholder: "Marka ve model", required: true },
-      { name: "screenSize", label: "Ekran", placeholder: "10.9 inch IPS/AMOLED", required: true },
-      { name: "ram", label: "RAM", placeholder: "6 GB" },
-      { name: "storage", label: "Depolama", placeholder: "128 GB", required: true },
-      { name: "processor", label: "İşlemci", placeholder: "A serisi, Snapdragon..." },
-      { name: "battery", label: "Batarya", placeholder: "8000 mAh, 10 saat" },
-      { name: "connectivity", label: "Bağlantı", placeholder: "Wi-Fi, LTE, 5G, kalem destekli..." },
-      { name: "useCase", label: "Kullanım amacı", placeholder: "Eğitim, not alma, çizim, medya..." }
-    ]
-  },
-  akilli_saat: {
-    family: "teknoloji",
-    label: "Teknoloji / Akıllı Saat",
-    shortLabel: "Akıllı Saat",
-    defaultMotivation: "ihtiyac",
-    audience: "income",
-    exampleName: "GPS ve AMOLED Ekranlı Akıllı Saat",
-    descriptionPlaceholder: "Marka/model, pil, ekran, su dayanımı, sensörler, telefon uyumu ve spor/sağlık kullanımını yazın.",
-    fields: [
-      { name: "brand", label: "Marka / model", placeholder: "Marka ve model", required: true },
-      { name: "screenSize", label: "Ekran boyutu", placeholder: "1.43 inch" },
-      { name: "displayType", label: "Ekran tipi", placeholder: "AMOLED, Always-on..." },
-      { name: "battery", label: "Pil süresi", placeholder: "7 gün, 14 gün..." },
-      { name: "waterResistance", label: "Su dayanımı", placeholder: "5 ATM, IP68..." },
-      { name: "sensors", label: "Sensörler", placeholder: "Nabız, SpO2, GPS, uyku takibi..." },
-      { name: "connectivity", label: "Bağlantı / uyum", placeholder: "Bluetooth, eSIM, iOS/Android..." },
-      { name: "useCase", label: "Kullanım amacı", placeholder: "Spor, sağlık takibi, bildirim..." }
-    ]
-  },
-  ayakkabi: {
-    family: "aksesuar",
-    label: "Aksesuar / Ayakkabı",
-    shortLabel: "Ayakkabı",
-    defaultMotivation: "stil_begeni",
-    audience: "full",
-    exampleName: "Hakiki Deri Günlük Sneaker",
-    descriptionPlaceholder: "Saya ve taban malzemesini, numara aralığını, kalıbın dar/geniş olduğunu, rahatlık ve kullanım alanını yazın.",
-    fields: [
-      { name: "material", label: "Saya malzemesi", placeholder: "Hakiki deri, süet, file...", required: true },
-      { name: "soleMaterial", label: "Taban", placeholder: "Kauçuk, EVA, ortopedik iç taban..." },
-      { name: "sizeRange", label: "Numara aralığı", placeholder: "36-45", required: true },
-      { name: "fit", label: "Kalıp", type: "select", options: [
-        { value: "normal", label: "Normal kalıp" },
-        { value: "dar", label: "Dar kalıp (bir numara büyük)" },
-        { value: "genis", label: "Geniş kalıp" }
-      ] },
-      { name: "heelHeight", label: "Topuk / taban yüksekliği", placeholder: "3 cm" },
-      { name: "useCase", label: "Kullanım alanı", placeholder: "Günlük, koşu, ofis, yürüyüş..." },
-      { name: "season", label: "Sezon", type: "select", options: seasonOptions },
-      { name: "waterproof", label: "Su geçirmez", type: "checkbox" }
-    ]
-  },
-  canta: {
-    family: "aksesuar",
-    label: "Aksesuar / Çanta",
-    shortLabel: "Çanta",
-    defaultMotivation: "stil_begeni",
-    audience: "full",
-    exampleName: "Su Geçirmez Laptop Sırt Çantası",
-    descriptionPlaceholder: "Ölçüleri, malzemeyi, bölmeleri, askı tipini ve içine neyin sığdığını (laptop, A4, su şişesi) yazın.",
-    fields: [
-      { name: "material", label: "Malzeme", placeholder: "Hakiki deri, kanvas, polyester...", required: true },
-      { name: "dimensions", label: "Ölçüler / hacim", placeholder: "45 x 30 x 15 cm, 20 L", required: true },
-      { name: "compartments", label: "Bölmeler", placeholder: "Laptop bölmesi, 3 iç cep..." },
-      { name: "strapType", label: "Askı tipi", type: "select", options: [
-        { value: "el", label: "El çantası" },
-        { value: "omuz", label: "Omuz askısı" },
-        { value: "capraz", label: "Çapraz askı" },
-        { value: "sirt", label: "Sırt çantası" }
-      ] },
-      { name: "colorsText", label: "Renk seçenekleri", placeholder: "Siyah, taba, lacivert..." },
-      { name: "useCase", label: "Kullanım alanı", placeholder: "Ofis, okul, seyahat, günlük..." },
-      { name: "waterproof", label: "Su geçirmez", type: "checkbox" }
-    ]
-  },
-  kozmetik: {
-    family: "aksesuar",
-    label: "Bakım / Kozmetik",
-    shortLabel: "Kozmetik",
-    defaultMotivation: "ihtiyac",
-    audience: "full",
-    exampleName: "Hyaluronik Asitli Nemlendirici Krem 50 ml",
-    descriptionPlaceholder: "Öne çıkan içerikleri, cilt/saç tipini, hacmi, kullanım şeklini ve test/sertifika bilgisini yazın.",
-    fields: [
-      { name: "brand", label: "Marka", placeholder: "Marka ve ürün serisi", required: true },
-      { name: "skinType", label: "Cilt / saç tipi", type: "select", options: [
-        { value: "tum", label: "Tüm cilt tipleri" },
-        { value: "kuru", label: "Kuru" },
-        { value: "yagli", label: "Yağlı" },
-        { value: "karma", label: "Karma" },
-        { value: "hassas", label: "Hassas" }
-      ] },
-      { name: "ingredients", label: "Öne çıkan içerikler", placeholder: "Hyaluronik asit, niasinamid, SPF 50...", required: true },
-      { name: "volume", label: "Hacim / gramaj", placeholder: "50 ml" },
-      { name: "certifications", label: "Test ve sertifikalar", placeholder: "Dermatolojik test, vegan, cruelty-free..." },
-      { name: "useCase", label: "Kullanım amacı", placeholder: "Günlük nem, akne bakımı, makyaj..." }
-    ]
-  }
-};
-
-const categoryFamilies = [
-  {
-    key: "kiyafet",
-    label: "Kıyafet",
-    icon: Shirt,
-    items: ["tisort", "pantolon", "mont", "elbise", "etek"]
-  },
-  {
-    key: "teknoloji",
-    label: "Teknolojik Cihaz",
-    icon: Smartphone,
-    items: ["telefon", "laptop", "kulaklik", "tablet", "akilli_saat"]
-  },
-  {
-    key: "aksesuar",
-    label: "Aksesuar & Bakım",
-    icon: ShoppingBag,
-    items: ["ayakkabi", "canta", "kozmetik"]
-  }
-];
-
-
-
-
-
 function getString(formData: FormData, key: string): string | undefined {
   const value = String(formData.get(key) || "").trim();
   return value || undefined;
@@ -410,20 +45,30 @@ function getString(formData: FormData, key: string): string | undefined {
 
 export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
-  const [category, setCategory] = useState<Category>("tisort");
+  const [category, setCategory] = useState("tisort");
+  // How the link reader found the category; cleared when the user picks one.
+  const [categoryNote, setCategoryNote] = useState<{ text: string; check: boolean } | null>(null);
   const [motivation, setMotivation] = useState<PurchaseMotivation>("stil_begeni");
   const [linkStatus, setLinkStatus] = useState<string>("");
   const [isReadingLink, setIsReadingLink] = useState(false);
   const [images, setImages] = useState<string[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const activeCategory = useMemo(() => categoryConfig[category] || categoryConfig.tisort, [category]);
+  const info = useMemo(() => categoryInfo(category), [category]);
+  const family = FAMILIES.find((f) => f.id === info.family) ?? FAMILIES[0];
 
   const handleCategoryChange = (value: string | null) => {
     // Values can come from the link reader, so only accept categories the API knows.
-    const nextCategory = (value && value in categoryConfig ? value : "tisort") as Category;
-    setCategory(nextCategory);
-    setMotivation(categoryConfig[nextCategory].defaultMotivation);
+    const next = isKnownCategory(value) ? value : OTHER;
+    setCategory(next);
+    setMotivation(categoryInfo(next).defaultMotivation);
+  };
+
+  const pickCategory = (value: string | null) => {
+    // Radix fires "" when the subtype list is rebuilt after a family change; that is not a choice.
+    if (!value) return;
+    setCategoryNote(null);
+    handleCategoryChange(value);
   };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -436,63 +81,14 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
       productName: String(formData.get("productName") || ""),
       productUrl: getString(formData, "productUrl"),
       price: Number(String(formData.get("price") || "0").replace(",", ".")),
+      marketPrice: Number(String(formData.get("marketPrice") || "").replace(",", ".")) || undefined,
       description: String(formData.get("description") || ""),
       targetAudience: {
         ageRange: getString(formData, "ageRange") || "genel",
         gender: getString(formData, "gender") || "unisex",
         incomeLevel: getString(formData, "incomeLevel") || "middle"
       },
-      features: {
-        fabric: getString(formData, "fabric"),
-        innerFilling: getString(formData, "innerFilling"),
-        waterproof: formData.get("waterproof") === "on",
-        windproof: formData.get("windproof") === "on",
-        season: getString(formData, "season"),
-        colors: getString(formData, "colorsText")?.split(",").map((item) => item.trim()).filter(Boolean),
-        brand: getString(formData, "brand"),
-        ram: getString(formData, "ram"),
-        storage: getString(formData, "storage"),
-        processor: getString(formData, "processor"),
-        camera: getString(formData, "camera"),
-        battery: getString(formData, "battery"),
-        refreshRate: getString(formData, "refreshRate"),
-        displayType: getString(formData, "displayType"),
-        material: getString(formData, "material"),
-        style: getString(formData, "style"),
-        fit: getString(formData, "fit"),
-        useCase: getString(formData, "useCase"),
-        operatingSystem: getString(formData, "operatingSystem"),
-        connectivity: getString(formData, "connectivity"),
-        sensors: getString(formData, "sensors"),
-        compatibleModel: getString(formData, "compatibleModel"),
-        dimensions: getString(formData, "dimensions"),
-        installationEase: getString(formData, "installationEase"),
-        sizeRange: getString(formData, "sizeRange"),
-        printType: getString(formData, "printType"),
-        collarType: getString(formData, "collarType"),
-        sleeveLength: getString(formData, "sleeveLength"),
-        waistType: getString(formData, "waistType"),
-        legType: getString(formData, "legType"),
-        stretch: formData.get("stretch") === "on",
-        hood: formData.get("hood") === "on",
-        pocketCount: getString(formData, "pocketCount"),
-        screenSize: getString(formData, "screenSize"),
-        gpu: getString(formData, "gpu"),
-        weight: getString(formData, "weight"),
-        connectionType: getString(formData, "connectionType"),
-        noiseCancellation: formData.get("noiseCancellation") === "on",
-        microphone: getString(formData, "microphone"),
-        waterResistance: getString(formData, "waterResistance"),
-        latency: getString(formData, "latency"),
-        soleMaterial: getString(formData, "soleMaterial"),
-        heelHeight: getString(formData, "heelHeight"),
-        compartments: getString(formData, "compartments"),
-        strapType: getString(formData, "strapType"),
-        skinType: getString(formData, "skinType"),
-        ingredients: getString(formData, "ingredients"),
-        volume: getString(formData, "volume"),
-        certifications: getString(formData, "certifications")
-      },
+      features: readFeatures(formData, info.form.fields),
       commerce: {
         shippingDays: Number(formData.get("shippingDays") || 3),
         returnAvailable: formData.get("returnAvailable") === "on",
@@ -549,6 +145,7 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
       // Kategori varsa degistir (bu yeni alanlari render eder)
       if (result.category) {
         handleCategoryChange(result.category);
+        setCategoryNote(linkCategoryNote(result));
       }
 
       // DOM guncellenmesi ve alanlarin render olmasi icin biraz bekle
@@ -646,29 +243,47 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
         {/* 2 · Temel bilgiler */}
         <Step n={2} title="Temel bilgiler">
           <div className="grid gap-4 sm:grid-cols-2">
-            <FieldLabel htmlFor="category" label="Kategori">
-              <Select value={category} onValueChange={handleCategoryChange}>
+            <FieldLabel htmlFor="category" label="Kategori" className={family.subtypes.length ? undefined : "sm:col-span-2"}>
+              <Select value={info.family} onValueChange={pickCategory}>
                 <SelectTrigger id="category" className="field h-11">
                   <SelectValue placeholder="Kategori seçin" />
                 </SelectTrigger>
                 <SelectContent>
-                  {categoryFamilies.map((family) => (
-                    <div key={family.key}>
-                      <div className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-muted-foreground">
-                        <family.icon className="h-3.5 w-3.5" aria-hidden /> {family.label}
-                      </div>
-                      {family.items.map((itemKey) => (
-                        <SelectItem key={itemKey} value={itemKey}>
-                          {categoryConfig[itemKey].shortLabel}
-                        </SelectItem>
-                      ))}
-                    </div>
+                  {FAMILIES.map((f) => (
+                    <SelectItem key={f.id} value={f.id}>
+                      {/* inline-flex: Tailwind makes svg a block, which would put the icon on its own line */}
+                      <span className="inline-flex items-center gap-2">
+                        <f.icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden /> {f.label}
+                      </span>
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </FieldLabel>
-            <FieldLabel htmlFor="motivation" label="Satın alma motivasyonu">
-              <Select name="motivation" value={motivation} onValueChange={(val) => setMotivation((val as PurchaseMotivation) || activeCategory.defaultMotivation)}>
+            {family.subtypes.length > 0 && (
+              <FieldLabel htmlFor="subtype" label="Ürün türü">
+                <Select value={category} onValueChange={pickCategory}>
+                  <SelectTrigger id="subtype" className="field h-11">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {family.subtypes.map((sub) => (
+                      <SelectItem key={sub.id} value={sub.id}>{sub.label}</SelectItem>
+                    ))}
+                    <SelectItem value={family.id}>Genel / emin değilim</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FieldLabel>
+            )}
+          </div>
+          {categoryNote && (
+            <p className={categoryNote.check ? "note-risk" : "text-sm text-muted-foreground"} aria-live="polite">
+              {categoryNote.text}
+            </p>
+          )}
+
+          <FieldLabel htmlFor="motivation" label="Satın alma motivasyonu">
+              <Select name="motivation" value={motivation} onValueChange={(val) => setMotivation((val as PurchaseMotivation) || info.defaultMotivation)}>
                 <SelectTrigger id="motivation" className="field h-11">
                   <SelectValue placeholder="Motivasyon seçin" />
                 </SelectTrigger>
@@ -682,17 +297,26 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
                   <SelectItem value="profesyonel_kullanim">Profesyonel kullanım</SelectItem>
                 </SelectContent>
               </Select>
-            </FieldLabel>
-          </div>
+          </FieldLabel>
 
           <div className="grid gap-4 sm:grid-cols-[1fr_9rem]">
             <FieldLabel htmlFor="productName" label="Ürün adı" required>
-              <input id="productName" name="productName" placeholder={activeCategory.exampleName} minLength={4} maxLength={120} required className="field" />
+              <input id="productName" name="productName" placeholder={info.form.exampleName} minLength={4} maxLength={120} required className="field" />
             </FieldLabel>
             <FieldLabel htmlFor="price" label="Fiyat (TL)" required>
               <input id="price" name="price" type="number" min="1" max="10000000" step="0.01" placeholder="1200" required className="field" />
             </FieldLabel>
           </div>
+
+          {info.averagePrice === null && (
+            <FieldLabel
+              htmlFor="marketPrice"
+              label="Benzer ürünlerin ortalama fiyatı (TL)"
+              hint="Bu kategoride hazır bir fiyat ortalaması yok. Boş bırakırsan kasaba fiyatını ne pahalı ne ucuz bulur."
+            >
+              <input id="marketPrice" name="marketPrice" type="number" min="1" max="10000000" step="0.01" placeholder="Örn. 750" className="field" />
+            </FieldLabel>
+          )}
 
           <FieldLabel htmlFor="description" label="Ürün açıklaması" required hint="En az 40 karakter. Detay arttıkça simülasyon isabeti artar.">
             <textarea
@@ -701,7 +325,7 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
               minLength={40}
               maxLength={4000}
               rows={6}
-              placeholder={activeCategory.descriptionPlaceholder}
+              placeholder={info.form.descriptionPlaceholder}
               required
               className="field resize-y"
             />
@@ -751,9 +375,9 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
 
         <div className="space-y-6">
           {/* 3 · Kategoriye özel özellikler */}
-          <Step n={3} title={`${activeCategory.shortLabel} özellikleri`}>
+          <Step n={3} title={`${info.label} özellikleri`}>
             <div className="grid gap-4 sm:grid-cols-2">
-              {activeCategory.fields.map((field) => {
+              {info.form.fields.map((field) => {
                 if (field.type === "checkbox") {
                   return (
                     <label key={field.name} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border-2 border-border bg-card px-3.5 text-sm font-bold hover:bg-secondary">
@@ -798,8 +422,7 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
           {/* 4 · Hedef kitle ve satış koşulları */}
           <Step n={4} title="Hedef kitle ve satış koşulları">
             <div className="grid gap-4 sm:grid-cols-2">
-              {activeCategory.audience === "full" && (
-                <>
+              {info.audienceFields.includes("ageRange") && (
                   <FieldLabel htmlFor="ageRange" label="Yaş aralığı">
                     <Select name="ageRange" defaultValue="18-30">
                       <SelectTrigger id="ageRange" className="field h-11"><SelectValue /></SelectTrigger>
@@ -811,6 +434,8 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
                       </SelectContent>
                     </Select>
                   </FieldLabel>
+              )}
+              {info.audienceFields.includes("gender") && (
                   <FieldLabel htmlFor="gender" label="Cinsiyet">
                     <Select name="gender" defaultValue="unisex">
                       <SelectTrigger id="gender" className="field h-11"><SelectValue /></SelectTrigger>
@@ -821,7 +446,6 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
                       </SelectContent>
                     </Select>
                   </FieldLabel>
-                </>
               )}
               <FieldLabel htmlFor="incomeLevel" label="Fiyat segmenti">
                 <Select name="incomeLevel" defaultValue="middle">
@@ -833,7 +457,8 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
                   </SelectContent>
                 </Select>
               </FieldLabel>
-              <FieldLabel htmlFor="shippingDays" label="Kargo süresi (gün)">
+              {/* Spans the row when the audience fields leave it alone (no empty cell). */}
+              <FieldLabel htmlFor="shippingDays" label="Kargo süresi (gün)" className={info.audienceFields.filter((f) => f !== "incomeLevel").length % 2 ? "sm:col-span-2" : undefined}>
                 <input id="shippingDays" name="shippingDays" type="number" defaultValue="3" min="0" max="60" className="field" />
               </FieldLabel>
             </div>
@@ -854,7 +479,7 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
       {/* Sticky submit bar: always visible while filling the form (DESIGN.md §9.2) */}
       <div className="no-print sticky bottom-4 z-30 flex flex-col items-stretch gap-3 rounded-wobble-lg border-2 border-foreground bg-card px-5 py-3.5 shadow-sticker-ink sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-foreground-2">
-          <b className="font-display">{activeCategory.shortLabel}</b> · 500 sentetik tüketici · genelde 30–90 sn
+          <b className="font-display">{info.label}</b> · 500 sentetik tüketici · genelde 30–90 sn
         </p>
         <button type="submit" disabled={isLoading} className="btn-sticker-primary px-6 py-2.5 text-base">
           {isLoading ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <Sparkles className="h-5 w-5" aria-hidden />}
@@ -885,17 +510,19 @@ function FieldLabel({
   label,
   required,
   hint,
+  className,
   children,
 }: {
   htmlFor: string;
   label: string;
   required?: boolean;
   hint?: string;
+  className?: string;
   children: React.ReactNode;
 }) {
   return (
     // gap, not space-y: Radix Select appends a hidden native <select> as the last child.
-    <div className="flex flex-col gap-1.5">
+    <div className={`flex flex-col gap-1.5 ${className ?? ""}`}>
       <label htmlFor={htmlFor} className="text-sm leading-6 font-bold text-foreground-2">
         {label} {required && <span className="text-skip-text" aria-hidden>*</span>}
       </label>
@@ -903,4 +530,23 @@ function FieldLabel({
       {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
     </div>
   );
+}
+
+/** Feature values of the fields this category shows (the form only renders those). */
+function readFeatures(formData: FormData, fields: Array<{ name: string; type?: string }>): Features {
+  const features: Record<string, unknown> = {};
+  for (const field of fields) {
+    if (field.type === "checkbox") features[field.name] = formData.get(field.name) === "on";
+    else if (field.name === "colorsText") features.colors = getString(formData, "colorsText")?.split(",").map((c) => c.trim()).filter(Boolean);
+    else features[field.name] = getString(formData, field.name);
+  }
+  return features as Features;
+}
+
+function linkCategoryNote(result: ProductLinkReadResponse): { text: string; check: boolean } | null {
+  const label = categoryLabel(result.category ?? OTHER);
+  if (result.category_confidence === "high") return { text: `Kategori sayfanın kendi kategorisinden okundu: ${label}.`, check: false };
+  if (result.category_confidence === "medium") return { text: `Kategoriyi ürün adından tahmin ettik (${label}). Doğru değilse değiştirin.`, check: true };
+  if (result.category_confidence === "low") return { text: "Kategori tanınamadı; “Diğer” seçildi. Uygun kategoriyi seçin.", check: true };
+  return null;
 }

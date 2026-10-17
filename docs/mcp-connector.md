@@ -8,7 +8,7 @@ PazarLab, bir **uzak MCP sunucusu** olarak da çalışır. Claude kullanan biri 
 
 | Araç | Ne yapar |
 |---|---|
-| `list_categories` | Kategoriler, ortalama fiyatlar, skoru etkileyen alanlar, motivasyonlar |
+| `list_categories` | 12 kategori ailesi + Diğer ve alt türleri; ortalama fiyatlar, skoru etkileyen alanlar, motivasyonlar. Kategori olarak alt tür kimliği, bilinmiyorsa aile kimliği verilir; `diger` için `marketPrice` (benzer ürünlerin ortalama fiyatı) önerilir |
 | `list_personas` | 12 alışveriş personası ve karakterleri (rol yapmak için) |
 | `read_product_link` | Herkese açık bir ürün sayfasını okur (sitedeki SSRF korumasıyla) |
 | `simulate_product` | 500 sentetik tüketiciyle simülasyon; skorlar, persona kararları, zayıflıklar, kural tabanlı öneriler; sonucu kaydeder ve `siteUrl` döner |

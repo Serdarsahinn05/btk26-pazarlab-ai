@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import { InputAnalysisResponse } from "@/types";
+import { categoryLabel } from "@/lib/categories";
 
 interface AnalysisWarningProps {
   analysis: InputAnalysisResponse;
@@ -42,7 +43,7 @@ export default function AnalysisWarning({ analysis, onConfirm, onCancel }: Analy
 
   const suggestions = [
     ...analysis.suggestions,
-    ...(analysis.suspectedCategory ? [`Kategori önerisi: ${analysis.suspectedCategory}`] : []),
+    ...(analysis.suspectedCategory ? [`Kategori önerisi: ${categoryLabel(analysis.suspectedCategory)}`] : []),
     ...(analysis.correctedProductName ? [`İsim önerisi: ${analysis.correctedProductName}`] : []),
   ];
 

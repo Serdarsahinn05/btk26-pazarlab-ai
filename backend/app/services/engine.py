@@ -28,6 +28,7 @@ from typing import Any
 
 from app.models.product import SimulationRequest
 from app.models.simulation import NormalizedProduct
+from app.services import categories
 from app.services.normalization_service import get_category_rule
 from app.services.town import residents_with_traits
 
@@ -123,7 +124,7 @@ def run_town(
 ) -> dict[str, Any]:
     """Decisions of the whole town for one product. `seed` fixes the crowd's noise (price is not part of it)."""
     rule = get_category_rule(request.category)
-    average_price = float(rule["averagePrice"])
+    average_price = categories.reference_price(request.category, request.market_price, request.price)
     applicable = set(rule.get("applicableAudienceFields", []))
     price = float(request.price)
     values = _product_values(product)

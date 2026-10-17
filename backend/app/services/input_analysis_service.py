@@ -4,7 +4,7 @@ from typing import Any, Dict, Iterable, Mapping, Optional
 
 from app.models.input_analysis import InputAnalysisResponse, InputQualitySignals
 from app.models.product import SimulationRequest
-from app.models.category import FASHION
+from app.services import categories
 from app.services import llm_client
 from app.utils.math_utils import clamp
 from app.utils.text_utils import fold_text
@@ -53,38 +53,9 @@ JSON semasi:
 """.strip()
 
 
-CATEGORY_TERMS = {
-    "tisort": {"tisort", "tshirt", "kumas", "pamuk", "yaka", "kol", "baski", "beden", "oversize"},
-    "pantolon": {"pantolon", "denim", "keten", "bel", "paca", "fit", "beden", "esnek"},
-    "mont": {"mont", "kaban", "ceket", "kumas", "dolgu", "su", "ruzgar", "kapuson", "kis"},
-    "elbise": {"elbise", "kumas", "kesim", "astar", "boy", "askili", "kol", "beden", "abiye"},
-    "etek": {"etek", "kumas", "bel", "pile", "mini", "midi", "beden"},
-    "telefon": {"telefon", "gb", "kamera", "batarya", "ekran", "ram", "islemci", "hz", "5g"},
-    "laptop": {"laptop", "notebook", "ram", "ssd", "islemci", "ekran", "gpu", "batarya", "kg"},
-    "kulaklik": {"kulaklik", "bluetooth", "anc", "mikrofon", "pil", "saat", "gecikme", "kablolu"},
-    "tablet": {"tablet", "ekran", "kalem", "gb", "batarya", "wifi", "lte", "ram", "hafiza"},
-    "akilli_saat": {"akilli", "saat", "nabiz", "gps", "batarya", "spor", "su", "amoled", "bildirim"},
-    "ayakkabi": {"ayakkabi", "sneaker", "bot", "cizme", "sandalet", "terlik", "taban", "numara", "topuk"},
-    "canta": {"canta", "sirt", "omuz", "bolme", "fermuar", "aski", "cuzdan", "valiz"},
-    "kozmetik": {"krem", "serum", "sampuan", "parfum", "ruj", "makyaj", "cilt", "spf", "ml", "nemlendirici", "vegan"},
-}
-
-
-IMPORTANT_FIELDS = {
-    "tisort": ["fabric", "fit", "size_range", "collar_type", "sleeve_length", "print_type", "season"],
-    "pantolon": ["fabric", "fit", "waist_type", "leg_type", "size_range", "use_case", "season"],
-    "mont": ["fabric", "inner_filling", "season", "fit", "size_range", "waterproof", "windproof"],
-    "elbise": ["fabric", "fit", "size_range", "sleeve_length", "season", "use_case", "colors"],
-    "etek": ["fabric", "waist_type", "size_range", "leg_type", "season", "use_case", "colors"],
-    "telefon": ["brand", "ram", "storage", "processor", "camera", "battery", "screen_size", "refresh_rate"],
-    "laptop": ["brand", "processor", "ram", "storage", "gpu", "screen_size", "battery", "weight", "use_case"],
-    "kulaklik": ["brand", "connection_type", "battery", "noise_cancellation", "microphone", "water_resistance", "latency", "use_case"],
-    "tablet": ["brand", "processor", "ram", "storage", "screen_size", "battery", "connectivity", "use_case"],
-    "akilli_saat": ["brand", "battery", "screen_size", "display_type", "water_resistance", "sensors", "connectivity", "use_case"],
-    "ayakkabi": ["material", "sole_material", "size_range", "fit", "heel_height", "use_case", "season"],
-    "canta": ["material", "dimensions", "compartments", "strap_type", "use_case", "colors"],
-    "kozmetik": ["brand", "skin_type", "ingredients", "volume", "certifications", "use_case"],
-}
+def _terms(category: str) -> set[str]:
+    """Words that suggest a category (folded; from data/category_rules.json)."""
+    return set(categories.rule_for(category).get("terms", []))
 
 
 def analyze_input(request: SimulationRequest) -> InputAnalysisResponse:
@@ -194,7 +165,7 @@ def deterministic_analysis(request: SimulationRequest) -> InputAnalysisResponse:
         ]
     ))
 
-    filled_important = _filled_ratio(features, IMPORTANT_FIELDS.get(request.category, []))
+    filled_important = _filled_ratio(request.raw_features(), categories.rule_for(request.category).get("importantFields", []))
     description_quality = _description_quality(request.description)
     category_fit = _category_fit(request.category, text, filled_important)
     plausibility = min(description_quality, 0.55 + filled_important * 0.45)
@@ -222,7 +193,7 @@ def deterministic_analysis(request: SimulationRequest) -> InputAnalysisResponse:
     if category_fit < 0.40:
         warnings.append("Ürün bilgileri seçilen kategoriyle tam uyuşmuyor olabilir.")
         suggestions.append("Kategoriyi ve alt ürünü tekrar kontrol et.")
-    if request.category in {"telefon", "laptop", "tablet", "akilli_saat", "kozmetik"} and not features.brand:
+    if "brand" in categories.rule_for(request.category).get("importantFields", []) and not features.brand:
         warnings.append("Marka/model bilgisi net değil.")
         suggestions.append("Marka ve modeli yazarsan güven ve teknik uyum daha doğru hesaplanır.")
     if description_quality < 0.45:
@@ -290,13 +261,14 @@ def _clean_optional(value: Any) -> Optional[str]:
     return text
 
 
-def _filled_ratio(features: Any, field_names: Iterable[str]) -> float:
+def _filled_ratio(features: dict[str, Any], field_names: Iterable[str]) -> float:
+    """Share of the important fields (camelCase API names) that are filled."""
     names = list(field_names)
     if not names:
         return 0.45
     filled = 0
     for name in names:
-        value = getattr(features, name, None)
+        value = features.get(name)
         if isinstance(value, bool):
             filled += 1 if value else 0
         elif value:
@@ -312,12 +284,14 @@ def _description_quality(description: str) -> float:
 
 
 def _category_fit(category: str, text: str, filled_ratio: float) -> float:
-    terms = CATEGORY_TERMS.get(category, set())
+    terms = _terms(category)
     if not terms:
         return 0.65
     hits = _category_hits(terms, text)
+    # Only other families compete: a shirt that reads a bit like a T-shirt is still clothing.
+    family = categories.family_of(category)
     competing_hits = max(
-        (_category_hits(other_terms, text) for other_category, other_terms in CATEGORY_TERMS.items() if other_category != category),
+        (_category_hits(_terms(other), text) for other in categories.all_ids() if categories.family_of(other) != family),
         default=0,
     )
     score = 0.25 + min(hits / 4, 0.45) + filled_ratio * 0.30
@@ -359,7 +333,7 @@ def _brand_trust_from_input(features: Any, commerce: Any, description: str) -> f
 def _visual_signal(category: str, features: Any, description: str) -> float:
     text = fold_text(description)
     score = 0.42
-    if category in FASHION:
+    if categories.has_trait(category, "fashion"):
         if getattr(features, "colors", None):
             score += 0.15
         if getattr(features, "fit", None):
@@ -404,7 +378,7 @@ def _looks_like_generic_marketing(description: str) -> bool:
         "guzel", "kaliteli", "super", "harika", "mukemmel", "uygun", "kampanyali",
         "herkes", "ideal", "urun", "cok", "iyi", "alinir", "tavsiye", "efsane",
     }
-    detail_terms = set().union(*CATEGORY_TERMS.values())
+    detail_terms = set().union(*(_terms(c) for c in categories.all_ids()))
     generic_hits = sum(1 for word in words if word in generic_words)
     detail_hits = sum(1 for term in detail_terms if term in fold_text(description))
     return generic_hits >= 5 and detail_hits < 2
@@ -413,11 +387,12 @@ def _looks_like_generic_marketing(description: str) -> bool:
 def _guess_category(text: str, current_category: str) -> Optional[str]:
     best_category = current_category
     best_hits = 0
-    for category, terms in CATEGORY_TERMS.items():
-        hits = sum(1 for term in terms if term in text)
+    for category in categories.all_ids():
+        hits = sum(1 for term in _terms(category) if term in text)
         if hits > best_hits:
             best_category = category
             best_hits = hits
-    if best_category != current_category and best_hits >= 2:
+    # Suggest only another family; a sibling subtype (shirt vs T-shirt) is scored almost the same.
+    if categories.family_of(best_category) != categories.family_of(current_category) and best_hits >= 2:
         return best_category
     return None

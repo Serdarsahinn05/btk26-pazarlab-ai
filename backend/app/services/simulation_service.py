@@ -5,6 +5,7 @@ from typing import Any, Optional
 from app.models.input_analysis import InputAnalysisResponse
 from app.models.product import PurchaseMotivation, SimulationRequest
 from app.models.simulation import DecisionDistribution, NormalizedProduct, PersonaResult, SimulationResponse
+from app.services import categories
 from app.services.ai_insight_service import generate_insights
 from app.services.input_analysis_service import analyze_input, deterministic_analysis
 from app.services.normalization_service import (
@@ -23,10 +24,18 @@ DATA_DIR = Path(__file__).resolve().parents[1] / "data"
 logger = logging.getLogger("simulation")
 
 
+NEWER_FEATURES = ("power", "ageGroup")
+
+
 def _seed_payload(request: SimulationRequest) -> dict[str, Any]:
     # Price is left out on purpose: the same synthetic crowd sees every price, so
     # price sweeps and A/B variants differ only by the change being tested.
-    payload = request.model_dump(mode="json", by_alias=True, exclude={"price", "input_analysis", "images"})
+    # The market price is a price too, and anchored what-if variants set it.
+    payload = request.model_dump(mode="json", by_alias=True, exclude={"price", "market_price", "input_analysis", "images"})
+    # Feature fields added later (Faz 13a) join the seed only when filled, so older inputs keep their crowd.
+    for key in NEWER_FEATURES:
+        if payload["features"].get(key) is None:
+            payload["features"].pop(key, None)
     return payload
 
 
@@ -41,6 +50,7 @@ def simulate_core(request: SimulationRequest, input_analysis: Optional[InputAnal
 
 
 def _candidate_changes(request: SimulationRequest) -> list[tuple[str, str, SimulationRequest]]:
+    request = categories.anchored(request)
     commerce = request.commerce
     changes = []
     if commerce.shipping_days > 2:

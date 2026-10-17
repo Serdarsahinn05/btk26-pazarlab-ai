@@ -1,11 +1,10 @@
 import io
 import json
-import typing
 import urllib.error
 
 import pytest
 
-from app.models.product import Category, SimulationRequest
+from app.models.product import SimulationRequest
 from app.services import llm_client
 from app.services.simulation_service import run_simulation
 from tests.conftest import VALID_REQUEST
@@ -125,6 +124,7 @@ def test_graph_uses_llm_debate_and_skips_duplicate_analysis(monkeypatch):
 def test_link_reader_only_returns_accepted_categories():
     from app.services.product_link_service import ProductLinkReader
 
-    allowed = set(typing.get_args(Category))
+    from app.services.categories import is_known
+
     for title in ["iPhone 15 telefon", "Nike sneaker ayakkabı", "Deri çanta", "parfüm", "Oversize tişört", "rastgele"]:
-        assert ProductLinkReader._map_category(None, title) in allowed
+        assert is_known(ProductLinkReader._map_category(None, title))

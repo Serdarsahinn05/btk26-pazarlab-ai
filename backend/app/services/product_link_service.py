@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 
 import requests
 
-from app.services import llm_client
+from app.services import categories, llm_client
 from app.services.safe_http import UnsafeURLError, get_following_redirects, validate_url
 from app.utils.text_utils import fold_text
 
@@ -29,6 +29,14 @@ logger = logging.getLogger("product_scraper")
 
 PUBLIC_URL_ERROR = "Bu link okunamadı. Herkese açık bir http/https ürün sayfası girin."
 FETCH_FAILED_MESSAGE = "Ürün sayfası şu anda okunamadı. Bilgileri elle girebilirsiniz."
+
+
+def _position(value: Any) -> float:
+    """BreadcrumbList positions may be numbers or strings; unknown ones go last."""
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return float("inf")
 
 
 # ---------------------------------------------------------------------------
@@ -96,6 +104,8 @@ class ProductLinkReadResponse:
     variants: List[ProductVariant] = field(default_factory=list)
     source: str = SourceType.FALLBACK.value
     warnings: List[str] = field(default_factory=list)
+    category_confidence: Optional[str] = None  # high | medium | low
+    category_source: Optional[str] = None  # breadcrumb | title | ai | none
 
 
 class ScrapingError(Exception):
@@ -303,6 +313,45 @@ class JSONLDExtractor:
                 if product and isinstance(product, dict):
                     return cls._parse_product(product)
         return {}
+
+    @classmethod
+    def breadcrumb(cls, scripts: List[str]) -> List[str]:
+        """Names in the page's schema.org BreadcrumbList, outermost first ("Kadın", "Giyim", "Elbise")."""
+        for script in scripts:
+            for item in cls._iter_json_objects(script):
+                found = cls._find_typed(item, "BreadcrumbList")
+                if not found:
+                    continue
+                elements = found.get("itemListElement") or []
+                elements = elements if isinstance(elements, list) else [elements]
+                names = []
+                for element in sorted((e for e in elements if isinstance(e, dict)), key=lambda e: _position(e.get("position"))):
+                    inner = element.get("item")
+                    name = element.get("name") or (inner.get("name") if isinstance(inner, dict) else None)
+                    if isinstance(name, str) and name.strip():
+                        names.append(name.strip())
+                if names:
+                    return names
+        return []
+
+    @classmethod
+    def _find_typed(cls, data: Any, wanted: str) -> Optional[Dict[str, Any]]:
+        if isinstance(data, list):
+            for item in data:
+                found = cls._find_typed(item, wanted)
+                if found:
+                    return found
+        elif isinstance(data, dict):
+            type_value = data.get("@type")
+            types = type_value if isinstance(type_value, list) else [type_value]
+            if wanted in types:
+                return data
+            for value in data.values():
+                if isinstance(value, (dict, list)):
+                    found = cls._find_typed(value, wanted)
+                    if found:
+                        return found
+        return None
 
     @staticmethod
     def _iter_json_objects(script: str) -> List[Any]:
@@ -1075,6 +1124,7 @@ class ProductLinkReader:
         # Extract from all sources
         metadata = self.metadata_extractor.extract(parser, normalized_url)
         structured = self.jsonld_extractor.extract(parser.json_ld)
+        breadcrumb = self.jsonld_extractor.breadcrumb(parser.json_ld)
         app_json_data = self._extract_app_json(parser.app_json)
 
         # NEW: Extract technical specs from HTML tables
@@ -1176,7 +1226,12 @@ class ProductLinkReader:
         final_source = SourceType.HYBRID.value if len(sources_used) > 1 else (sources_used[0] if sources_used else SourceType.FALLBACK.value)
 
         # Intelligent Mapping
-        final_category = self._map_category(merged.get("category"), merged.get("title"))
+        page_category = next((c for c in (structured.get("category"), app_json_data.get("category"), metadata.get("category")) if isinstance(c, str)), None)
+        detected = categories.detect(breadcrumb, page_category, merged.get("title"))
+        if detected["source"] in ("title", "none") and isinstance(ai_data.get("category"), str):
+            from_ai = categories.detect_from_text(ai_data["category"])
+            if from_ai:
+                detected = {"category": from_ai, "confidence": "medium", "source": "ai"}
         final_features = self._map_features(merged.get("features"))
 
         return ProductLinkReadResponse(
@@ -1189,7 +1244,9 @@ class ProductLinkReader:
             image=main_image,
             images=final_images,
             brand=TextCleaner.clean(merged.get("brand")),
-            category=final_category,
+            category=detected["category"],
+            category_confidence=detected["confidence"],
+            category_source=detected["source"],
             features=final_features,
             availability=TextCleaner.clean(merged.get("availability")),
             sku=TextCleaner.clean(merged.get("sku")),
@@ -1300,36 +1357,8 @@ class ProductLinkReader:
 
     @staticmethod
     def _map_category(raw_category: Optional[str], title: Optional[str]) -> str:
-        """Maps raw marketplace categories to the categories accepted by SimulationRequest."""
-        text = fold_text(f"{raw_category or ''} {title or ''}")
-
-        # Order matters: "laptop çantası" is a bag and "24 saat kalıcı ruj" is cosmetics, so these come first.
-        mappings = {
-            "kozmetik": ["kozmetik", "makyaj", "ruj", "maskara", "fondöten", "parfüm", "serum", "nemlendirici", "kremi", "şampuan", "losyon", "oje", "cilt bakım"],
-            "canta": ["çanta", "sırt çantası", "backpack", "handbag", "cüzdan", "valiz", "bavul"],
-            "ayakkabi": ["ayakkabı", "sneaker", "bot", "çizme", "sandalet", "terlik", "loafer", "babet"],
-            "telefon": ["telefon", "phone", "mobile", "cep", "iphone", "samsung", "xiaomi", "redmi"],
-            "laptop": ["laptop", "bilgisayar", "computer", "notebook", "dizüstü", "macbook"],
-            "akilli_saat": ["saat", "watch", "smartwatch", "bileklik"],
-            "tablet": ["tablet", "ipad"],
-            "kulaklik": ["kulaklık", "headphone", "earbud", "airpods"],
-            "tisort": ["tişört", "t-shirt", "tshirt", "fanila"],
-            "pantolon": ["pantolon", "jean", "denim", "trouser"],
-            "mont": ["mont", "ceket", "kaban", "parka", "jacket"],
-            "elbise": ["elbise", "dress"],
-            "etek": ["etek", "skirt"],
-        }
-        
-        def hit(keyword: str) -> bool:
-            k = fold_text(keyword)
-            # Short words need word boundaries, so "bot" does not match "robot".
-            return re.search(rf"\b{re.escape(k)}\b", text) is not None if len(k) <= 4 else k in text
-
-        for target, keywords in mappings.items():
-            if any(hit(k) for k in keywords):
-                return target
-        
-        return "tisort" # Fallback
+        """Category id for a marketplace category text and/or title (see services/categories.detect)."""
+        return categories.detect(None, raw_category, title)["category"]
 
     @staticmethod
     def _map_features(features: Dict[str, Any]) -> Dict[str, Any]:
@@ -1340,7 +1369,7 @@ class ProductLinkReader:
             "kamera": "camera", "arka_kamera": "camera", "ana_kamera": "camera", "camera": "camera", "kamera_cozunurlugu": "camera",
             "dahili_hafiza": "storage", "kapasite": "storage", "hafiza": "storage", "disk": "storage", "depolama": "storage",
             "bellek": "ram", "memory": "ram", "ram": "ram", "ram_kapasitesi": "ram",
-            "batarya": "battery", "pil": "battery", "guc": "battery", "pil_gucu": "battery", "batarya_kapasitesi": "battery",
+            "batarya": "battery", "pil": "battery", "pil_gucu": "battery", "batarya_kapasitesi": "battery",
             "ekran": "screenSize", "ekran_boyutu": "screenSize", "ekran_tazeleme": "refreshRate", "ekran_yenileme_hizi": "refreshRate",
             "isletim_sistemi": "operatingSystem", "yazilim": "operatingSystem", "os": "operatingSystem",
             "baglanti": "connectivity", "connectivity": "connectivity",
@@ -1351,6 +1380,9 @@ class ProductLinkReader:
             "bolme": "compartments", "bolme_sayisi": "compartments", "aski": "strapType", "aski_tipi": "strapType",
             "cilt_tipi": "skinType", "sac_tipi": "skinType", "hacim": "volume", "icerik": "ingredients", "icindekiler": "ingredients",
             "olcu": "dimensions", "boyut": "dimensions", "ebat": "dimensions",
+            # Appliances, accessories, baby (Faz 13a)
+            "guc": "power", "motor_gucu": "power", "guc_watt": "power", "maksimum_guc": "power",
+            "yas_grubu": "ageGroup", "yas_araligi": "ageGroup", "uyumlu_model": "compatibleModel", "uyumlu_marka": "compatibleModel",
 
             # Clothing
             "kumas": "fabric", "materyal": "fabric", "kalip": "fit", "sezon": "season",

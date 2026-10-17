@@ -34,7 +34,8 @@
 | 12b | `feat/engine-v2` | Motor v2: ödeme isteği, lojistik karar, Monte Carlo, `engineVersion` | 1 gün | ✅ |
 | 12c | `feat/town-dynamics` | Arkadaşlık ağı ve yayılma, "en etkili iyileştirme", segmentler | 1 gün | ✅ |
 | 12d | `feat/engine-v2-ui` | Arayüz: ± aralık, kasaba temsilcileri, segment grafiği, iyileştirme kartı | 1 gün | ✅ |
-| 13 | `feat/product-entry-v2` | Ürün ekleme ekranı: link öncelikli akış + yeni yerleşim | 2 gün | ⬜ |
+| 13a | `feat/category-families` | 12 kategori ailesi + alt türler + Diğer, tek veri dosyası, linkten kategori tanıma | 1 gün | ✅ |
+| 13b | `feat/product-entry-v2` | Ürün ekleme ekranı: link öncelikli akış + yeni yerleşim | 1,5 gün | ⬜ |
 | 14 | `feat/link-reader-v2` | Site okuyucuları, kayıtlı HTML testleri, "HTML ver" ucu | 2 gün | ⬜ |
 | 15 | `feat/layout-pass` | Diğer ekranların yerleşimi (audit → critique → ponytail-review) | 1,5 gün | ⬜ |
 | 16 | `feat/insight-features` | İlan yeniden yazma, rakip kartı, segment grafiği, görsel analizi | 2–3 gün | ⬜ |
@@ -215,10 +216,10 @@ Kabul kriteri: DESIGN.md'deki tüm kalıplar uygulanmış; bileşenlerde ham ren
 
 ## Şu an neredeyiz
 
-- **Son tamamlanan:** Faz 12d (motor v2 arayüzü): alıcı aralığı, en etkili 3 değişiklik, ağızdan ağıza, kasabadan 5 sakin, segment grafiği, eski motor notu. Faz 12 bütünüyle bitti.
-- **Sıradaki:** Faz 13 (ürün ekleme ekranı v2). Başlamadan önce kategori genişletme kararı konuşulacak (bkz. bekleyen kararlar). 12'nin ertelenen maddeleri (rakipli seçim, belirli bir sakinle sohbet) Faz 16'da değerlendirilebilir.
+- **Son tamamlanan:** Faz 13a (kategori aileleri): 12 aile + Diğer, 52 alt tür, tek veri dosyası; form, skorlama, girdi analizi, tavsiye metinleri ve link okuyucu bu dosyadan çalışıyor. Eski 13 kimlik birebir aynı sonucu veriyor.
+- **Sıradaki:** Faz 13b (ürün ekleme ekranı: link öncelikli akış, adım adım form, canlı kalite göstergesi). Kural: önce `impeccable audit`/`critique`, sonra tasarım, en sonda `ponytail-review`. 12'nin ertelenen maddeleri (rakipli seçim, belirli bir sakinle sohbet) Faz 16'da değerlendirilebilir.
 - **Ertelenen (kullanıcı kararı, 2026-10-17):** Faz 11'in Claude.ai denemesi sonra birlikte yapılacak. Gerekenler: `cloudflared` kurulumu (`winget install Cloudflare.cloudflared`), tünel adresinin `MCP_ALLOWED_HOSTS`'a yazılması, Claude'da connector eklenmesi; açık soru `?key=` sorgu dizesinin korunup korunmadığı. Adımlar: docs/mcp-connector.md. (sıra aşağıdaki tabloda). Her faz kendi dalında, bitince bu bölüm güncellenir.
-- **Bekleyen kararlar:** kategori genişletme (hangi aileler) Faz 13'e gelince konuşulacak; Faz 9 için API anahtarı yok.
+- **Bekleyen kararlar:** Faz 9 için API anahtarı yok. Süpermarket/gıda, pet shop, otomotiv, kitap/kırtasiye aileleri bilerek dışarıda ("Diğer"e düşüyorlar); talep olursa eklenecek.
 - **Ortam notları:** `backend/venv` bozuk (eski bir kullanıcı yolunu gösteriyor). Testler geçici bir venv ile koşuyor. Gemini sık sık 429 veriyor; arayüz testlerinde AI kapalı ya da sahte SSE kullanılıyor. `gh`, nginx ve Docker daemon yok.
 
 ## Yol haritası v2 (2026-10-17'de kararlaştırıldı)
@@ -324,10 +325,26 @@ Dört alt faza bölündü (12a–12d); her biri ayrı dalda, ayrı testlerle. A�
 - Kabul: fiyat düştükçe fiyat hassas sakinlerde alıcı sayısı artıyor (test); aynı girdi + tohum deterministik; 500 sakin × 30 tohum simülasyonu < 1 sn; mevcut API sözleşmesi geriye uyumlu (yeni alanlar ek).
 
 ### Faz 13: Ürün ekleme ekranı v2 (link + form + yerleşim)
+İki alt faza bölündü: 13a kategori sistemi, 13b ekran.
+
+**13a ✅ Kategori aileleri** (`feat/category-families`)
+- **Karar (kullanıcı, 2026-10-17):** 12 aile + "Diğer": Giyim; Ayakkabı; Çanta ve aksesuar; Kozmetik ve kişisel bakım; Telefon ve tablet; Bilgisayar; Ses ve giyilebilir; Elektronik aksesuar; Küçük ev aletleri; Ev ve yaşam; Anne, bebek ve oyuncak; Spor ve outdoor. Aileler pazar yerlerinin üst menülerine denk geliyor, böylece sayfanın kategori yolu doğrudan eşleşiyor. Süpermarket, pet, otomotiv, kitap bilerek dışarıda (tekrar eden alım ve düşük fiyat davranışı mevcut personalarla iyi temsil edilmiyor).
+- **Tek veri dosyası:** `app/data/category_rules.json` v3 (`frontend/data/` altında aynı kopya; bir test ikisini karşılaştırıyor). Aile, motorun kurallarını taşıyor: ağırlıklar, hedef kitle alanları, form alanları, kalite alanları (`qualityFields`), önemli alanlar, ayırt edici terimler, sezon zirvesi, trend etkisi, tavsiye metinleri. Alt tür ailesini devralıyor ve yalnızca farklı olanı eziyor (en az ad, tanıma kelimeleri, ortalama fiyat). Aile kimliği de kategori olarak geçerli (alt tür bilinmiyorsa). 13 aile, 52 alt tür.
+- **Geriye uyum:** eski 13 kimlik geçerli; `tisort`, `telefon` vb. alt tür, `ayakkabi`, `canta`, `kozmetik` aile kimliği oldu. Bütün değerleri aynen taşındı. Kod içindeki kategori dalları (`_score_quality`, `CATEGORY_TERMS`, `IMPORTANT_FIELDS`, `TECH`/`CLOTHING`… kümeleri, tavsiye metinleri) veriye taşındı ve `services/categories.py` katalog modülünden okunuyor.
+- **Referans fiyat:** "Diğer"in ortalama fiyatı yok. Yeni isteğe bağlı `marketPrice` alanı (benzer ürünlerin ortalama fiyatı) her kategoride ortalamayı ezer; Diğer'de boşsa fiyat nötr kabul edilir. Fiyat eğrisi, ±%10 iyileştirmeleri ve A/B'de referans ilk fiyata sabitleniyor (`categories.anchored`); yoksa her fiyat kendisiyle karşılaştırılırdı. `marketPrice` simülasyon tohumuna girmiyor (fiyat gibi).
+- **Linkten tanıma:** sayfanın schema.org `BreadcrumbList`'i ve kendi kategori metni (en özel parçadan başlayarak) → ürün başlığı → AI tahmini → "Diğer". Türkçe isim tamlamasında asıl isim sonda geldiği için ("Laptop Çantası", "iPhone Kılıfı") en son biten eşleşme kazanıyor; aynı yerde daha uzun kelime ("akıllı bileklik" > "bileklik"). Yol aileyle bitiyorsa ("Giyim") başlıktaki alt tür kullanılıyor. Marka adları tanıma kelimesi değil ("Samsung TV" telefon sanılmıyor). Yanıta `category_confidence` (high/medium/low) ve `category_source` eklendi. Eskiden tanınmayan her şey sessizce tişört oluyordu.
+- **Girdi analizi:** kategori uyumunda yalnızca **başka ailelerin** terimleri rekabet ediyor (gömlek ile tişörtün karışması uyarı sebebi değil); kategori önerisi de yalnızca başka aileyi gösteriyor ve arayüzde Türkçe adıyla. Marka uyarısı, markası "önemli alan" olan bütün kategorilerde (kulaklık da artık uyarı alıyor).
+- **Form:** "Kategori" (12 aile + Diğer, ikonlu) ve "Ürün türü" (alt türler + "Genel / emin değilim"); alanlar, örnek ad ve açıklama ipucu veriden. Hedef kitle alanları kategorinin `applicableAudienceFields`'ından (ör. küçük ev aletlerinde cinsiyet yok); kargo alanı tek kalırsa satırı kaplıyor. Diğer'de "Benzer ürünlerin ortalama fiyatı" alanı. Linkten okununca kategori notu: kaynaktan okunduysa bilgi, tahminse "kontrol edin" kutusu. Yeni özellik alanları: `power`, `ageGroup`; link tablosunda "güç", "yaş grubu", "uyumlu model" eşleşiyor.
+- **MCP:** `list_categories` aileleri alt türleriyle dönüyor; `simulate_product` `marketPrice` kabul ediyor.
+- **Doğrulama:** kod değişmeden önce 13 eski kategori × 3 farklı girdiyle (AI kapalı) bütün yanıtların altın kaydı alındı. Yeniden yapılanmadan sonra skor, alıcı, persona, sakin, segment ve iyileştirmeler 39 senaryonun hepsinde birebir aynı; farklar yalnızca bilinçli olanlar (kategori adı "Giyim / Tişört" biçiminde, kulaklıkta marka uyarısı, link tanıma). Bu karşılaştırma iki hatayı yakaladı: yeni boş alanlar simülasyon tohumunu değiştiriyordu (eski girdilerin kalabalığı değişiyordu) ve yeni ailelerdeki genel terimler ("garanti", "malzeme") eski kategorilerin uyumunu düşürüyordu. `tests/test_categories.py` yeniden yazıldı (110 test; toplam 250): veri dosyasının şekli ve her kategorinin eksiksizliği (ağırlıklar; form, önemli ve kalite alanlarının gerçek özellik alanları olması), eski değerler, frontend kopyası, 8 kategoride uçtan uca simülasyon (uyum ≥ 0,6, yanlış öneri yok), bilinmeyen kategoriye 422, aile kimliğiyle simülasyon, Diğer'de referans fiyat ve fiyat eğrisi, alt tür sezon zirvesi, 19 başlık ve 6 kategori yolu tanıma vakası, JSON-LD breadcrumb. tsc/eslint temiz. Puppeteer (gerçek backend, AI kapalı, link yanıtı sahte): aile → alt tür → alanlar, Diğer'de referans fiyat, linkten kategori + not + alan doldurma, simülasyon sonucu, 375 px'te taşma yok, konsol hatası yok.
+- Tarayıcıda bulunan hatalar: aile değişince alt tür listesi yeniden kurulurken Radix Select boş değer gönderiyor, form da bunu "bilinmeyen → Diğer" sanıyordu (boş değer artık yok sayılıyor). Seçim listesindeki ikon, Tailwind'in `svg { display: block }` kuralı yüzünden kendi satırına düşüyordu.
+- Yeni bulgular: F22, F23.
+
+**13b Ekran** (`feat/product-entry-v2`)
 - [ ] Önce `impeccable audit` / `critique` (kural: önce doğruluk ve kalite), sonra tasarım; en sonda `ponytail-review`.
 - [ ] Link öncelikli akış: "Linki yapıştır → doldurduk → kontrol et"; elle giriş ikinci yol.
-- [ ] Adım adım form, canlı kalite göstergesi ("bu alan skora +X katkı veriyor"), eksik alan ipuçları, taslak kaydetme, önceki ürünü kopyalama.
-- [ ] Kategori sistemi veriye dayalı: alanlar, ağırlıklar, anahtar kelimeler ve ortalama fiyat tek bir paylaşılan dosyada; form bu dosyadan üretilir. **Hangi yeni kategori ailelerinin ekleneceği bu fazın başında konuşulacak.**
+- [ ] Adım adım form, canlı kalite göstergesi ("bu alan skora +X katkı veriyor"; `qualityFields` artık veride), eksik alan ipuçları, taslak kaydetme, önceki ürünü kopyalama.
+- [ ] `marketPrice` her kategoride isteğe bağlı gelişmiş alan olarak gösterilsin mi? (şu an yalnızca Diğer'de)
 - Kabul: DESIGN.md'ye uygun; 375 px'te taşma yok; mevcut uçtan uca testler geçiyor; kullanıcı onayı.
 
 ### Faz 14: Link okuma v2

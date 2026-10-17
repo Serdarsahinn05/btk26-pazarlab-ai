@@ -36,3 +36,6 @@ class ProductLinkReadResponse(BaseModel):
     variants: List[ProductVariant] = Field(default_factory=list)
     source: str = "fallback"
     warnings: List[str] = Field(default_factory=list)
+    # How the category was found: high = the page's own category path, medium = title or AI, low = not found ("diger").
+    category_confidence: Optional[str] = None
+    category_source: Optional[str] = None

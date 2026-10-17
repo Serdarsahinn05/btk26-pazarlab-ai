@@ -1,21 +1,9 @@
-"""Category ids and the groups that share scoring and copy rules.
+"""Category id type: any family or subtype id in data/category_rules.json (see services/categories.py)."""
 
-Rules live in data/category_rules.json; these sets only say which code path a category takes.
-"""
+from typing import Annotated
 
-from typing import Literal
+from pydantic import AfterValidator
 
-Category = Literal[
-    "tisort", "pantolon", "mont", "elbise", "etek",
-    "telefon", "laptop", "kulaklik", "tablet", "akilli_saat",
-    "ayakkabi", "canta", "kozmetik",
-]
+from app.services.categories import validate_category
 
-CLOTHING = frozenset({"tisort", "pantolon", "mont", "elbise", "etek"})
-TECH = frozenset({"telefon", "laptop", "kulaklik", "tablet", "akilli_saat"})
-# Shoes and bags: sold on style and fit like clothing, but no fabric/collar/sleeve fields.
-FASHION_ACCESSORIES = frozenset({"ayakkabi", "canta"})
-FASHION = CLOTHING | FASHION_ACCESSORIES
-BEAUTY = frozenset({"kozmetik"})
-# Demand moves with the season (shoes: boots vs sandals). Bags and cosmetics are scored as season-neutral.
-SEASONAL = CLOTHING | {"ayakkabi"}
+Category = Annotated[str, AfterValidator(validate_category)]
