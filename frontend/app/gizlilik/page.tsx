@@ -43,7 +43,7 @@ export default function PrivacyPage() {
         <ul>
           <li>Hesap ve giriş yoktur. Çerez veya analiz aracı kullanılmaz.</li>
           <li>Tarayıcında (localStorage) yalnızca son simülasyonların, yarım kalan form taslağının ve tema tercihinin tutulur. Bunlar cihazından çıkmaz; tarayıcı verilerini silerek ya da sitedeki düğmelerle silebilirsin.</li>
-          <li>Bir simülasyon başlattığında ürün bilgileri ve sonuç, paylaşım linki çalışsın diye sunucuda <b>90 gün</b> saklanır, sonra silinir. Yüklediğin fotoğraflar saklanmaz. Kayıtlar listelenmez; yalnızca linki bilen açabilir.</li>
+          <li>Bir simülasyon başlattığında ürün bilgileri ve sonuç, paylaşım linki çalışsın diye sunucuda en fazla <b>90 gün</b> saklanır. Şu anki sunucuda kayıtlar sunucu her yeniden başladığında silinir; bu genellikle çok daha erken olur. Yüklediğin fotoğraflar saklanmaz. Kayıtlar listelenmez; yalnızca linki bilen açabilir.</li>
         </ul>
       </Section>
 
@@ -64,9 +64,8 @@ export default function PrivacyPage() {
 
       <Section title="İletişim">
         <p>
-          Soruların ve silme talepleri için{" "}
+          Soruların için{" "}
           <a className="text-accent underline" href={`${REPO}/issues`} target="_blank" rel="noopener noreferrer">GitHub üzerinden</a> yazabilirsin.
-          Paylaşım linki olan bir kaydın silinmesini istiyorsan linki de ekle.
         </p>
       </Section>
     </article>
