@@ -5,8 +5,9 @@ services:
     name: pazarlab-api
     runtime: docker
     rootDir: backend
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
+    # With rootDir set, Render resolves these inside backend/ ("./backend" would become backend/backend).
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     region: frankfurt # closest to Turkey; cannot be changed later
     # free: sleeps after 15 min idle (~1 min to wake) and loses saved results on every restart.
     # For share links that last, use 0.5c-512mb and uncomment the disk below.
