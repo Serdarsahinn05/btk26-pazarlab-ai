@@ -1,0 +1,11 @@
+{
+  "url": "https://www.example.com.tr/robot-supurge",
+  "expect": {
+    "title": "Philips Robot Süpürge XU3000",
+    "price": 8499.0,
+    "original_price": 10999.0,
+    "brand": "Philips",
+    "sku": "RS-3000",
+    "category": "supurge"
+  }
+}

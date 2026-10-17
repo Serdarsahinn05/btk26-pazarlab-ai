@@ -93,6 +93,12 @@ export const compareVariants = async (base: SimulationRequest, variant: Simulati
   return response.data;
 };
 
+/** POST /api/read-product-page: the same fields from page HTML or copied page text; the server fetches nothing. */
+export const readProductPage = async (page: { html?: string; text?: string; url?: string }): Promise<ProductLinkReadResponse> => {
+  const response = await client.post("/api/read-product-page", page, { timeout: 60_000 });
+  return response.data;
+};
+
 /** POST /api/draft-check: estimated score of a half-filled form and what each empty field would add. */
 export const draftCheck = async (draft: object, signal?: AbortSignal): Promise<DraftCheckResponse> => {
   const response = await client.post("/api/draft-check", draft, { timeout: 15_000, signal });

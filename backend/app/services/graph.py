@@ -44,7 +44,7 @@ def input_analysis_node(state: GraphState) -> Dict[str, Any]:
 
 def research_node(state: GraphState) -> Dict[str, Any]:
     logger.info("Researching competitors...")
-    from app.services.product_link_service import SerperShoppingService
+    from app.services.serper import SerperShoppingService
     serper = SerperShoppingService()
     results = serper.search(state["product_name"])
     competitors = serper.filter_competitors(results, state["product_name"])

@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Check, History, Link2, Loader2, Trash2, Upload } from "lucide-react";
+import { Check, ClipboardPaste, History, Link2, Loader2, Star, Trash2, Upload } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ReadinessPanel, { ReadinessBar, formatGain } from "@/components/ReadinessPanel";
 import { DraftCheckResponse, ProductLinkReadResponse, PurchaseMotivation, SimulationRequest } from "@/types";
-import { apiErrorMessage, draftCheck, readProductLink } from "@/lib/api";
+import { apiErrorMessage, draftCheck, readProductLink, readProductPage } from "@/lib/api";
 import { FAMILIES, OTHER, type FormField, categoryInfo, categoryLabel, isKnownCategory } from "@/lib/categories";
 import { type HistoryEntry, loadHistory } from "@/lib/history";
 import {
@@ -60,7 +60,7 @@ interface ProductFormProps {
 type LinkState =
   | { status: "idle" }
   | { status: "reading" }
-  | { status: "done"; text: string; note?: { text: string; check: boolean } | null }
+  | { status: "done"; text: string; note?: { text: string; check: boolean } | null; rating?: { value: number; count: number | null } | null }
   | { status: "error"; text: string };
 
 export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
@@ -75,6 +75,9 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
   const [restored, setRestored] = useState(false);
   const [recent, setRecent] = useState<HistoryEntry[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  // Fallback when the link cannot be read: the seller pastes the page's text (or its HTML).
+  const [pasteOpen, setPasteOpen] = useState(false);
+  const [pasteText, setPasteText] = useState("");
 
   const info = useMemo(() => categoryInfo(category), [category]);
   const family = FAMILIES.find((f) => f.id === info.family) ?? FAMILIES[0];
@@ -131,6 +134,27 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
     changeCategory(value);
   };
 
+  /** Fill the form from what the link reader or the page reader found. */
+  const applyRead = (result: ProductLinkReadResponse) => {
+    const next = isKnownCategory(result.category) ? result.category : OTHER;
+    const patch = linkValues(result);
+    changeCategory(next);
+    setValues((prev) => ({ ...prev, ...patch }));
+    setAutoFilled(new Set(Object.keys(patch)));
+    if (result.images?.length || result.image) {
+      setImages((result.images?.length ? result.images : [result.image as string]).slice(0, MAX_IMAGES));
+    }
+    const visible = new Set(["productName", "description", "price", "rating", "reviewCount", ...categoryInfo(next).form.fields.map((f) => f.name)]);
+    const filled = Object.keys(patch).filter((key) => visible.has(key)).length;
+    setLink({
+      status: "done",
+      text: result.warnings[0] ?? (filled ? `${filled} alan dolduruldu. Mavi işaretli alanları kontrol et.` : "Sayfadan bilgi okunamadı; alanları elle doldur."),
+      note: linkCategoryNote(result),
+      rating: result.rating != null ? { value: result.rating, count: result.review_count ?? null } : null,
+    });
+    if (!filled) setPasteOpen(true);
+  };
+
   const readLink = async () => {
     const url = String(values.productUrl ?? "").trim();
     if (!url) {
@@ -139,20 +163,23 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
     }
     setLink({ status: "reading" });
     try {
-      const result = await readProductLink(url);
-      const next = isKnownCategory(result.category) ? result.category : OTHER;
-      const patch = linkValues(result);
-      changeCategory(next);
-      setValues((prev) => ({ ...prev, ...patch }));
-      setAutoFilled(new Set(Object.keys(patch)));
-      setImages((result.images?.length ? result.images : result.image ? [result.image] : []).slice(0, MAX_IMAGES));
-      const visible = new Set(["productName", "description", "price", ...categoryInfo(next).form.fields.map((f) => f.name)]);
-      const filled = Object.keys(patch).filter((key) => visible.has(key)).length;
-      setLink({
-        status: "done",
-        text: result.warnings[0] ?? (filled ? `${filled} alan dolduruldu. Mavi işaretli alanları kontrol et.` : "Sayfadan bilgi okunamadı; alanları elle doldur."),
-        note: linkCategoryNote(result),
-      });
+      applyRead(await readProductLink(url));
+    } catch (err: unknown) {
+      setLink({ status: "error", text: apiErrorMessage(err) });
+      setPasteOpen(true);
+    }
+  };
+
+  const readPasted = async () => {
+    const content = pasteText.trim();
+    if (!content) return;
+    setLink({ status: "reading" });
+    try {
+      const url = String(values.productUrl ?? "").trim();
+      // A paste that starts like markup is the page source (e.g. "view source"); anything else is its visible text.
+      applyRead(await readProductPage(content.startsWith("<") ? { html: content, url } : { text: content, url }));
+      setPasteText("");
+      setPasteOpen(false);
     } catch (err: unknown) {
       setLink({ status: "error", text: apiErrorMessage(err) });
     }
@@ -248,13 +275,51 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
           )}
           {link.status === "reading" && <p className="text-muted-foreground">Sayfa okunuyor; bu birkaç saniye sürebilir.</p>}
           {link.status === "done" && (
-            <p className="flex items-start gap-2 text-foreground-2">
+            <p className="flex flex-wrap items-start gap-x-2 text-foreground-2">
               <Check className="mt-0.5 h-4 w-4 shrink-0 text-buy-text" aria-hidden /> {link.text}
+              {link.rating && (
+                <span className="inline-flex items-center gap-1 font-bold">
+                  <Star className="h-4 w-4 text-watch" aria-hidden />
+                  {link.rating.value.toLocaleString("tr-TR", { maximumFractionDigits: 1 })}
+                  {link.rating.count != null && <span className="font-normal text-muted-foreground">· {link.rating.count.toLocaleString("tr-TR")} değerlendirme</span>}
+                </span>
+              )}
             </p>
           )}
           {link.status === "error" && <p className="note-risk">{link.text} Bilgileri aşağıya elle de girebilirsin.</p>}
           {link.status === "done" && link.note && (
             <p className={link.note.check ? "note-risk" : "text-muted-foreground"}>{link.note.text}</p>
+          )}
+        </div>
+        <div className="flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={() => setPasteOpen((open) => !open)}
+            aria-expanded={pasteOpen}
+            aria-controls="paste-panel"
+            className="inline-flex min-h-11 items-center gap-2 self-start text-left text-sm font-bold text-accent underline-offset-2 hover:underline"
+          >
+            <ClipboardPaste className="h-4 w-4" aria-hidden /> Link okunamadı mı? Sayfanın metnini yapıştır
+          </button>
+          {pasteOpen && (
+            <div id="paste-panel" className="flex flex-col gap-2">
+              <label htmlFor="pasteText" className="text-sm text-muted-foreground">
+                Ürün sayfasında Ctrl+A ile her şeyi seçip kopyala, buraya yapıştır. Ad, fiyat, açıklama ve puanı oradan çıkarırız.
+              </label>
+              <textarea
+                id="pasteText"
+                value={pasteText}
+                onChange={(e) => setPasteText(e.target.value)}
+                rows={5}
+                maxLength={200_000}
+                placeholder="Sayfanın metni (ya da kaynak kodu)"
+                className="field resize-y"
+              />
+              <button type="button" onClick={readPasted} disabled={!pasteText.trim() || link.status === "reading"} className="btn-sticker min-h-11 self-start">
+                {link.status === "reading" ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <ClipboardPaste className="h-4 w-4" aria-hidden />}
+                Metinden doldur
+              </button>
+            </div>
           )}
         </div>
         {recent.length > 0 && (
@@ -422,6 +487,16 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
                 <input {...textProps("shippingDays")} type="number" inputMode="numeric" min="0" max="60" className="field" />
               </FieldLabel>
             </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FieldLabel htmlFor="rating" label="Mağaza puanı (5 üzerinden)" auto={autoFilled.has("rating")}
+                hint="Satıştaki ürünün yıldızı; yeni üründe boş bırak.">
+                <input {...textProps("rating")} type="number" inputMode="decimal" min="0" max="5" step="0.1" placeholder="Örn. 4,6" className="field" />
+              </FieldLabel>
+              <FieldLabel htmlFor="reviewCount" label="Değerlendirme sayısı" auto={autoFilled.has("reviewCount")}
+                hint="Çok değerlendirme, puanın güvene etkisini büyütür.">
+                <input {...textProps("reviewCount")} type="number" inputMode="numeric" min="0" step="1" placeholder="Örn. 1284" className="field" />
+              </FieldLabel>
+            </div>
             <div className="flex flex-wrap gap-3">
               <Toggle name="returnAvailable" label="İade imkânı var" checked={values.returnAvailable === true} gain={gainOf.get("returnAvailable")} onChange={set} />
               <Toggle name="warranty" label="Garanti / fatura var" checked={values.warranty === true} gain={gainOf.get("warranty")} onChange={set} />
@@ -482,6 +557,8 @@ function linkValues(result: ProductLinkReadResponse): Values {
   // type="number" inputs only take a dot decimal.
   if (result.price) patch.price = String(result.price);
   if (result.brand) patch.brand = result.brand.slice(0, 200);
+  if (result.rating != null) patch.rating = String(result.rating);
+  if (result.review_count != null) patch.reviewCount = String(result.review_count);
   for (const [key, value] of Object.entries(result.features ?? {})) {
     if (value === null || value === undefined || value === "") continue;
     patch[key === "colors" ? "colorsText" : key] = String(value).slice(0, 200);

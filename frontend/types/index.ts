@@ -121,6 +121,9 @@ export interface SimulationRequest {
   price: number;
   /** Typical price of similar products; overrides the category average ("diger" has none). */
   marketPrice?: number;
+  /** Store rating out of 5 and number of ratings: social proof for trust (Faz 14). */
+  rating?: number;
+  reviewCount?: number;
   description: string;
   targetAudience: TargetAudience;
   features: Features;
@@ -355,4 +358,7 @@ export interface ProductLinkReadResponse {
   /** high = the page's own category path, medium = title or AI guess, low = not found ("diger"). */
   category_confidence?: "high" | "medium" | "low" | null;
   category_source?: "breadcrumb" | "title" | "ai" | "none" | null;
+  /** Store rating out of 5 and how many ratings it is based on. */
+  rating?: number | null;
+  review_count?: number | null;
 }

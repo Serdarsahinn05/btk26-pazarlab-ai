@@ -9,7 +9,8 @@ from app.models.product import ProductFeatures, SimulationRequest
 from app.services import categories
 from app.services.input_analysis_service import deterministic_analysis
 from app.services.normalization_service import get_normalized_weights, normalize_product
-from app.services.product_link_service import JSONLDExtractor, ProductLinkReader
+from app.services.link_reader import ProductLinkReader
+from app.services.link_reader.structured import JSONLDExtractor
 from app.utils.text_utils import fold_text
 
 DATA = categories.load_category_rules()

@@ -1,4 +1,5 @@
 import json
+import math
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Optional, Union
@@ -19,6 +20,22 @@ DATA_DIR = Path(__file__).resolve().parents[1] / "data"
 def load_persona_data() -> dict[str, Any]:
     with (DATA_DIR / "personas.json").open(encoding="utf-8") as file:
         return json.load(file)
+
+
+# Assumptions (Faz 14): 4.0 stars is neutral on Turkish marketplaces (5 = +1, 3 = -1), and the signal
+# is fully trusted from ~1,000 ratings (log scale: 10 ratings = 1/3, 100 = 2/3).
+SOCIAL_PROOF_NEUTRAL = 4.0
+SOCIAL_PROOF_FULL_COUNT_LOG10 = 3.0
+SOCIAL_PROOF_WEIGHT = 0.15
+
+
+def social_proof(rating: Optional[float], review_count: Optional[int]) -> float:
+    """-1 … 1: how much the store rating should move trust; 0 without a rating."""
+    if rating is None:
+        return 0.0
+    direction = max(-1.0, min(1.0, rating - SOCIAL_PROOF_NEUTRAL))
+    strength = min(1.0, math.log10(1 + (review_count or 0)) / SOCIAL_PROOF_FULL_COUNT_LOG10)
+    return direction * strength
 
 
 def get_category_rule(category: str) -> dict[str, Any]:
@@ -75,6 +92,9 @@ def normalize_product(request: SimulationRequest, ai_signals: Optional[InputQual
         quality_score = clamp(quality_score * plausibility_factor)
         trend_fit = clamp(trend_fit * category_factor)
         target_audience_fit = clamp(target_audience_fit * category_factor)
+
+    # Social proof last, so the AI blend does not water it down (Faz 14).
+    brand_trust = clamp(brand_trust + SOCIAL_PROOF_WEIGHT * social_proof(request.rating, request.review_count))
 
     return NormalizedProduct(
         priceFit=round(price_fit, 2),

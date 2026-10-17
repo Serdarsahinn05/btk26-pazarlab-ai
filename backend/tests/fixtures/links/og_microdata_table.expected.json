@@ -1,0 +1,12 @@
+{
+  "url": "https://www.example.com.tr/kiwi-airfryer",
+  "expect": {
+    "title": "Kiwi KAF-5510 Yağsız Airfryer 5,5 L",
+    "price": 2899.0,
+    "category": "airfryer",
+    "category_confidence": "medium",
+    "rating": 4.2,
+    "review_count": 312,
+    "features": {"power": "1700 W", "volume": "5,5 L", "material": "Yapışmaz kaplama"}
+  }
+}

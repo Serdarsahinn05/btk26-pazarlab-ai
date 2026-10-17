@@ -25,6 +25,8 @@ logger = logging.getLogger("simulation")
 
 
 NEWER_FEATURES = ("power", "ageGroup")
+# Request fields added later (Faz 14): likewise only in the seed when given.
+NEWER_FIELDS = ("rating", "reviewCount")
 
 
 def _seed_payload(request: SimulationRequest) -> dict[str, Any]:
@@ -33,6 +35,9 @@ def _seed_payload(request: SimulationRequest) -> dict[str, Any]:
     # The market price is a price too, and anchored what-if variants set it.
     payload = request.model_dump(mode="json", by_alias=True, exclude={"price", "market_price", "input_analysis", "images"})
     # Feature fields added later (Faz 13a) join the seed only when filled, so older inputs keep their crowd.
+    for key in NEWER_FIELDS:
+        if payload.get(key) is None:
+            payload.pop(key, None)
     for key in NEWER_FEATURES:
         if payload["features"].get(key) is None:
             payload["features"].pop(key, None)
