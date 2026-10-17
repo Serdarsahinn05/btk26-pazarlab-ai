@@ -15,6 +15,7 @@ import PersonaChat from "@/components/PersonaChat";
 import { SegmentRing, Ring } from "@/components/ui/ring";
 import { DebateLogs } from "@/components/DebateLogs";
 import { ImprovementsCard, LegacyEngineNote, SegmentsCard, TownCast, WordOfMouthCard } from "@/components/TownInsights";
+import { Disclosure, ResultNav, SECTION_SCROLL_MARGIN, type ResultSection } from "@/components/ResultLayout";
 import {
   DECISION_LABEL,
   DECISION_TEXT_CLASS,
@@ -60,31 +61,76 @@ export default function ResultDashboard({ data, view, productName, request, onRe
     );
   }
 
+  const sections: ResultSection[] = [
+    { id: "karar", label: "Karar" },
+    { id: "iyilestir", label: "Neyi değiştirmeli?" },
+    { id: "kasaba", label: "Kasaba" },
+    ...(whatIfRequest ? [{ id: "ne-olur", label: "Ne olur?" }] : []),
+    { id: "aciklama", label: "Açıklama" },
+    { id: "parametreler", label: "Parametreler" },
+  ];
+  const range = data.buyersRange && data.buyersRange.high > data.buyersRange.low ? data.buyersRange : null;
+
+  // A report read top to bottom (DESIGN.md §9.3): verdict, what to change, why (the town), then tools and details folded.
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {!data.engineVersion && <LegacyEngineNote />}
-      <div className="grid gap-6 lg:grid-cols-[5fr_7fr]">
-        <DecisionCard data={data} />
-        <ActionCard data={data} productName={productName} onReset={onReset} />
-      </div>
-      <KpiRow data={data} />
-      <TownRow data={data} />
-      <PersonaGrid personas={sortedPersonas(data)} resultId={data.simulationId} />
-      {data.representatives?.length ? <TownCast residents={data.representatives} /> : null}
-      {data.segments && <SegmentsCard segments={data.segments} />}
-      <div className="grid items-start gap-6 md:grid-cols-2">
+      <ResultNav
+        sections={sections}
+        verdict={
+          <span className="flex items-baseline gap-1.5 whitespace-nowrap">
+            <span className="font-display text-lg font-extrabold">{data.overallScore}</span>
+            <span className="text-muted-foreground">/100 ·</span>
+            <span>{data.estimatedBuyers} alıcı</span>
+            {range && <span className="hidden font-semibold text-muted-foreground sm:inline">({range.low}–{range.high})</span>}
+          </span>
+        }
+      />
+
+      <section id="karar" aria-label="Karar" className={cn("space-y-6", SECTION_SCROLL_MARGIN)}>
+        <div className="grid gap-6 lg:grid-cols-[5fr_7fr]">
+          <DecisionCard data={data} />
+          <ActionCard data={data} productName={productName} onReset={onReset} />
+        </div>
+        <KpiRow data={data} />
+      </section>
+
+      <section id="iyilestir" aria-label="Neyi değiştirmeli?" className={cn("grid items-start gap-6 md:grid-cols-2 lg:grid-cols-3", SECTION_SCROLL_MARGIN)}>
+        {data.improvements && <ImprovementsCard items={data.improvements} />}
         <ListCard title="Zayıflıklar" items={data.weaknesses} empty="Belirgin bir zayıflık bulunmadı." />
-        <ListCard
-          title="Kanal önerileri"
-          items={data.aiInsights.channelRecommendation}
-          note={data.aiInsights.marketingAdvice}
-          empty="Kanal önerisi yok."
-          chips
-        />
-      </div>
-      <ParamBars product={data.normalizedProduct} />
-      {whatIfRequest && <WhatIf request={whatIfRequest} />}
-      <ImprovedDescription text={data.aiInsights.improvedDescription} images={data.images} />
+        <div className={cn(data.improvements ? "md:col-span-2 lg:col-span-1" : undefined)}>
+          <ListCard
+            title="Kanal önerileri"
+            items={data.aiInsights.channelRecommendation}
+            note={data.aiInsights.marketingAdvice}
+            empty="Kanal önerisi yok."
+            chips
+          />
+        </div>
+      </section>
+
+      <section id="kasaba" aria-label="Kasaba" className={cn("space-y-8", SECTION_SCROLL_MARGIN)}>
+        <PersonaGrid personas={sortedPersonas(data)} resultId={data.simulationId} />
+        {data.representatives?.length ? <TownCast residents={data.representatives} /> : null}
+        {(data.adoptionCurve?.length || data.segments) && (
+          <div className="grid items-start gap-6 lg:grid-cols-[1fr_2fr]">
+            {data.adoptionCurve?.length ? <WordOfMouthCard curve={data.adoptionCurve} /> : null}
+            {data.segments && <SegmentsCard segments={data.segments} />}
+          </div>
+        )}
+      </section>
+
+      {whatIfRequest && (
+        <Disclosure id="ne-olur" title="Ne olur?" summary="Fiyat eğrisi ve A/B karşılaştırma: aynı 500 kişiyle, AI'sız, anında.">
+          <WhatIf request={whatIfRequest} bare />
+        </Disclosure>
+      )}
+      <Disclosure id="aciklama" title="İyileştirilmiş açıklama" summary="İlana kopyalayabileceğin, eksikleri tamamlanmış açıklama.">
+        <ImprovedDescription text={data.aiInsights.improvedDescription} images={data.images} />
+      </Disclosure>
+      <Disclosure id="parametreler" title="Ürün parametreleri" summary="Skorun dayandığı 11 ölçü: fiyat uyumu, kalite, trend, güven…">
+        <ParamBars product={data.normalizedProduct} />
+      </Disclosure>
     </div>
   );
 }
@@ -112,6 +158,7 @@ function handNote(score: number) {
 }
 
 function DecisionCard({ data }: { data: SimulationResponse }) {
+  // id: the result bar shows the verdict once this card has scrolled away.
   const dist = data.decisionDistribution ?? { buy: data.estimatedBuyers, watch: 0, skip: data.simulatedConsumers - data.estimatedBuyers };
   const segments = [
     { label: "Aldı", value: dist.buy, color: "hsl(var(--buy))" },
@@ -120,7 +167,7 @@ function DecisionCard({ data }: { data: SimulationResponse }) {
   ];
 
   return (
-    <section className="card-paper">
+    <section id="karar-karti" className="card-paper">
       <h2 className="squiggle text-[21px] font-bold">Karar</h2>
       <div className="relative mt-4">
         <SegmentRing segments={segments}>
@@ -192,37 +239,24 @@ function ActionCard({ data, productName, onReset }: { data: SimulationResponse; 
           {risk}
         </p>
       )}
-      <div className="no-print mt-auto flex flex-wrap gap-3 pt-1">
+      <div className="no-print mt-auto flex flex-wrap gap-2.5 pt-1">
         <button type="button" onClick={onReset} className="btn-sticker-primary">
           <RotateCcw className="h-4 w-4" aria-hidden /> Yeni simülasyon
         </button>
         {shareUrl && (
-          <button type="button" onClick={copyLink} className="btn-sticker" title="Bu sonucu açan link (90 gün saklanır)">
+          <button type="button" onClick={copyLink} className="btn-sticker px-3.5" title="Bu sonucu açan link (90 gün saklanır)">
             {copied ? <Check className="h-4 w-4" aria-hidden /> : <Link2 className="h-4 w-4" aria-hidden />}
-            {copied ? "Kopyalandı" : "Linki kopyala"}
+            {copied ? "Kopyalandı" : "Link"}
           </button>
         )}
-        <button type="button" onClick={downloadMarkdown} className="btn-sticker">
-          <FileDown className="h-4 w-4" aria-hidden /> Markdown
+        <button type="button" onClick={downloadMarkdown} className="btn-sticker px-3.5" title="Raporu Markdown dosyası olarak indir">
+          <FileDown className="h-4 w-4" aria-hidden /> .md
         </button>
-        <button type="button" onClick={() => window.print()} className="btn-sticker">
-          <Printer className="h-4 w-4" aria-hidden /> Yazdır / PDF
+        <button type="button" onClick={() => window.print()} className="btn-sticker px-3.5" title="Yazdır ya da PDF olarak kaydet">
+          <Printer className="h-4 w-4" aria-hidden /> PDF
         </button>
       </div>
     </section>
-  );
-}
-
-/** What-ifs next to word of mouth; one card takes the full row when the other is missing. */
-function TownRow({ data }: { data: SimulationResponse }) {
-  const improvements = data.improvements ? <ImprovementsCard items={data.improvements} /> : null;
-  const curve = data.adoptionCurve?.length ? <WordOfMouthCard curve={data.adoptionCurve} /> : null;
-  if (!improvements && !curve) return null;
-  return (
-    <div className={cn("grid items-start gap-6", improvements && curve && "md:grid-cols-2")}>
-      {improvements}
-      {curve}
-    </div>
   );
 }
 
@@ -347,9 +381,8 @@ const PARAMS: Array<{ key: keyof NormalizedProduct; label: string; risk?: boolea
 
 function ParamBars({ product }: { product: NormalizedProduct }) {
   return (
-    <section className="card-paper">
-      <h2 className="squiggle text-[21px] font-bold">Ürün parametreleri</h2>
-      <dl className="mt-5 grid gap-x-10 gap-y-4 md:grid-cols-2">
+    <div className="card-paper">
+      <dl className="grid gap-x-10 gap-y-4 md:grid-cols-2">
         {PARAMS.map(({ key, label, risk }) => {
           const pct = Math.round((product[key] ?? 0) * 100);
           return (
@@ -372,7 +405,7 @@ function ParamBars({ product }: { product: NormalizedProduct }) {
           );
         })}
       </dl>
-    </section>
+    </div>
   );
 }
 
@@ -389,9 +422,8 @@ function ImprovedDescription({ text, images }: { text: string; images?: string[]
   };
 
   return (
-    <section className="card-paper space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="squiggle text-[21px] font-bold">İyileştirilmiş açıklama</h2>
+    <div className="card-paper space-y-4">
+      <div className="flex justify-end">
         <button type="button" onClick={copy} className="btn-sticker no-print py-1.5!">
           {copied ? <Check className="h-4 w-4" aria-hidden /> : <Copy className="h-4 w-4" aria-hidden />}
           {copied ? "Kopyalandı" : "Kopyala"}
@@ -409,7 +441,7 @@ function ImprovedDescription({ text, images }: { text: string; images?: string[]
           ))}
         </div>
       )}
-    </section>
+    </div>
   );
 }
 

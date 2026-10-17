@@ -244,14 +244,20 @@ export function TownCast({ residents }: { residents: TownRepresentative[] }) {
         <h2 className="squiggle text-[21px] font-bold">Kasabadan {residents.length} sakin</h2>
         <span className="text-sm text-muted-foreground">Sakinler kurgusaldır; kararları simülasyondan gelir.</span>
       </div>
-      {/* Wrapping flex rather than a grid: 5 cards leave no empty cell, the last row stretches. */}
-      <div className="flex flex-wrap gap-4 *:min-w-0 *:grow *:basis-[300px]">
+      {/* Phones: a swipeable row (like the persona rings). Wider: wrapping flex, 5 cards leave no empty cell. */}
+      <div className="-mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-3 *:w-[85%] *:shrink-0 *:snap-start md:mx-0 md:flex-wrap md:overflow-visible md:px-0 md:pb-0 md:*:w-auto md:*:min-w-0 md:*:shrink md:*:grow md:*:basis-[300px]">
         {residents.map((r, i) => (
           <ResidentCard key={r.id} resident={r} avatar={avatars[i]} />
         ))}
       </div>
     </section>
   );
+}
+
+/** "hemşire olarak çalışıyor" → "Hemşire"; other phrasings ("kendi şirketini yönetiyor") stay as they are. */
+function shortOccupation(occupation: string): string {
+  const title = occupation.replace(/ olarak çalışıyor$/, "");
+  return title === occupation ? occupation : title.charAt(0).toLocaleUpperCase("tr") + title.slice(1);
 }
 
 function ResidentCard({ resident: r, avatar }: { resident: TownRepresentative; avatar: number }) {
@@ -269,7 +275,7 @@ function ResidentCard({ resident: r, avatar }: { resident: TownRepresentative; a
         <div className="flex min-w-0 grow flex-col">
           <h3 className="font-display text-lg font-bold leading-tight">{r.name}</h3>
           <span className="text-sm text-muted-foreground">
-            {r.age} · {r.city} · {r.occupation}
+            {r.age} · {r.city} · {shortOccupation(r.occupation)}
           </span>
         </div>
         <span className={cn("chip shrink-0 self-start", DECISION_TEXT_CLASS[r.decision])}>{DECISION_LABEL[r.decision]}</span>

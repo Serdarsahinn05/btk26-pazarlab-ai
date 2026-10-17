@@ -11,7 +11,15 @@ import { cn } from "@/lib/utils";
 const tl = (n: number) => `${Math.round(n).toLocaleString("tr-TR")} TL`;
 
 /** "Ne olur?" section: price sensitivity curve + A/B variant comparison (deterministic core, no LLM). */
-export default function WhatIf({ request }: { request: SimulationRequest }) {
+/** `bare`: inside a section that already has the title (the result page's "Ne olur?" disclosure). */
+export default function WhatIf({ request, bare = false }: { request: SimulationRequest; bare?: boolean }) {
+  const tools = (
+    <div className="grid items-start gap-6 lg:grid-cols-2">
+      <PriceCurve request={request} />
+      <AbCompare request={request} />
+    </div>
+  );
+  if (bare) return tools;
   return (
     <section className="space-y-4" aria-labelledby="whatif-title">
       <div>
@@ -20,10 +28,7 @@ export default function WhatIf({ request }: { request: SimulationRequest }) {
           Aynı 500 sentetik tüketiciyle hızlı senaryolar. AI kullanılmaz; sonuç anında gelir.
         </p>
       </div>
-      <div className="grid items-start gap-6 lg:grid-cols-2">
-        <PriceCurve request={request} />
-        <AbCompare request={request} />
-      </div>
+      {tools}
     </section>
   );
 }

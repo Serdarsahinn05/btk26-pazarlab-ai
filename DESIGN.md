@@ -112,6 +112,7 @@ Persona kartı zemini: kendi renginin %7'si kart rengine karışır. Etiket (chi
 | **Numara rozeti** | Sarı blob, Bricolage 800 | Aksiyon listesi, form adımları |
 | **Tek serili grafik** | Tek ton `--accent`; değer ve etiketler metin renginde (seri renginde değil); başlık seriyi adlandırır, lejant yok; hover/odakta değer; "Tablo olarak göster" | Ağızdan ağıza (haftalık çubuk), Kim alıyor? (yatay çubuk), fiyat eğrisi |
 | **Sakin kartı** | Solda 56 px çizim avatar (`public/pp_icons/1–10`, `rounded-blob`, 2px kenar; sakinin kimliğinden sabit, ekrandaki kartlarda tekrarsız, dekoratif `alt=""`), ad (Bricolage), yaş · şehir · meslek, persona noktası + adı (metin renginde), karar chip'i, gerekçe, katlanabilir "Hikâyesi"; satır `flex-wrap` + `basis-[300px]` (boş hücre kalmaz) | Kasabadan 5 sakin |
+| **Katlanır bölüm** | Kesikli kenarlı başlık düğmesi, dalgalı başlık, bir satır özet, ok; içerik açılınca çizilir, yazdırırken açılır | Sonuç: Ne olur?, İyileştirilmiş açıklama, Ürün parametreleri |
 | **Kazanç rozeti** | Chip, `--buy-text`; "+5,5 puan" (Türkçe ondalık), boş alanın etiket satırının sağında | Ürün formu, Hazırlık paneli |
 | **Öneri satırı** | Tam genişlik düğme, 44 px, 2px kenar; solda alan adı, sağda Bricolage kazanç; tıklayınca alana kayar ve odaklar | Hazırlık paneli |
 | **Durum toast'u** | Alt-orta, tam yuvarlak, sticker gölge; `info` / `error` + "Tekrar dene" | API hataları |
@@ -223,6 +224,21 @@ Faz 13b'den beri: önce link, sonra kontrol; sağda canlı "Hazırlık" paneli.
 │ İyileştirilmiş açıklama (kopyala düğmeli)  ·  görseller şeridi                       │
 └─────────────────────────────────────────────────────────────────────────────────────┘
 ```
+
+Faz 15'ten beri sayfa dört gruba ayrılmış bir rapor:
+
+```
+[yapışkan sonuç çubuğu: 52/100 · 276 alıcı (260–289) | Karar · Neyi değiştirmeli? · Kasaba · Ne olur? · Açıklama · Parametreler]
+#karar      Karar halkası | Ne yapmalı? (+ Yeni simülasyon, Link, .md, PDF) ; 4 KPI
+#iyilestir  En etkili 3 değişiklik | Zayıflıklar | Kanal önerileri      (lg 3 sütun, md 2 + tam satır)
+#kasaba     Personalar (12 halka) ; Kasabadan 5 sakin ; Ağızdan ağıza | Kim alıyor? (1fr 2fr)
+katlı       Ne olur? (fiyat eğrisi + A/B) · İyileştirilmiş açıklama · Ürün parametreleri
+```
+
+- **Sonuç çubuğu:** üst menünün altında yapışır (`top: var(--topbar-h)`, TopBar yüksekliğini ölçüp yazar; mobilde menü iki satır, 106 px). Karar kartı ekrandan çıkınca skor ve alıcı çubukta görünür. Bağlantılar 44 px hap; bulunulan bölüm `--primary` dolgulu ve `aria-current`; mobilde liste yana kayar ve etkin bağlantı görünür tutulur. Bölümlerin `scroll-margin`'i iki çubuğun altına denk gelir.
+- **Katlanır bölüm** (`Disclosure`): başlık satırı kesikli kenarlı, tam genişlik düğme (`aria-expanded`), dalgalı başlık + bir satır özet + ok. İçerik açılınca çizilir (fiyat eğrisi açılmadan istek atmaz); yazdırırken hepsi kendiliğinden açılır. İçindeki kart kendi başlığını tekrar etmez.
+- Mobil: sakin kartları persona halkaları gibi yana kaydırılır (%85 genişlik, snap).
+- Personalar sekmesi: mobilde kartta ad, tip ve alıntı; alışkanlık, değerler, korku ve nüfus "Alışkanlık, değerler, korku" düğmesiyle açılır. md ve üstünde hepsi açık.
 
 Kurallar:
 - **En önemli şey en üstte:** karar (halka) ve ne yapılacağı (aksiyonlar) ilk ekranda, kaydırmadan görünür.
