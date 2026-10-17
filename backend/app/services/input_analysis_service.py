@@ -346,10 +346,6 @@ def _visual_signal(category: str, features: Any, description: str) -> float:
     return clamp(score)
 
 
-def _looks_like_noise(text: str) -> bool:
-    return bool(_noise_reasons(text, ""))
-
-
 def _noise_reasons(text: str, label: str) -> list[str]:
     cleaned = re.sub(r"\s+", "", fold_text(text))
     words = [word for word in re.split(r"\s+", fold_text(text).strip()) if word]

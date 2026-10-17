@@ -43,6 +43,7 @@
 | 18 | `feat/browser-extension` | "PazarLab'a gönder" tarayıcı eklentisi | 1–2 gün | ✅ |
 | 18c | `feat/extension-store` | Chrome Web Mağazası paketi, gizlilik sayfası, mağaza görselleri | 0,5 gün | ✅ (yükleme kullanıcıda) |
 | 18b | `feat/debate-avatars` | Tartışmadaki konuşmacılara avatar (kullanıcı isteği) | 0,25 gün | ✅ |
+| 18d | `fix/small-items` | Küçük işler: B10, F24, F28, F30, F31, ölü kod, IMPROVEMENTS durumları | 0,5 gün | ✅ |
 | 19 | `feat/bring-your-population` | Kendi nüfusunu yükle + kalibrasyon (hesap sistemi, KVKK) | 3+ gün | ⬜ |
 | 20 | `feat/claude-artifact` | Claude içinde bağımsız PazarLab sayfası (11b, seçenek B) | 1,5 gün | ⬜ isteğe bağlı |
 
@@ -224,7 +225,7 @@ Kabul kriteri: DESIGN.md'deki tüm kalıplar uygulanmış; bileşenlerde ham ren
 - **Ara iş (2026-10-17, `chore/deploy-vercel-render`):** Vercel (website) + Render (API) ile yayın hazırlığı: `render.yaml` Blueprint, [deployment.md §6](deployment.md#6-vercel--render) (adımlar, ücretsiz planın kısıtları, ne zaman VPS), `CLIENT_IP_HEADER` (platform proxy'sinin yazdığı IP başlığı; Render'da `CF-Connecting-IP`, ilk deploy'da `/api/health`'teki `clientIp` ile doğrulanacak). 2 test (toplam 257). Gerçek bir Render/Vercel hesabında denenmedi.
 - **Önceki:** Faz 16 (yeni özellikler) dört adımıyla bitti ve main'e merge edildi: ilan yeniden yazma + öncesi/sonrası, rakip fiyat kartı, AI görsel analizi, paylaşım görseli.
 - **Son biten:** Faz 17 (temizlik ve CI testleri): ölü kod ve 2 paket silindi, veri kopyaları tek kaynağa bağlandı, LangGraph kaldırıldı, Playwright testleri repoda ve CI'da, Docker imajları doğrulandı, README yenilendi.
-- **Son biten:** Faz 18 (tarayıcı eklentisi), 18b (tartışmada avatarlar), 18c (mağaza paketi ve gizlilik sayfası; yükleme kullanıcıda).
+- **Son biten:** Faz 18d (küçük işler; F31: kırık frontend Docker build'i bulundu ve düzeltildi). Öncesinde 18 (eklenti), 18b (avatarlar), 18c (mağaza paketi; yükleme kullanıcıda).
 - **Sıradaki:** Faz 19 (kendi nüfusunu yükle; hesap sistemi ve KVKK gerektiriyor, kapsamı kullanıcıyla netleşmeli) ya da isteğe bağlı Faz 20. Eklenti ikonu şimdilik favicon; kalıcı ikon kullanıcıyla seçilecek. Açık karar: görsel puanı simülasyona girsin mi (F29); pazar payı için rakipli seçim (multinomial logit) ne zaman. 12'nin ertelenen maddeleri (rakipli seçim, belirli bir sakinle sohbet) Faz 16'da değerlendirilebilir.
 - **Kullanıcıdan beklenen (isteğe bağlı):** Trendyol, Hepsiburada, Amazon TR, n11, Çiçeksepeti'den birer ürün sayfasını tarayıcıda "Farklı kaydet → Yalnızca HTML" ile kaydedip `backend/tests/fixtures/links/` altına koymak; siteye özel okuma kuralları bu gerçek sayfalara göre yazılır.
 - **Ertelenen (kullanıcı kararı, 2026-10-17):** Faz 11'in Claude.ai denemesi sonra birlikte yapılacak. Gerekenler: `cloudflared` kurulumu (`winget install Cloudflare.cloudflared`), tünel adresinin `MCP_ALLOWED_HOSTS`'a yazılması, Claude'da connector eklenmesi; açık soru `?key=` sorgu dizesinin korunup korunmadığı. Adımlar: docs/mcp-connector.md. (sıra aşağıdaki tabloda). Her faz kendi dalında, bitince bu bölüm güncellenir.
@@ -420,6 +421,16 @@ Dört alt faza bölündü (12a–12d); her biri ayrı dalda, ayrı testlerle. A�
 - [x] **Mağaza materyali** `extension/store/`: 3 ekran görüntüsü 1280×800 (kurgusal "Örnek Mağaza" sayfası + gerçek popup, canlı sitede doldurulmuş form, sonuç ekranı), küçük tanıtım kutusu 440×280, [LISTING.md](../extension/store/LISTING.md): adım adım yükleme, açıklama, tek amaç, izin gerekçeleri, veri kullanımı beyanı, inceleyici notu.
 - **Doğrulama:** e2e 14/14 (yeni: gizlilik sayfası, landing bağlantısı, 375 px). Canlı ortamda uçtan uca: zip'in birebir içeriği Chromium'a yüklendi → popup → canlı API (`read-product-page` ~200 ms) → `pazarlab-ai.vercel.app/dashboard` formu doldu, hash silindi (test kopyasında yalnızca test sayfası adresi manifeste eklendi, gerçek tıklamanın `activeTab` iznine denk).
 - **Kullanıcıda kalan:** geliştirici hesabı (5 USD), zip'in yüklenmesi, incelemeye gönderme (LISTING.md). Kalıcı ikon kararı (mağaza simgesi şu an favicon'dan, 128 px'te bulanık).
+
+### Faz 18d ✅: Küçük işler (`fix/small-items`)
+- [x] **B10:** `RateLimit` dakikada bir, son pencerede isteği olmayan IP'leri siliyor (önceden her görülen IP bellekte kalıyordu). Test: 100 IP → bir dakika sonra yalnızca etkin olan kalıyor.
+- [x] **F24:** `/api/draft-check` sonucu taslak başına bellekte (`lru_cache`, 256). Aynı taslak (geri alma, yenileme, ikinci sekme) hiç simülasyon koşmadan dönüyor. Test: ikinci istekte `simulate_core` çağrılmıyor, fiyat değişince yeniden hesaplanıyor.
+- [x] **F28:** Sonuç çubuğu sayfanın dibinde son bölümü etkin sayıyor; bağlantıya tıklanınca o bölüm kaydırma süresince (1 sn) sabit kalıyor (önceden "Açıklama"ya tıklayınca dipte "Kasaba" kalıyordu). İlk denemede IntersectionObserver'ın dipte kaydırma olayını ezdiği görüldü ve düzeltildi. e2e testi eklendi.
+- [x] **F30:** frontend imajında `HEALTHCHECK` (Node `fetch`; slim imajda curl yok). Konteyner "healthy" oldu.
+- [x] **F31 (yeni, ciddi):** frontend Docker build'i Faz 18'den beri kırıktı (e2e testi build bağlamı dışındaki `extension/`'ı import ediyor). `.dockerignore` + CI'da iki imajı build eden `docker` işi.
+- [x] Ölü kod: `_looks_like_noise`, `ImageProcessor.clean`. IMPROVEMENTS.md'de güncel olmayan 13 satırın durumu koddan doğrulanarak düzeltildi.
+- **Doğrulama:** pytest 280/280, ruff temiz; tsc/eslint temiz; e2e 15/15 (`--repeat-each=2` ile 30/30); `docker compose build frontend` + healthy.
+- Açık kalan küçükler: B12 (AI çağrıları ardışık), B13 (Serper zaman aşımı bilgisi), F23, F25.
 
 ### Faz 19: Kendi nüfusunu yükle + kalibrasyon
 - [ ] Satıcı kendi sipariş dökümünden (Trendyol satıcı paneli, Shopify vb.) **anonim/toplu segmentler** yükler (JSON/CSV şeması); kasaba bu dağılımlara göre üretilir.

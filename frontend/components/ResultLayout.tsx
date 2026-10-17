@@ -18,10 +18,15 @@ export function ResultNav({ sections, verdict }: { sections: ResultSection[]; ve
   const [active, setActive] = useState(sections[0]?.id);
   // The verdict joins the bar only once the decision card has scrolled away; above it would repeat the card.
   const [showVerdict, setShowVerdict] = useState(false);
+  // A clicked link stays current while the page scrolls to it (the sections passed on the way do not take over).
+  const pinnedUntil = useRef(0);
+  const now = () => performance.now();
 
   useEffect(() => {
+    const atBottom = () => window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
     const observer = new IntersectionObserver(
       (entries) => {
+        if (now() < pinnedUntil.current || atBottom()) return;
         const visible = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
         if (visible[0]) setActive(visible[0].target.id);
       },
@@ -32,7 +37,15 @@ export function ResultNav({ sections, verdict }: { sections: ResultSection[]; ve
       const el = document.getElementById(id);
       if (el) observer.observe(el);
     });
-    return () => observer.disconnect();
+    // The last (short, folded) sections never reach the upper third: at the very bottom, the last one is current.
+    const onScroll = () => {
+      if (now() >= pinnedUntil.current && atBottom() && sections.length) setActive(sections[sections.length - 1].id);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("scroll", onScroll);
+    };
   }, [sections]);
 
   // Phones: the link list scrolls sideways, so keep the current section's link in view.
@@ -64,6 +77,10 @@ export function ResultNav({ sections, verdict }: { sections: ResultSection[]; ve
               <a
                 href={`#${id}`}
                 aria-current={active === id ? "location" : undefined}
+                onClick={() => {
+                  setActive(id);
+                  pinnedUntil.current = now() + 1000;
+                }}
                 className={cn(
                   "inline-flex min-h-11 items-center rounded-full px-3.5 text-sm font-bold transition-colors",
                   active === id ? "bg-primary text-primary-foreground" : "text-foreground-2 hover:bg-secondary",
