@@ -1,6 +1,7 @@
 """Human-readable Turkish labels for ids that end up in user-facing text (same wording as the form)."""
 
-from app.services.normalization_service import get_category_rule, load_persona_data
+from app.services import categories
+from app.services.normalization_service import load_persona_data
 
 MOTIVATION_LABELS = {
     "stil_begeni": "stil / beğeni",
@@ -16,7 +17,7 @@ INCOME_LABELS = {"low": "ekonomik", "middle": "orta", "high": "premium"}
 
 
 def category_label(category: str) -> str:
-    return get_category_rule(category).get("label", category)
+    return categories.label(category)
 
 
 def motivation_label(motivation: str) -> str:

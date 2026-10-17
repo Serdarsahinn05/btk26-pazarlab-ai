@@ -7,13 +7,8 @@ export type PurchaseMotivation =
   | "trend" 
   | "profesyonel_kullanim";
 
-/** Must match `Category` in backend/app/models/product.py. */
-export const CATEGORIES = [
-  "tisort", "pantolon", "mont", "elbise", "etek",
-  "telefon", "laptop", "kulaklik", "tablet", "akilli_saat",
-  "ayakkabi", "canta", "kozmetik",
-] as const;
-export type Category = (typeof CATEGORIES)[number];
+/** A family ("giyim") or subtype ("tisort") id from data/category_rules.json; see lib/categories.ts. */
+export type Category = string;
 
 export interface TargetAudience {
   ageRange: string;
@@ -83,6 +78,10 @@ export interface Features {
   ingredients?: string;
   volume?: string;
   certifications?: string;
+
+  // Appliances, accessories, baby (Faz 13a)
+  power?: string;
+  ageGroup?: string;
 }
 
 export interface Commerce {
@@ -120,6 +119,8 @@ export interface SimulationRequest {
   productName: string;
   productUrl?: string;
   price: number;
+  /** Typical price of similar products; overrides the category average ("diger" has none). */
+  marketPrice?: number;
   description: string;
   targetAudience: TargetAudience;
   features: Features;
@@ -332,4 +333,7 @@ export interface ProductLinkReadResponse {
   variants: ProductVariant[];
   source: string;
   warnings: string[];
+  /** high = the page's own category path, medium = title or AI guess, low = not found ("diger"). */
+  category_confidence?: "high" | "medium" | "low" | null;
+  category_source?: "breadcrumb" | "title" | "ai" | "none" | null;
 }

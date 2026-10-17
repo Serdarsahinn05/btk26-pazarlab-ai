@@ -4,7 +4,7 @@ import { ArrowRight } from "lucide-react";
 import PazarLabBrand from "@/components/PazarLabBrand";
 import ThemeToggle from "@/components/ThemeToggle";
 import { SegmentRing } from "@/components/ui/ring";
-import { CATEGORIES } from "@/types";
+import { FAMILY_COUNT } from "@/lib/categories";
 
 const STEPS = [
   {
@@ -24,7 +24,7 @@ const STEPS = [
 const STATS = [
   { value: "500", label: "sentetik tüketici" },
   { value: "12", label: "persona" },
-  { value: String(CATEGORIES.length), label: "kategori" },
+  { value: String(FAMILY_COUNT), label: "kategori" },
 ];
 
 // Static preview of the result ring, so visitors see what they get.

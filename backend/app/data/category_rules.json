@@ -1,21 +1,7 @@
 {
   "meta": {
-    "version": "2.0",
-    "categories": [
-      "tisort",
-      "pantolon",
-      "mont",
-      "telefon",
-      "laptop",
-      "kulaklik",
-      "elbise",
-      "etek",
-      "tablet",
-      "akilli_saat",
-      "ayakkabi",
-      "canta",
-      "kozmetik"
-    ],
+    "version": "3.0",
+    "note": "Aileler motorun kurallarını taşır (ağırlıklar, form, kalite alanları, metinler). Alt türler ailesini devralır ve yalnızca farklı olanı ezer (en az: ad, tanıma kelimeleri, ortalama fiyat). Bir aile kimliği de kategori olarak kullanılabilir (alt tür bilinmiyorsa). Eski 13 kimlik değerlerini aynen korur.",
     "motivations": [
       "stil_begeni",
       "ihtiyac",
@@ -24,8 +10,7 @@
       "hediye",
       "trend",
       "profesyonel_kullanim"
-    ],
-    "note": "Kategori kurallari soru setini ve skor agirliklarini urun tipine gore ayirir. Demografik alanlar sadece ilgili kategorilerde yuksek agirlik alir."
+    ]
   },
   "commonParameters": [
     "priceFit",
@@ -48,11 +33,22 @@
     "trend": 10,
     "profesyonel_kullanim": -6
   },
-  "categories": {
-    "tisort": {
-      "label": "Kıyafet / Tişört",
-      "averagePrice": 450,
-      "marketBreadthBase": 72,
+  "families": {
+    "giyim": {
+      "label": "Giyim",
+      "icon": "shirt",
+      "keywords": [
+        "giyim",
+        "kıyafet",
+        "spor giyim"
+      ],
+      "traits": [
+        "fashion",
+        "seasonal"
+      ],
+      "trendBoost": 0.12,
+      "averagePrice": 800,
+      "marketBreadthBase": 68,
       "applicableAudienceFields": [
         "ageRange",
         "gender",
@@ -71,48 +67,6 @@
         "targetAudienceFit": 0.04,
         "differentiationScore": 0.01
       },
-      "formFields": [
-        {
-          "key": "fabric",
-          "type": "text",
-          "label": "Kumas icerigi"
-        },
-        {
-          "key": "fit",
-          "type": "select",
-          "label": "Kalip"
-        },
-        {
-          "key": "sizeRange",
-          "type": "text",
-          "label": "Beden araligi"
-        },
-        {
-          "key": "collarType",
-          "type": "select",
-          "label": "Yaka tipi"
-        },
-        {
-          "key": "sleeveLength",
-          "type": "select",
-          "label": "Kol tipi"
-        },
-        {
-          "key": "printType",
-          "type": "text",
-          "label": "Baski / desen"
-        },
-        {
-          "key": "colors",
-          "type": "multi",
-          "label": "Renk secenekleri"
-        },
-        {
-          "key": "season",
-          "type": "select",
-          "label": "Sezon"
-        }
-      ],
       "motivationWeights": {
         "stil_begeni": {
           "priceFit": 0.13,
@@ -150,858 +104,153 @@
           "targetAudienceFit": 0.03,
           "differentiationScore": 0.01
         }
-      }
-    },
-    "pantolon": {
-      "label": "Kıyafet / Pantolon",
-      "averagePrice": 900,
-      "marketBreadthBase": 66,
-      "applicableAudienceFields": [
-        "ageRange",
-        "gender",
-        "incomeLevel"
-      ],
-      "defaultMotivation": "ihtiyac",
-      "defaultWeights": {
-        "priceFit": 0.17,
-        "qualityScore": 0.17,
-        "trendFit": 0.09,
-        "brandTrust": 0.05,
-        "descriptionCompleteness": 0.14,
-        "visualAppeal": 0.12,
-        "seasonFit": 0.1,
-        "shippingReturnScore": 0.08,
-        "targetAudienceFit": 0.07,
-        "differentiationScore": 0.01
       },
-      "formFields": [
-        {
-          "key": "fabric",
-          "type": "text",
-          "label": "Kumas icerigi"
-        },
-        {
-          "key": "fit",
-          "type": "select",
-          "label": "Kalip"
-        },
-        {
-          "key": "waistType",
-          "type": "select",
-          "label": "Bel tipi"
-        },
-        {
-          "key": "legType",
-          "type": "select",
-          "label": "Paca tipi"
-        },
-        {
-          "key": "stretch",
-          "type": "boolean",
-          "label": "Esneklik"
-        },
-        {
-          "key": "sizeRange",
-          "type": "text",
-          "label": "Beden/olcu araligi"
-        },
-        {
-          "key": "useCase",
-          "type": "text",
-          "label": "Kullanim alani"
-        },
-        {
-          "key": "season",
-          "type": "select",
-          "label": "Sezon"
-        }
+      "terms": [
+        "kumas",
+        "beden",
+        "kalip",
+        "pamuk",
+        "giyim",
+        "yaka"
       ],
-      "motivationWeights": {
-        "ihtiyac": {
-          "priceFit": 0.19,
-          "qualityScore": 0.19,
-          "trendFit": 0.06,
-          "brandTrust": 0.06,
-          "descriptionCompleteness": 0.16,
-          "visualAppeal": 0.1,
-          "seasonFit": 0.1,
-          "shippingReturnScore": 0.08,
-          "targetAudienceFit": 0.05,
-          "differentiationScore": 0.01
-        },
-        "stil_begeni": {
-          "priceFit": 0.14,
-          "qualityScore": 0.16,
-          "trendFit": 0.16,
-          "brandTrust": 0.05,
-          "descriptionCompleteness": 0.12,
-          "visualAppeal": 0.18,
-          "seasonFit": 0.09,
-          "shippingReturnScore": 0.06,
-          "targetAudienceFit": 0.03,
-          "differentiationScore": 0.01
-        }
-      }
-    },
-    "mont": {
-      "label": "Kıyafet / Mont",
-      "averagePrice": 1800,
-      "marketBreadthBase": 68,
-      "applicableAudienceFields": [
-        "ageRange",
-        "gender",
-        "incomeLevel"
+      "importantFields": [
+        "fabric",
+        "fit",
+        "sizeRange",
+        "season",
+        "useCase",
+        "colors"
       ],
-      "defaultMotivation": "stil_begeni",
-      "defaultWeights": {
-        "priceFit": 0.12,
-        "qualityScore": 0.17,
-        "trendFit": 0.13,
-        "brandTrust": 0.05,
-        "descriptionCompleteness": 0.08,
-        "visualAppeal": 0.14,
-        "seasonFit": 0.18,
-        "shippingReturnScore": 0.08,
-        "targetAudienceFit": 0.04,
-        "differentiationScore": 0.01
+      "qualityFields": [
+        [
+          [
+            "fabric"
+          ],
+          0.14
+        ],
+        [
+          [
+            "fit"
+          ],
+          0.08
+        ],
+        [
+          [
+            "sizeRange"
+          ],
+          0.08
+        ],
+        [
+          [
+            "season"
+          ],
+          0.06
+        ],
+        [
+          [
+            "printType",
+            "collarType",
+            "waistType",
+            "legType",
+            "useCase"
+          ],
+          0.06
+        ],
+        [
+          [
+            "stretch"
+          ],
+          0.05
+        ]
+      ],
+      "form": {
+        "exampleName": "Pamuklu Basic Gömlek",
+        "descriptionPlaceholder": "Kumaş, kalıp, beden aralığı, renkler, sezon ve kullanım/kombin senaryosunu yazın.",
+        "fields": [
+          {
+            "name": "fabric",
+            "label": "Kumaş içeriği",
+            "placeholder": "%100 pamuk, keten, polyester…",
+            "required": true
+          },
+          {
+            "name": "fit",
+            "label": "Kalıp",
+            "type": "select",
+            "options": [
+              {
+                "value": "regular",
+                "label": "Regular"
+              },
+              {
+                "value": "oversize",
+                "label": "Oversize"
+              },
+              {
+                "value": "slim",
+                "label": "Slim"
+              }
+            ]
+          },
+          {
+            "name": "sizeRange",
+            "label": "Beden aralığı",
+            "placeholder": "S-XL",
+            "required": true
+          },
+          {
+            "name": "colorsText",
+            "label": "Renk seçenekleri",
+            "placeholder": "Siyah, beyaz…"
+          },
+          {
+            "name": "useCase",
+            "label": "Kullanım alanı",
+            "placeholder": "Günlük, ofis, spor…"
+          },
+          {
+            "name": "season",
+            "label": "Sezon",
+            "type": "select",
+            "options": [
+              {
+                "value": "summer",
+                "label": "Yaz"
+              },
+              {
+                "value": "winter",
+                "label": "Kış"
+              },
+              {
+                "value": "spring",
+                "label": "Bahar"
+              },
+              {
+                "value": "all",
+                "label": "Dört mevsim"
+              }
+            ]
+          }
+        ]
       },
-      "formFields": [
-        {
-          "key": "fabric",
-          "type": "text",
-          "label": "Kumas tipi"
-        },
-        {
-          "key": "innerFilling",
-          "type": "text",
-          "label": "Ic dolgu"
-        },
-        {
-          "key": "season",
-          "type": "select",
-          "label": "Sezon",
-          "options": [
-            "winter",
-            "spring",
-            "summer",
-            "all"
-          ]
-        },
-        {
-          "key": "waterproof",
-          "type": "boolean",
-          "label": "Su gecirmez"
-        },
-        {
-          "key": "windproof",
-          "type": "boolean",
-          "label": "Ruzgar gecirmez"
-        },
-        {
-          "key": "style",
-          "type": "text",
-          "label": "Stil / kalip"
-        }
-      ],
-      "motivationWeights": {
-        "stil_begeni": {
-          "priceFit": 0.12,
-          "qualityScore": 0.16,
-          "trendFit": 0.16,
-          "brandTrust": 0.05,
-          "descriptionCompleteness": 0.07,
-          "visualAppeal": 0.16,
-          "seasonFit": 0.18,
-          "shippingReturnScore": 0.06,
-          "targetAudienceFit": 0.03,
-          "differentiationScore": 0.01
-        },
-        "ihtiyac": {
-          "priceFit": 0.17,
-          "qualityScore": 0.19,
-          "trendFit": 0.05,
-          "brandTrust": 0.08,
-          "descriptionCompleteness": 0.12,
-          "visualAppeal": 0.08,
-          "seasonFit": 0.18,
-          "shippingReturnScore": 0.1,
-          "targetAudienceFit": 0.02,
-          "differentiationScore": 0.01
-        },
-        "trend": {
-          "priceFit": 0.1,
-          "qualityScore": 0.14,
-          "trendFit": 0.2,
-          "brandTrust": 0.05,
-          "descriptionCompleteness": 0.06,
-          "visualAppeal": 0.2,
-          "seasonFit": 0.15,
-          "shippingReturnScore": 0.06,
-          "targetAudienceFit": 0.03,
-          "differentiationScore": 0.01
-        }
-      }
-    },
-    "telefon": {
-      "label": "Teknoloji / Telefon",
-      "averagePrice": 16000,
-      "marketBreadthBase": 62,
-      "applicableAudienceFields": [
-        "incomeLevel"
-      ],
-      "defaultMotivation": "ihtiyac",
-      "defaultWeights": {
-        "priceFit": 0.17,
-        "qualityScore": 0.24,
-        "trendFit": 0.06,
-        "brandTrust": 0.11,
-        "descriptionCompleteness": 0.15,
-        "visualAppeal": 0.05,
-        "seasonFit": 0,
-        "shippingReturnScore": 0.12,
-        "targetAudienceFit": 0.08,
-        "differentiationScore": 0.02
-      },
-      "formFields": [
-        {
-          "key": "brand",
-          "type": "text",
-          "label": "Marka / model (biliyorsan)"
-        },
-        {
-          "key": "ram",
-          "type": "text",
-          "label": "RAM"
-        },
-        {
-          "key": "storage",
-          "type": "text",
-          "label": "Depolama"
-        },
-        {
-          "key": "processor",
-          "type": "text",
-          "label": "Islemci"
-        },
-        {
-          "key": "camera",
-          "type": "text",
-          "label": "Kamera"
-        },
-        {
-          "key": "battery",
-          "type": "text",
-          "label": "Batarya"
-        }
-      ],
-      "motivationWeights": {
-        "ihtiyac": {
-          "priceFit": 0.18,
-          "qualityScore": 0.22,
-          "trendFit": 0.04,
-          "brandTrust": 0.1,
-          "descriptionCompleteness": 0.16,
-          "visualAppeal": 0.04,
-          "seasonFit": 0,
-          "shippingReturnScore": 0.13,
-          "targetAudienceFit": 0.1,
-          "differentiationScore": 0.03
-        },
-        "trend": {
-          "priceFit": 0.14,
-          "qualityScore": 0.2,
-          "trendFit": 0.14,
-          "brandTrust": 0.1,
-          "descriptionCompleteness": 0.13,
-          "visualAppeal": 0.1,
-          "seasonFit": 0,
-          "shippingReturnScore": 0.09,
-          "targetAudienceFit": 0.07,
-          "differentiationScore": 0.03
-        },
-        "profesyonel_kullanim": {
-          "priceFit": 0.12,
-          "qualityScore": 0.27,
-          "trendFit": 0.03,
-          "brandTrust": 0.12,
-          "descriptionCompleteness": 0.2,
-          "visualAppeal": 0.03,
-          "seasonFit": 0,
-          "shippingReturnScore": 0.1,
-          "targetAudienceFit": 0.1,
-          "differentiationScore": 0.03
-        }
-      }
-    },
-    "laptop": {
-      "label": "Teknoloji / Laptop",
-      "averagePrice": 28000,
-      "marketBreadthBase": 54,
-      "applicableAudienceFields": [
-        "incomeLevel"
-      ],
-      "defaultMotivation": "profesyonel_kullanim",
-      "defaultWeights": {
-        "priceFit": 0.15,
-        "qualityScore": 0.27,
-        "trendFit": 0.04,
-        "brandTrust": 0.1,
-        "descriptionCompleteness": 0.18,
-        "visualAppeal": 0.03,
-        "seasonFit": 0,
-        "shippingReturnScore": 0.1,
-        "targetAudienceFit": 0.1,
-        "differentiationScore": 0.03
-      },
-      "formFields": [
-        {
-          "key": "brand",
-          "type": "text",
-          "label": "Marka / model"
-        },
-        {
-          "key": "processor",
-          "type": "text",
-          "label": "Islemci"
-        },
-        {
-          "key": "ram",
-          "type": "text",
-          "label": "RAM"
-        },
-        {
-          "key": "storage",
-          "type": "text",
-          "label": "Depolama"
-        },
-        {
-          "key": "gpu",
-          "type": "text",
-          "label": "Ekran karti"
-        },
-        {
-          "key": "screenSize",
-          "type": "text",
-          "label": "Ekran"
-        },
-        {
-          "key": "battery",
-          "type": "text",
-          "label": "Batarya"
-        },
-        {
-          "key": "weight",
-          "type": "text",
-          "label": "Agirlik"
-        },
-        {
-          "key": "useCase",
-          "type": "text",
-          "label": "Kullanim amaci"
-        }
-      ],
-      "motivationWeights": {
-        "profesyonel_kullanim": {
-          "priceFit": 0.12,
-          "qualityScore": 0.3,
-          "trendFit": 0.03,
-          "brandTrust": 0.1,
-          "descriptionCompleteness": 0.2,
-          "visualAppeal": 0.02,
-          "seasonFit": 0,
-          "shippingReturnScore": 0.1,
-          "targetAudienceFit": 0.1,
-          "differentiationScore": 0.03
-        },
-        "ihtiyac": {
-          "priceFit": 0.18,
-          "qualityScore": 0.23,
-          "trendFit": 0.04,
-          "brandTrust": 0.1,
-          "descriptionCompleteness": 0.17,
-          "visualAppeal": 0.03,
-          "seasonFit": 0,
-          "shippingReturnScore": 0.12,
-          "targetAudienceFit": 0.1,
-          "differentiationScore": 0.03
-        }
-      }
-    },
-    "kulaklik": {
-      "label": "Teknoloji / Kulaklık",
-      "averagePrice": 2500,
-      "marketBreadthBase": 60,
-      "applicableAudienceFields": [
-        "incomeLevel"
-      ],
-      "defaultMotivation": "ihtiyac",
-      "defaultWeights": {
-        "priceFit": 0.17,
-        "qualityScore": 0.2,
-        "trendFit": 0.08,
-        "brandTrust": 0.09,
-        "descriptionCompleteness": 0.15,
-        "visualAppeal": 0.08,
-        "seasonFit": 0,
-        "shippingReturnScore": 0.1,
-        "targetAudienceFit": 0.1,
-        "differentiationScore": 0.03
-      },
-      "formFields": [
-        {
-          "key": "brand",
-          "type": "text",
-          "label": "Marka / model"
-        },
-        {
-          "key": "connectionType",
-          "type": "select",
-          "label": "Baglanti"
-        },
-        {
-          "key": "battery",
-          "type": "text",
-          "label": "Pil suresi"
-        },
-        {
-          "key": "noiseCancellation",
-          "type": "boolean",
-          "label": "ANC"
-        },
-        {
-          "key": "microphone",
-          "type": "text",
-          "label": "Mikrofon"
-        },
-        {
-          "key": "waterResistance",
-          "type": "text",
-          "label": "Su/ter dayanimi"
-        },
-        {
-          "key": "latency",
-          "type": "text",
-          "label": "Gecikme"
-        },
-        {
-          "key": "useCase",
-          "type": "text",
-          "label": "Kullanim amaci"
-        }
-      ],
-      "motivationWeights": {
-        "ihtiyac": {
-          "priceFit": 0.18,
-          "qualityScore": 0.21,
-          "trendFit": 0.06,
-          "brandTrust": 0.09,
-          "descriptionCompleteness": 0.16,
-          "visualAppeal": 0.07,
-          "seasonFit": 0,
-          "shippingReturnScore": 0.1,
-          "targetAudienceFit": 0.1,
-          "differentiationScore": 0.03
-        },
-        "trend": {
-          "priceFit": 0.14,
-          "qualityScore": 0.18,
-          "trendFit": 0.16,
-          "brandTrust": 0.08,
-          "descriptionCompleteness": 0.12,
-          "visualAppeal": 0.14,
-          "seasonFit": 0,
-          "shippingReturnScore": 0.08,
-          "targetAudienceFit": 0.07,
-          "differentiationScore": 0.03
-        }
-      }
-    },
-    "elbise": {
-      "label": "Kıyafet / Elbise",
-      "averagePrice": 1300,
-      "marketBreadthBase": 66,
-      "applicableAudienceFields": [
-        "ageRange",
-        "gender",
-        "incomeLevel"
-      ],
-      "defaultMotivation": "stil_begeni",
-      "defaultWeights": {
-        "priceFit": 0.14,
-        "qualityScore": 0.14,
-        "trendFit": 0.15,
-        "brandTrust": 0.05,
-        "descriptionCompleteness": 0.1,
-        "visualAppeal": 0.21,
-        "seasonFit": 0.11,
-        "shippingReturnScore": 0.06,
-        "targetAudienceFit": 0.04,
-        "differentiationScore": 0.01
-      },
-      "formFields": [
-        {
-          "key": "fabric",
-          "type": "text",
-          "label": "Kumas icerigi"
-        },
-        {
-          "key": "fit",
-          "type": "select",
-          "label": "Kesim / kalip"
-        },
-        {
-          "key": "sizeRange",
-          "type": "text",
-          "label": "Beden araligi"
-        },
-        {
-          "key": "sleeveLength",
-          "type": "select",
-          "label": "Kol / askili tipi"
-        },
-        {
-          "key": "legType",
-          "type": "select",
-          "label": "Boy / etek kesimi"
-        },
-        {
-          "key": "colors",
-          "type": "multi",
-          "label": "Renk secenekleri"
-        },
-        {
-          "key": "useCase",
-          "type": "text",
-          "label": "Kullanim alani"
-        },
-        {
-          "key": "season",
-          "type": "select",
-          "label": "Sezon"
-        }
-      ],
-      "motivationWeights": {
-        "stil_begeni": {
-          "priceFit": 0.13,
-          "qualityScore": 0.13,
-          "trendFit": 0.19,
-          "brandTrust": 0.05,
-          "descriptionCompleteness": 0.09,
-          "visualAppeal": 0.22,
-          "seasonFit": 0.09,
-          "shippingReturnScore": 0.06,
-          "targetAudienceFit": 0.03,
-          "differentiationScore": 0.01
-        },
-        "ihtiyac": {
-          "priceFit": 0.2,
-          "qualityScore": 0.17,
-          "trendFit": 0.08,
-          "brandTrust": 0.06,
-          "descriptionCompleteness": 0.14,
-          "visualAppeal": 0.12,
-          "seasonFit": 0.11,
-          "shippingReturnScore": 0.08,
-          "targetAudienceFit": 0.03,
-          "differentiationScore": 0.01
-        },
-        "trend": {
-          "priceFit": 0.11,
-          "qualityScore": 0.12,
-          "trendFit": 0.23,
-          "brandTrust": 0.05,
-          "descriptionCompleteness": 0.08,
-          "visualAppeal": 0.24,
-          "seasonFit": 0.08,
-          "shippingReturnScore": 0.05,
-          "targetAudienceFit": 0.03,
-          "differentiationScore": 0.01
-        }
-      }
-    },
-    "etek": {
-      "label": "Kıyafet / Etek",
-      "averagePrice": 750,
-      "marketBreadthBase": 58,
-      "applicableAudienceFields": [
-        "ageRange",
-        "gender",
-        "incomeLevel"
-      ],
-      "defaultMotivation": "stil_begeni",
-      "defaultWeights": {
-        "priceFit": 0.16,
-        "qualityScore": 0.14,
-        "trendFit": 0.14,
-        "brandTrust": 0.05,
-        "descriptionCompleteness": 0.1,
-        "visualAppeal": 0.2,
-        "seasonFit": 0.12,
-        "shippingReturnScore": 0.06,
-        "targetAudienceFit": 0.04,
-        "differentiationScore": 0.01
-      },
-      "formFields": [
-        {
-          "key": "fabric",
-          "type": "text",
-          "label": "Kumas icerigi"
-        },
-        {
-          "key": "waistType",
-          "type": "select",
-          "label": "Bel tipi"
-        },
-        {
-          "key": "legType",
-          "type": "select",
-          "label": "Boy / kesim"
-        },
-        {
-          "key": "fit",
-          "type": "select",
-          "label": "Kalip"
-        },
-        {
-          "key": "sizeRange",
-          "type": "text",
-          "label": "Beden araligi"
-        },
-        {
-          "key": "colors",
-          "type": "multi",
-          "label": "Renk secenekleri"
-        },
-        {
-          "key": "useCase",
-          "type": "text",
-          "label": "Kullanim alani"
-        },
-        {
-          "key": "season",
-          "type": "select",
-          "label": "Sezon"
-        }
-      ],
-      "motivationWeights": {
-        "ihtiyac": {
-          "priceFit": 0.19,
-          "qualityScore": 0.19,
-          "trendFit": 0.06,
-          "brandTrust": 0.06,
-          "descriptionCompleteness": 0.16,
-          "visualAppeal": 0.1,
-          "seasonFit": 0.1,
-          "shippingReturnScore": 0.08,
-          "targetAudienceFit": 0.05,
-          "differentiationScore": 0.01
-        },
-        "stil_begeni": {
-          "priceFit": 0.14,
-          "qualityScore": 0.16,
-          "trendFit": 0.16,
-          "brandTrust": 0.05,
-          "descriptionCompleteness": 0.12,
-          "visualAppeal": 0.18,
-          "seasonFit": 0.09,
-          "shippingReturnScore": 0.06,
-          "targetAudienceFit": 0.03,
-          "differentiationScore": 0.01
-        }
-      }
-    },
-    "tablet": {
-      "label": "Teknoloji / Tablet",
-      "averagePrice": 12000,
-      "marketBreadthBase": 54,
-      "applicableAudienceFields": [
-        "incomeLevel"
-      ],
-      "defaultMotivation": "ihtiyac",
-      "defaultWeights": {
-        "priceFit": 0.17,
-        "qualityScore": 0.23,
-        "trendFit": 0.06,
-        "brandTrust": 0.11,
-        "descriptionCompleteness": 0.16,
-        "visualAppeal": 0.06,
-        "seasonFit": 0,
-        "shippingReturnScore": 0.12,
-        "targetAudienceFit": 0.09,
-        "differentiationScore": 0.02
-      },
-      "formFields": [
-        {
-          "key": "brand",
-          "type": "text",
-          "label": "Marka / model"
-        },
-        {
-          "key": "screenSize",
-          "type": "text",
-          "label": "Ekran"
-        },
-        {
-          "key": "ram",
-          "type": "text",
-          "label": "RAM"
-        },
-        {
-          "key": "storage",
-          "type": "text",
-          "label": "Depolama"
-        },
-        {
-          "key": "processor",
-          "type": "text",
-          "label": "Islemci"
-        },
-        {
-          "key": "battery",
-          "type": "text",
-          "label": "Batarya"
-        },
-        {
-          "key": "connectivity",
-          "type": "text",
-          "label": "Baglanti"
-        },
-        {
-          "key": "useCase",
-          "type": "text",
-          "label": "Kullanim amaci"
-        }
-      ],
-      "motivationWeights": {
-        "ihtiyac": {
-          "priceFit": 0.18,
-          "qualityScore": 0.22,
-          "trendFit": 0.04,
-          "brandTrust": 0.1,
-          "descriptionCompleteness": 0.16,
-          "visualAppeal": 0.04,
-          "seasonFit": 0,
-          "shippingReturnScore": 0.13,
-          "targetAudienceFit": 0.1,
-          "differentiationScore": 0.03
-        },
-        "trend": {
-          "priceFit": 0.14,
-          "qualityScore": 0.2,
-          "trendFit": 0.14,
-          "brandTrust": 0.1,
-          "descriptionCompleteness": 0.13,
-          "visualAppeal": 0.1,
-          "seasonFit": 0,
-          "shippingReturnScore": 0.09,
-          "targetAudienceFit": 0.07,
-          "differentiationScore": 0.03
-        },
-        "profesyonel_kullanim": {
-          "priceFit": 0.12,
-          "qualityScore": 0.27,
-          "trendFit": 0.03,
-          "brandTrust": 0.12,
-          "descriptionCompleteness": 0.2,
-          "visualAppeal": 0.03,
-          "seasonFit": 0,
-          "shippingReturnScore": 0.1,
-          "targetAudienceFit": 0.1,
-          "differentiationScore": 0.03
-        }
-      }
-    },
-    "akilli_saat": {
-      "label": "Teknoloji / Akıllı Saat",
-      "averagePrice": 4500,
-      "marketBreadthBase": 57,
-      "applicableAudienceFields": [
-        "incomeLevel"
-      ],
-      "defaultMotivation": "ihtiyac",
-      "defaultWeights": {
-        "priceFit": 0.17,
-        "qualityScore": 0.19,
-        "trendFit": 0.1,
-        "brandTrust": 0.09,
-        "descriptionCompleteness": 0.15,
-        "visualAppeal": 0.1,
-        "seasonFit": 0,
-        "shippingReturnScore": 0.1,
-        "targetAudienceFit": 0.09,
-        "differentiationScore": 0.03
-      },
-      "formFields": [
-        {
-          "key": "brand",
-          "type": "text",
-          "label": "Marka / model"
-        },
-        {
-          "key": "screenSize",
-          "type": "text",
-          "label": "Ekran boyutu"
-        },
-        {
-          "key": "displayType",
-          "type": "text",
-          "label": "Ekran tipi"
-        },
-        {
-          "key": "battery",
-          "type": "text",
-          "label": "Pil suresi"
-        },
-        {
-          "key": "waterResistance",
-          "type": "text",
-          "label": "Su dayanimi"
-        },
-        {
-          "key": "sensors",
-          "type": "text",
-          "label": "Sensorler"
-        },
-        {
-          "key": "connectivity",
-          "type": "text",
-          "label": "Baglanti"
-        },
-        {
-          "key": "useCase",
-          "type": "text",
-          "label": "Kullanim amaci"
-        }
-      ],
-      "motivationWeights": {
-        "ihtiyac": {
-          "priceFit": 0.18,
-          "qualityScore": 0.21,
-          "trendFit": 0.06,
-          "brandTrust": 0.09,
-          "descriptionCompleteness": 0.16,
-          "visualAppeal": 0.07,
-          "seasonFit": 0,
-          "shippingReturnScore": 0.1,
-          "targetAudienceFit": 0.1,
-          "differentiationScore": 0.03
-        },
-        "trend": {
-          "priceFit": 0.14,
-          "qualityScore": 0.18,
-          "trendFit": 0.16,
-          "brandTrust": 0.08,
-          "descriptionCompleteness": 0.12,
-          "visualAppeal": 0.14,
-          "seasonFit": 0,
-          "shippingReturnScore": 0.08,
-          "targetAudienceFit": 0.07,
-          "differentiationScore": 0.03
-        }
+      "copy": {
+        "recipeTip": "Beden/kalıp bilgisini ve gerçek kullanım/kombin senaryosunu açıklamanın ilk 2 satırına al.",
+        "marketingAngle": "stil, beden uyumu ve gerçek kullanım görselleri",
+        "descriptionAdvice": "Açıklamaya kumaş, kalıp, beden aralığı, sezon, kombin/kullanım senaryosu ve iade bilgisini ayrı cümlelerle ekle."
       }
     },
     "ayakkabi": {
-      "label": "Aksesuar / Ayakkabı",
+      "label": "Ayakkabı",
+      "icon": "footprints",
+      "keywords": [
+        "ayakkabı",
+        "ayakkabi"
+      ],
+      "traits": [
+        "fashion",
+        "seasonal"
+      ],
+      "trendBoost": 0.12,
       "averagePrice": 1500,
       "marketBreadthBase": 68,
       "applicableAudienceFields": [
@@ -1022,48 +271,6 @@
         "targetAudienceFit": 0.04,
         "differentiationScore": 0.02
       },
-      "formFields": [
-        {
-          "key": "material",
-          "type": "text",
-          "label": "Saya malzemesi"
-        },
-        {
-          "key": "soleMaterial",
-          "type": "text",
-          "label": "Taban"
-        },
-        {
-          "key": "sizeRange",
-          "type": "text",
-          "label": "Numara araligi"
-        },
-        {
-          "key": "fit",
-          "type": "select",
-          "label": "Kalip"
-        },
-        {
-          "key": "heelHeight",
-          "type": "text",
-          "label": "Topuk / taban yuksekligi"
-        },
-        {
-          "key": "useCase",
-          "type": "text",
-          "label": "Kullanim alani"
-        },
-        {
-          "key": "waterproof",
-          "type": "checkbox",
-          "label": "Su gecirmez"
-        },
-        {
-          "key": "season",
-          "type": "select",
-          "label": "Sezon"
-        }
-      ],
       "motivationWeights": {
         "stil_begeni": {
           "priceFit": 0.15,
@@ -1101,10 +308,168 @@
           "targetAudienceFit": 0.03,
           "differentiationScore": 0.02
         }
+      },
+      "terms": [
+        "ayakkabi",
+        "bot",
+        "cizme",
+        "numara",
+        "sandalet",
+        "sneaker",
+        "taban",
+        "terlik",
+        "topuk"
+      ],
+      "importantFields": [
+        "material",
+        "soleMaterial",
+        "sizeRange",
+        "fit",
+        "heelHeight",
+        "useCase",
+        "season"
+      ],
+      "form": {
+        "exampleName": "Hakiki Deri Günlük Sneaker",
+        "descriptionPlaceholder": "Saya ve taban malzemesini, numara aralığını, kalıbın dar/geniş olduğunu, rahatlık ve kullanım alanını yazın.",
+        "fields": [
+          {
+            "name": "material",
+            "label": "Saya malzemesi",
+            "placeholder": "Hakiki deri, süet, file...",
+            "required": true
+          },
+          {
+            "name": "soleMaterial",
+            "label": "Taban",
+            "placeholder": "Kauçuk, EVA, ortopedik iç taban..."
+          },
+          {
+            "name": "sizeRange",
+            "label": "Numara aralığı",
+            "placeholder": "36-45",
+            "required": true
+          },
+          {
+            "name": "fit",
+            "label": "Kalıp",
+            "type": "select",
+            "options": [
+              {
+                "value": "normal",
+                "label": "Normal kalıp"
+              },
+              {
+                "value": "dar",
+                "label": "Dar kalıp (bir numara büyük)"
+              },
+              {
+                "value": "genis",
+                "label": "Geniş kalıp"
+              }
+            ]
+          },
+          {
+            "name": "heelHeight",
+            "label": "Topuk / taban yüksekliği",
+            "placeholder": "3 cm"
+          },
+          {
+            "name": "useCase",
+            "label": "Kullanım alanı",
+            "placeholder": "Günlük, koşu, ofis, yürüyüş..."
+          },
+          {
+            "name": "season",
+            "label": "Sezon",
+            "type": "select",
+            "options": [
+              {
+                "value": "summer",
+                "label": "Yaz"
+              },
+              {
+                "value": "winter",
+                "label": "Kış"
+              },
+              {
+                "value": "spring",
+                "label": "Bahar"
+              },
+              {
+                "value": "all",
+                "label": "Dört mevsim"
+              }
+            ]
+          },
+          {
+            "name": "waterproof",
+            "label": "Su geçirmez",
+            "type": "checkbox"
+          }
+        ]
+      },
+      "qualityFields": [
+        [
+          [
+            "material"
+          ],
+          0.12
+        ],
+        [
+          [
+            "soleMaterial"
+          ],
+          0.12
+        ],
+        [
+          [
+            "sizeRange"
+          ],
+          0.08
+        ],
+        [
+          [
+            "fit"
+          ],
+          0.06
+        ],
+        [
+          [
+            "waterproof"
+          ],
+          0.06
+        ],
+        [
+          [
+            "heelHeight",
+            "useCase"
+          ],
+          0.06
+        ]
+      ],
+      "copy": {
+        "recipeTip": "Numara tablosunu, kalıbın dar/geniş olduğunu ve taban malzemesini açıklamanın ilk satırlarına al; yandan ve tabandan görsel ekle.",
+        "marketingAngle": "stil, malzeme kalitesi ve gerçek kullanımda çekilmiş görseller",
+        "descriptionAdvice": "Açıklamaya saya ve taban malzemesini, numara aralığını, kalıbın dar/geniş olduğunu, kullanım alanını ve iade bilgisini ayrı cümlelerle ekle."
       }
     },
     "canta": {
-      "label": "Aksesuar / Çanta",
+      "label": "Çanta ve aksesuar",
+      "icon": "shopping-bag",
+      "keywords": [
+        "çanta",
+        "aksesuar",
+        "sırt çantası",
+        "backpack",
+        "handbag",
+        "valiz",
+        "bavul"
+      ],
+      "traits": [
+        "fashion"
+      ],
+      "trendBoost": 0.12,
       "averagePrice": 900,
       "marketBreadthBase": 62,
       "applicableAudienceFields": [
@@ -1125,43 +490,6 @@
         "targetAudienceFit": 0.05,
         "differentiationScore": 0.03
       },
-      "formFields": [
-        {
-          "key": "material",
-          "type": "text",
-          "label": "Malzeme"
-        },
-        {
-          "key": "dimensions",
-          "type": "text",
-          "label": "Olculer / hacim"
-        },
-        {
-          "key": "compartments",
-          "type": "text",
-          "label": "Bolmeler"
-        },
-        {
-          "key": "strapType",
-          "type": "select",
-          "label": "Aski tipi"
-        },
-        {
-          "key": "useCase",
-          "type": "text",
-          "label": "Kullanim alani"
-        },
-        {
-          "key": "waterproof",
-          "type": "checkbox",
-          "label": "Su gecirmez"
-        },
-        {
-          "key": "colors",
-          "type": "multi",
-          "label": "Renk secenekleri"
-        }
-      ],
       "motivationWeights": {
         "stil_begeni": {
           "priceFit": 0.15,
@@ -1199,10 +527,139 @@
           "targetAudienceFit": 0.04,
           "differentiationScore": 0.02
         }
+      },
+      "terms": [
+        "aski",
+        "bolme",
+        "canta",
+        "cuzdan",
+        "fermuar",
+        "omuz",
+        "sirt",
+        "valiz"
+      ],
+      "importantFields": [
+        "material",
+        "dimensions",
+        "compartments",
+        "strapType",
+        "useCase",
+        "colors"
+      ],
+      "form": {
+        "exampleName": "Su Geçirmez Laptop Sırt Çantası",
+        "descriptionPlaceholder": "Ölçüleri, malzemeyi, bölmeleri, askı tipini ve içine neyin sığdığını (laptop, A4, su şişesi) yazın.",
+        "fields": [
+          {
+            "name": "material",
+            "label": "Malzeme",
+            "placeholder": "Hakiki deri, kanvas, polyester...",
+            "required": true
+          },
+          {
+            "name": "dimensions",
+            "label": "Ölçüler / hacim",
+            "placeholder": "45 x 30 x 15 cm, 20 L",
+            "required": true
+          },
+          {
+            "name": "compartments",
+            "label": "Bölmeler",
+            "placeholder": "Laptop bölmesi, 3 iç cep..."
+          },
+          {
+            "name": "strapType",
+            "label": "Askı tipi",
+            "type": "select",
+            "options": [
+              {
+                "value": "el",
+                "label": "El çantası"
+              },
+              {
+                "value": "omuz",
+                "label": "Omuz askısı"
+              },
+              {
+                "value": "capraz",
+                "label": "Çapraz askı"
+              },
+              {
+                "value": "sirt",
+                "label": "Sırt çantası"
+              }
+            ]
+          },
+          {
+            "name": "colorsText",
+            "label": "Renk seçenekleri",
+            "placeholder": "Siyah, taba, lacivert..."
+          },
+          {
+            "name": "useCase",
+            "label": "Kullanım alanı",
+            "placeholder": "Ofis, okul, seyahat, günlük..."
+          },
+          {
+            "name": "waterproof",
+            "label": "Su geçirmez",
+            "type": "checkbox"
+          }
+        ]
+      },
+      "qualityFields": [
+        [
+          [
+            "material"
+          ],
+          0.14
+        ],
+        [
+          [
+            "dimensions"
+          ],
+          0.12
+        ],
+        [
+          [
+            "compartments"
+          ],
+          0.1
+        ],
+        [
+          [
+            "strapType"
+          ],
+          0.08
+        ],
+        [
+          [
+            "waterproof"
+          ],
+          0.06
+        ],
+        [
+          [
+            "useCase"
+          ],
+          0.04
+        ]
+      ],
+      "copy": {
+        "recipeTip": "Ölçüleri ve neyin sığdığını (laptop, A4, su şişesi) gösteren bir görsel ekle; bölmeleri ve askıyı tek blokta yaz.",
+        "marketingAngle": "stil, malzeme kalitesi ve gerçek kullanımda çekilmiş görseller",
+        "descriptionAdvice": "Açıklamaya ölçüleri, malzemeyi, bölme sayısını, askı tipini ve neyin sığdığını ayrı cümlelerle ekle."
       }
     },
     "kozmetik": {
-      "label": "Bakım / Kozmetik",
+      "label": "Kozmetik ve kişisel bakım",
+      "icon": "sparkles",
+      "keywords": [
+        "kozmetik",
+        "kişisel bakım",
+        "güzellik"
+      ],
+      "traits": [],
       "averagePrice": 450,
       "marketBreadthBase": 70,
       "applicableAudienceFields": [
@@ -1223,38 +680,6 @@
         "targetAudienceFit": 0.06,
         "differentiationScore": 0.02
       },
-      "formFields": [
-        {
-          "key": "brand",
-          "type": "text",
-          "label": "Marka"
-        },
-        {
-          "key": "skinType",
-          "type": "select",
-          "label": "Cilt / sac tipi"
-        },
-        {
-          "key": "ingredients",
-          "type": "text",
-          "label": "One cikan icerikler"
-        },
-        {
-          "key": "volume",
-          "type": "text",
-          "label": "Hacim / gramaj"
-        },
-        {
-          "key": "certifications",
-          "type": "text",
-          "label": "Test ve sertifikalar"
-        },
-        {
-          "key": "useCase",
-          "type": "text",
-          "label": "Kullanim amaci"
-        }
-      ],
       "motivationWeights": {
         "ihtiyac": {
           "priceFit": 0.17,
@@ -1304,7 +729,4988 @@
           "targetAudienceFit": 0.03,
           "differentiationScore": 0.02
         }
+      },
+      "terms": [
+        "cilt",
+        "krem",
+        "makyaj",
+        "ml",
+        "nemlendirici",
+        "parfum",
+        "ruj",
+        "sampuan",
+        "serum",
+        "spf",
+        "vegan"
+      ],
+      "importantFields": [
+        "brand",
+        "skinType",
+        "ingredients",
+        "volume",
+        "certifications",
+        "useCase"
+      ],
+      "form": {
+        "exampleName": "Hyaluronik Asitli Nemlendirici Krem 50 ml",
+        "descriptionPlaceholder": "Öne çıkan içerikleri, cilt/saç tipini, hacmi, kullanım şeklini ve test/sertifika bilgisini yazın.",
+        "fields": [
+          {
+            "name": "brand",
+            "label": "Marka",
+            "placeholder": "Marka ve ürün serisi",
+            "required": true
+          },
+          {
+            "name": "skinType",
+            "label": "Cilt / saç tipi",
+            "type": "select",
+            "options": [
+              {
+                "value": "tum",
+                "label": "Tüm cilt tipleri"
+              },
+              {
+                "value": "kuru",
+                "label": "Kuru"
+              },
+              {
+                "value": "yagli",
+                "label": "Yağlı"
+              },
+              {
+                "value": "karma",
+                "label": "Karma"
+              },
+              {
+                "value": "hassas",
+                "label": "Hassas"
+              }
+            ]
+          },
+          {
+            "name": "ingredients",
+            "label": "Öne çıkan içerikler",
+            "placeholder": "Hyaluronik asit, niasinamid, SPF 50...",
+            "required": true
+          },
+          {
+            "name": "volume",
+            "label": "Hacim / gramaj",
+            "placeholder": "50 ml"
+          },
+          {
+            "name": "certifications",
+            "label": "Test ve sertifikalar",
+            "placeholder": "Dermatolojik test, vegan, cruelty-free..."
+          },
+          {
+            "name": "useCase",
+            "label": "Kullanım amacı",
+            "placeholder": "Günlük nem, akne bakımı, makyaj..."
+          }
+        ]
+      },
+      "qualityFields": [
+        [
+          [
+            "brand"
+          ],
+          0.1
+        ],
+        [
+          [
+            "ingredients"
+          ],
+          0.14
+        ],
+        [
+          [
+            "skinType"
+          ],
+          0.1
+        ],
+        [
+          [
+            "volume"
+          ],
+          0.08
+        ],
+        [
+          [
+            "certifications"
+          ],
+          0.12
+        ]
+      ],
+      "copy": {
+        "recipeTip": "İçerik listesini, cilt tipi uyumunu ve hacmi ilk satırlara al; dermatolojik test veya sertifika varsa ilk görselde göster.",
+        "marketingAngle": "içerik şeffaflığı, cilt tipi uyumu ve gerçek kullanıcı yorumları",
+        "descriptionAdvice": "Açıklamaya öne çıkan içerikleri, cilt/saç tipini, hacmi, kullanım şeklini ve test/sertifika bilgisini ayrı cümlelerle ekle."
       }
+    },
+    "telefon_tablet": {
+      "label": "Telefon ve tablet",
+      "icon": "smartphone",
+      "keywords": [
+        "cep telefonu",
+        "akıllı telefon",
+        "telefon"
+      ],
+      "traits": [
+        "tech"
+      ],
+      "trendBoost": 0,
+      "averagePrice": 15000,
+      "marketBreadthBase": 62,
+      "applicableAudienceFields": [
+        "incomeLevel"
+      ],
+      "defaultMotivation": "ihtiyac",
+      "defaultWeights": {
+        "priceFit": 0.17,
+        "qualityScore": 0.24,
+        "trendFit": 0.06,
+        "brandTrust": 0.11,
+        "descriptionCompleteness": 0.15,
+        "visualAppeal": 0.05,
+        "seasonFit": 0,
+        "shippingReturnScore": 0.12,
+        "targetAudienceFit": 0.08,
+        "differentiationScore": 0.02
+      },
+      "motivationWeights": {
+        "ihtiyac": {
+          "priceFit": 0.18,
+          "qualityScore": 0.22,
+          "trendFit": 0.04,
+          "brandTrust": 0.1,
+          "descriptionCompleteness": 0.16,
+          "visualAppeal": 0.04,
+          "seasonFit": 0,
+          "shippingReturnScore": 0.13,
+          "targetAudienceFit": 0.1,
+          "differentiationScore": 0.03
+        },
+        "trend": {
+          "priceFit": 0.14,
+          "qualityScore": 0.2,
+          "trendFit": 0.14,
+          "brandTrust": 0.1,
+          "descriptionCompleteness": 0.13,
+          "visualAppeal": 0.1,
+          "seasonFit": 0,
+          "shippingReturnScore": 0.09,
+          "targetAudienceFit": 0.07,
+          "differentiationScore": 0.03
+        },
+        "profesyonel_kullanim": {
+          "priceFit": 0.12,
+          "qualityScore": 0.27,
+          "trendFit": 0.03,
+          "brandTrust": 0.12,
+          "descriptionCompleteness": 0.2,
+          "visualAppeal": 0.03,
+          "seasonFit": 0,
+          "shippingReturnScore": 0.1,
+          "targetAudienceFit": 0.1,
+          "differentiationScore": 0.03
+        }
+      },
+      "terms": [
+        "5g",
+        "batarya",
+        "ekran",
+        "gb",
+        "hz",
+        "islemci",
+        "kamera",
+        "ram",
+        "telefon"
+      ],
+      "importantFields": [
+        "brand",
+        "ram",
+        "storage",
+        "processor",
+        "camera",
+        "battery",
+        "screenSize",
+        "refreshRate"
+      ],
+      "qualityFields": [
+        [
+          [
+            "brand"
+          ],
+          0.08
+        ],
+        [
+          [
+            "ram"
+          ],
+          0.1
+        ],
+        [
+          [
+            "storage"
+          ],
+          0.1
+        ],
+        [
+          [
+            "processor"
+          ],
+          0.1
+        ],
+        [
+          [
+            "battery"
+          ],
+          0.07
+        ],
+        [
+          [
+            "screenSize"
+          ],
+          0.08
+        ]
+      ],
+      "form": {
+        "exampleName": "128 GB 5G Akıllı Telefon",
+        "descriptionPlaceholder": "Marka/model, RAM, depolama, kamera, batarya, ekran ve garanti durumunu yazın.",
+        "fields": [
+          {
+            "name": "brand",
+            "label": "Marka / model",
+            "placeholder": "Marka ve model",
+            "required": true
+          },
+          {
+            "name": "ram",
+            "label": "RAM",
+            "placeholder": "8 GB",
+            "required": true
+          },
+          {
+            "name": "storage",
+            "label": "Depolama",
+            "placeholder": "128 GB",
+            "required": true
+          },
+          {
+            "name": "processor",
+            "label": "İşlemci",
+            "placeholder": "Snapdragon / A serisi..."
+          },
+          {
+            "name": "camera",
+            "label": "Kamera",
+            "placeholder": "50 MP OIS, 4K video..."
+          },
+          {
+            "name": "battery",
+            "label": "Batarya",
+            "placeholder": "5000 mAh"
+          },
+          {
+            "name": "screenSize",
+            "label": "Ekran",
+            "placeholder": "6.5 inch AMOLED"
+          },
+          {
+            "name": "refreshRate",
+            "label": "Yenileme hızı",
+            "placeholder": "120 Hz"
+          }
+        ]
+      },
+      "copy": {
+        "recipeTip": "Teknik özellikleri karşılaştırılabilir yaz: model, kapasite, pil, ekran ve garanti aynı blokta dursun.",
+        "marketingAngle": "teknik kanıt + güven + karşılaştırma",
+        "descriptionAdvice": "Açıklamaya model, kapasite, pil/ekran, garanti-fatura ve kimler için uygun olduğunu tablo gibi okunacak netlikte ekle.",
+        "seasonAdvice": "Teknoloji ürünlerinde sezon etkisi düşük; okul dönemi, yılbaşı, maaş haftası ve kampanya dönemleri ayrı test edilmeli."
+      }
+    },
+    "bilgisayar": {
+      "label": "Bilgisayar",
+      "icon": "laptop",
+      "keywords": [
+        "bilgisayar",
+        "computer",
+        "pc"
+      ],
+      "traits": [
+        "tech"
+      ],
+      "trendBoost": 0,
+      "averagePrice": 20000,
+      "marketBreadthBase": 54,
+      "applicableAudienceFields": [
+        "incomeLevel"
+      ],
+      "defaultMotivation": "profesyonel_kullanim",
+      "defaultWeights": {
+        "priceFit": 0.15,
+        "qualityScore": 0.27,
+        "trendFit": 0.04,
+        "brandTrust": 0.1,
+        "descriptionCompleteness": 0.18,
+        "visualAppeal": 0.03,
+        "seasonFit": 0,
+        "shippingReturnScore": 0.1,
+        "targetAudienceFit": 0.1,
+        "differentiationScore": 0.03
+      },
+      "motivationWeights": {
+        "profesyonel_kullanim": {
+          "priceFit": 0.12,
+          "qualityScore": 0.3,
+          "trendFit": 0.03,
+          "brandTrust": 0.1,
+          "descriptionCompleteness": 0.2,
+          "visualAppeal": 0.02,
+          "seasonFit": 0,
+          "shippingReturnScore": 0.1,
+          "targetAudienceFit": 0.1,
+          "differentiationScore": 0.03
+        },
+        "ihtiyac": {
+          "priceFit": 0.18,
+          "qualityScore": 0.23,
+          "trendFit": 0.04,
+          "brandTrust": 0.1,
+          "descriptionCompleteness": 0.17,
+          "visualAppeal": 0.03,
+          "seasonFit": 0,
+          "shippingReturnScore": 0.12,
+          "targetAudienceFit": 0.1,
+          "differentiationScore": 0.03
+        }
+      },
+      "terms": [
+        "batarya",
+        "ekran",
+        "gpu",
+        "islemci",
+        "kg",
+        "laptop",
+        "notebook",
+        "ram",
+        "ssd"
+      ],
+      "importantFields": [
+        "brand",
+        "processor",
+        "ram",
+        "storage",
+        "gpu",
+        "screenSize",
+        "battery",
+        "weight",
+        "useCase"
+      ],
+      "qualityFields": [
+        [
+          [
+            "brand"
+          ],
+          0.08
+        ],
+        [
+          [
+            "ram"
+          ],
+          0.1
+        ],
+        [
+          [
+            "storage"
+          ],
+          0.1
+        ],
+        [
+          [
+            "processor"
+          ],
+          0.1
+        ],
+        [
+          [
+            "battery"
+          ],
+          0.07
+        ],
+        [
+          [
+            "screenSize"
+          ],
+          0.08
+        ],
+        [
+          [
+            "gpu"
+          ],
+          0.08
+        ]
+      ],
+      "form": {
+        "exampleName": "16 GB RAM İş Laptopu",
+        "descriptionPlaceholder": "İşlemci, RAM, depolama, ekran, GPU, batarya, ağırlık ve hangi iş için uygun olduğunu yazın.",
+        "fields": [
+          {
+            "name": "brand",
+            "label": "Marka / model",
+            "placeholder": "Marka ve model",
+            "required": true
+          },
+          {
+            "name": "processor",
+            "label": "İşlemci",
+            "placeholder": "i5, Ryzen 7, M serisi...",
+            "required": true
+          },
+          {
+            "name": "ram",
+            "label": "RAM",
+            "placeholder": "16 GB",
+            "required": true
+          },
+          {
+            "name": "storage",
+            "label": "Depolama",
+            "placeholder": "512 GB SSD",
+            "required": true
+          },
+          {
+            "name": "gpu",
+            "label": "Ekran kartı",
+            "placeholder": "RTX 4050, entegre..."
+          },
+          {
+            "name": "screenSize",
+            "label": "Ekran",
+            "placeholder": "14 inch IPS, 2K..."
+          },
+          {
+            "name": "battery",
+            "label": "Batarya / süre",
+            "placeholder": "8 saat, 60 Wh..."
+          },
+          {
+            "name": "weight",
+            "label": "Ağırlık",
+            "placeholder": "1.4 kg"
+          },
+          {
+            "name": "useCase",
+            "label": "Kullanım amacı",
+            "placeholder": "Ofis, yazılım, oyun, tasarım..."
+          }
+        ]
+      },
+      "copy": {
+        "recipeTip": "Teknik özellikleri karşılaştırılabilir yaz: model, kapasite, pil, ekran ve garanti aynı blokta dursun.",
+        "marketingAngle": "teknik kanıt + güven + karşılaştırma",
+        "descriptionAdvice": "Açıklamaya model, kapasite, pil/ekran, garanti-fatura ve kimler için uygun olduğunu tablo gibi okunacak netlikte ekle.",
+        "seasonAdvice": "Teknoloji ürünlerinde sezon etkisi düşük; okul dönemi, yılbaşı, maaş haftası ve kampanya dönemleri ayrı test edilmeli."
+      }
+    },
+    "ses_giyilebilir": {
+      "label": "Ses ve giyilebilir",
+      "icon": "headphones",
+      "keywords": [
+        "giyilebilir teknoloji",
+        "ses sistemi"
+      ],
+      "traits": [
+        "tech"
+      ],
+      "trendBoost": 0.06,
+      "averagePrice": 3000,
+      "marketBreadthBase": 60,
+      "applicableAudienceFields": [
+        "incomeLevel"
+      ],
+      "defaultMotivation": "ihtiyac",
+      "defaultWeights": {
+        "priceFit": 0.17,
+        "qualityScore": 0.2,
+        "trendFit": 0.08,
+        "brandTrust": 0.09,
+        "descriptionCompleteness": 0.15,
+        "visualAppeal": 0.08,
+        "seasonFit": 0,
+        "shippingReturnScore": 0.1,
+        "targetAudienceFit": 0.1,
+        "differentiationScore": 0.03
+      },
+      "motivationWeights": {
+        "ihtiyac": {
+          "priceFit": 0.18,
+          "qualityScore": 0.21,
+          "trendFit": 0.06,
+          "brandTrust": 0.09,
+          "descriptionCompleteness": 0.16,
+          "visualAppeal": 0.07,
+          "seasonFit": 0,
+          "shippingReturnScore": 0.1,
+          "targetAudienceFit": 0.1,
+          "differentiationScore": 0.03
+        },
+        "trend": {
+          "priceFit": 0.14,
+          "qualityScore": 0.18,
+          "trendFit": 0.16,
+          "brandTrust": 0.08,
+          "descriptionCompleteness": 0.12,
+          "visualAppeal": 0.14,
+          "seasonFit": 0,
+          "shippingReturnScore": 0.08,
+          "targetAudienceFit": 0.07,
+          "differentiationScore": 0.03
+        }
+      },
+      "terms": [
+        "anc",
+        "bluetooth",
+        "gecikme",
+        "kablolu",
+        "kulaklik",
+        "mikrofon",
+        "pil",
+        "saat"
+      ],
+      "importantFields": [
+        "brand",
+        "connectionType",
+        "battery",
+        "noiseCancellation",
+        "microphone",
+        "waterResistance",
+        "latency",
+        "useCase"
+      ],
+      "qualityFields": [
+        [
+          [
+            "brand"
+          ],
+          0.07
+        ],
+        [
+          [
+            "connectionType"
+          ],
+          0.12
+        ],
+        [
+          [
+            "battery"
+          ],
+          0.12
+        ],
+        [
+          [
+            "noiseCancellation"
+          ],
+          0.1
+        ],
+        [
+          [
+            "microphone"
+          ],
+          0.08
+        ],
+        [
+          [
+            "waterResistance"
+          ],
+          0.06
+        ],
+        [
+          [
+            "latency"
+          ],
+          0.06
+        ]
+      ],
+      "form": {
+        "exampleName": "ANC Bluetooth Kulaklık",
+        "descriptionPlaceholder": "Bağlantı tipi, pil, ANC, mikrofon, su dayanımı, gecikme ve kullanım alanını yazın.",
+        "fields": [
+          {
+            "name": "brand",
+            "label": "Marka / model",
+            "placeholder": "Marka ve model"
+          },
+          {
+            "name": "connectionType",
+            "label": "Bağlantı",
+            "type": "select",
+            "options": [
+              {
+                "value": "bluetooth",
+                "label": "Bluetooth"
+              },
+              {
+                "value": "kablolu",
+                "label": "Kablolu"
+              },
+              {
+                "value": "dongle",
+                "label": "2.4 GHz dongle"
+              }
+            ]
+          },
+          {
+            "name": "battery",
+            "label": "Pil süresi",
+            "placeholder": "30 saat"
+          },
+          {
+            "name": "noiseCancellation",
+            "label": "Aktif gürültü engelleme",
+            "type": "checkbox"
+          },
+          {
+            "name": "microphone",
+            "label": "Mikrofon kalitesi",
+            "placeholder": "ENC, çift mikrofon..."
+          },
+          {
+            "name": "waterResistance",
+            "label": "Su/ter dayanımı",
+            "placeholder": "IPX4, IP54..."
+          },
+          {
+            "name": "latency",
+            "label": "Gecikme",
+            "placeholder": "45 ms, düşük gecikme modu..."
+          },
+          {
+            "name": "useCase",
+            "label": "Kullanım amacı",
+            "placeholder": "Müzik, oyun, toplantı, spor..."
+          }
+        ]
+      },
+      "copy": {
+        "recipeTip": "Teknik özellikleri karşılaştırılabilir yaz: model, kapasite, pil, ekran ve garanti aynı blokta dursun.",
+        "marketingAngle": "teknik kanıt + güven + karşılaştırma",
+        "descriptionAdvice": "Açıklamaya model, kapasite, pil/ekran, garanti-fatura ve kimler için uygun olduğunu tablo gibi okunacak netlikte ekle.",
+        "seasonAdvice": "Teknoloji ürünlerinde sezon etkisi düşük; okul dönemi, yılbaşı, maaş haftası ve kampanya dönemleri ayrı test edilmeli."
+      }
+    },
+    "elektronik_aksesuar": {
+      "label": "Elektronik aksesuar",
+      "icon": "plug",
+      "keywords": [
+        "elektronik aksesuar",
+        "telefon aksesuarı",
+        "kordon",
+        "tutucu",
+        "hafıza kartı",
+        "usb bellek"
+      ],
+      "traits": [],
+      "trendBoost": 0,
+      "averagePrice": 400,
+      "marketBreadthBase": 66,
+      "applicableAudienceFields": [
+        "incomeLevel"
+      ],
+      "defaultMotivation": "ihtiyac",
+      "defaultWeights": {
+        "priceFit": 0.22,
+        "qualityScore": 0.14,
+        "trendFit": 0.04,
+        "brandTrust": 0.08,
+        "descriptionCompleteness": 0.14,
+        "visualAppeal": 0.08,
+        "seasonFit": 0.02,
+        "shippingReturnScore": 0.16,
+        "targetAudienceFit": 0.06,
+        "differentiationScore": 0.06
+      },
+      "terms": [
+        "kilif",
+        "sarj",
+        "kablo",
+        "usb",
+        "adaptor",
+        "mah",
+        "powerbank"
+      ],
+      "importantFields": [
+        "compatibleModel",
+        "material",
+        "power",
+        "connectionType"
+      ],
+      "qualityFields": [
+        [
+          [
+            "brand"
+          ],
+          0.08
+        ],
+        [
+          [
+            "compatibleModel"
+          ],
+          0.16
+        ],
+        [
+          [
+            "material"
+          ],
+          0.1
+        ],
+        [
+          [
+            "power"
+          ],
+          0.1
+        ],
+        [
+          [
+            "connectionType"
+          ],
+          0.08
+        ],
+        [
+          [
+            "battery"
+          ],
+          0.08
+        ]
+      ],
+      "form": {
+        "exampleName": "iPhone 15 Uyumlu Şeffaf Silikon Kılıf",
+        "descriptionPlaceholder": "Hangi modellerle uyumlu olduğunu, malzemeyi, gücü/kapasiteyi ve kutu içeriğini yazın.",
+        "fields": [
+          {
+            "name": "brand",
+            "label": "Marka"
+          },
+          {
+            "name": "compatibleModel",
+            "label": "Uyumlu model",
+            "placeholder": "iPhone 15, Galaxy S24…",
+            "required": true
+          },
+          {
+            "name": "material",
+            "label": "Malzeme",
+            "placeholder": "Silikon, TPU, alüminyum…"
+          },
+          {
+            "name": "power",
+            "label": "Güç (W)",
+            "placeholder": "20 W"
+          },
+          {
+            "name": "connectionType",
+            "label": "Bağlantı / giriş",
+            "placeholder": "USB-C, Lightning…"
+          },
+          {
+            "name": "useCase",
+            "label": "Kullanım",
+            "placeholder": "Günlük, araç, seyahat"
+          }
+        ]
+      },
+      "copy": {
+        "recipeTip": "Uyumlu modelleri başlıkta ve ilk görselde açıkça yaz; yanlış model iadesi bu kategoride en sık sorun.",
+        "marketingAngle": "uyumluluk, dayanıklılık ve hızlı teslimat",
+        "descriptionAdvice": "Açıklamaya uyumlu modelleri tek tek, malzemeyi, güç/kapasite değerlerini ve kutu içeriğini ayrı satırlarda ekle."
+      }
+    },
+    "kucuk_ev_aletleri": {
+      "label": "Küçük ev aletleri",
+      "icon": "plug-zap",
+      "keywords": [
+        "küçük ev aleti",
+        "ev aletleri",
+        "su ısıtıcı",
+        "kettle",
+        "tost makinesi",
+        "çay makinesi"
+      ],
+      "traits": [],
+      "trendBoost": 0,
+      "averagePrice": 3500,
+      "marketBreadthBase": 60,
+      "applicableAudienceFields": [
+        "ageRange",
+        "incomeLevel"
+      ],
+      "defaultMotivation": "ihtiyac",
+      "defaultWeights": {
+        "priceFit": 0.18,
+        "qualityScore": 0.18,
+        "trendFit": 0.04,
+        "brandTrust": 0.16,
+        "descriptionCompleteness": 0.14,
+        "visualAppeal": 0.08,
+        "seasonFit": 0.02,
+        "shippingReturnScore": 0.12,
+        "targetAudienceFit": 0.04,
+        "differentiationScore": 0.04
+      },
+      "terms": [
+        "watt",
+        "hazne",
+        "motor",
+        "elektrikli",
+        "devir",
+        "programli"
+      ],
+      "importantFields": [
+        "brand",
+        "power",
+        "volume",
+        "material",
+        "dimensions"
+      ],
+      "qualityFields": [
+        [
+          [
+            "brand"
+          ],
+          0.12
+        ],
+        [
+          [
+            "power"
+          ],
+          0.12
+        ],
+        [
+          [
+            "volume"
+          ],
+          0.08
+        ],
+        [
+          [
+            "material"
+          ],
+          0.08
+        ],
+        [
+          [
+            "dimensions"
+          ],
+          0.06
+        ],
+        [
+          [
+            "useCase"
+          ],
+          0.04
+        ]
+      ],
+      "form": {
+        "exampleName": "5,5 L Yağsız Airfryer",
+        "descriptionPlaceholder": "Güç, kapasite, hazne malzemesi, programlar, temizlik kolaylığı ve garantiyi yazın.",
+        "fields": [
+          {
+            "name": "brand",
+            "label": "Marka / model",
+            "required": true
+          },
+          {
+            "name": "power",
+            "label": "Güç (W)",
+            "placeholder": "1700 W",
+            "required": true
+          },
+          {
+            "name": "volume",
+            "label": "Kapasite / hazne",
+            "placeholder": "5,5 L"
+          },
+          {
+            "name": "material",
+            "label": "Malzeme",
+            "placeholder": "Paslanmaz çelik, yapışmaz kaplama…"
+          },
+          {
+            "name": "dimensions",
+            "label": "Ölçü",
+            "placeholder": "30 x 35 x 32 cm"
+          },
+          {
+            "name": "useCase",
+            "label": "Kullanım",
+            "placeholder": "Kızartma, fırın, ızgara…"
+          }
+        ]
+      },
+      "copy": {
+        "recipeTip": "Gücü, kapasiteyi ve garanti süresini ilk görselde göster; kullanımını gösteren kısa bir video ekle.",
+        "marketingAngle": "zaman kazancı, dayanıklılık ve garanti güvencesi",
+        "descriptionAdvice": "Açıklamaya güç (W), kapasite, malzeme, programlar, temizlik kolaylığı, garanti süresi ve servis bilgisini ayrı cümlelerle ekle."
+      }
+    },
+    "ev_yasam": {
+      "label": "Ev ve yaşam",
+      "icon": "lamp",
+      "keywords": [
+        "ev dekorasyon",
+        "ev yaşam",
+        "ev & yaşam",
+        "mutfak"
+      ],
+      "traits": [],
+      "trendBoost": 0,
+      "averagePrice": 800,
+      "marketBreadthBase": 64,
+      "applicableAudienceFields": [
+        "ageRange",
+        "incomeLevel"
+      ],
+      "defaultMotivation": "stil_begeni",
+      "defaultWeights": {
+        "priceFit": 0.17,
+        "qualityScore": 0.15,
+        "trendFit": 0.1,
+        "brandTrust": 0.05,
+        "descriptionCompleteness": 0.12,
+        "visualAppeal": 0.18,
+        "seasonFit": 0.04,
+        "shippingReturnScore": 0.11,
+        "targetAudienceFit": 0.04,
+        "differentiationScore": 0.04
+      },
+      "terms": [
+        "dekor",
+        "dekoratif",
+        "salon",
+        "mutfak",
+        "mobilya",
+        "yatak odasi"
+      ],
+      "importantFields": [
+        "material",
+        "dimensions",
+        "colors",
+        "style"
+      ],
+      "qualityFields": [
+        [
+          [
+            "material"
+          ],
+          0.14
+        ],
+        [
+          [
+            "dimensions"
+          ],
+          0.12
+        ],
+        [
+          [
+            "style"
+          ],
+          0.06
+        ],
+        [
+          [
+            "colors"
+          ],
+          0.06
+        ],
+        [
+          [
+            "useCase"
+          ],
+          0.04
+        ]
+      ],
+      "form": {
+        "exampleName": "Seramik El Yapımı Vazo 30 cm",
+        "descriptionPlaceholder": "Malzeme, ölçü, renk, stil, bakım/temizlik ve hangi mekâna uygun olduğunu yazın.",
+        "fields": [
+          {
+            "name": "material",
+            "label": "Malzeme",
+            "placeholder": "Seramik, ahşap, pamuk…",
+            "required": true
+          },
+          {
+            "name": "dimensions",
+            "label": "Ölçü",
+            "placeholder": "30 x 15 cm",
+            "required": true
+          },
+          {
+            "name": "colorsText",
+            "label": "Renk seçenekleri",
+            "placeholder": "Beyaz, antrasit…"
+          },
+          {
+            "name": "style",
+            "label": "Stil",
+            "placeholder": "Modern, bohem, minimal…"
+          },
+          {
+            "name": "useCase",
+            "label": "Kullanım alanı",
+            "placeholder": "Salon, mutfak, yatak odası…"
+          }
+        ]
+      },
+      "copy": {
+        "recipeTip": "Ürünü gerçek bir mekânda ve ölçü referansıyla göster; ölçüleri ilk satıra yaz.",
+        "marketingAngle": "mekân görselleri, ölçü netliği ve stil uyumu",
+        "descriptionAdvice": "Açıklamaya malzemeyi, ölçüleri, renk seçeneklerini, bakım/temizlik bilgisini ve uygun olduğu mekânı ayrı cümlelerle ekle."
+      }
+    },
+    "anne_bebek": {
+      "label": "Anne, bebek ve oyuncak",
+      "icon": "baby",
+      "keywords": [
+        "anne bebek",
+        "anne & bebek",
+        "bebek",
+        "çocuk"
+      ],
+      "traits": [],
+      "trendBoost": 0,
+      "averagePrice": 1000,
+      "marketBreadthBase": 52,
+      "applicableAudienceFields": [
+        "ageRange",
+        "gender",
+        "incomeLevel"
+      ],
+      "defaultMotivation": "ihtiyac",
+      "defaultWeights": {
+        "priceFit": 0.14,
+        "qualityScore": 0.18,
+        "trendFit": 0.06,
+        "brandTrust": 0.16,
+        "descriptionCompleteness": 0.14,
+        "visualAppeal": 0.1,
+        "seasonFit": 0.02,
+        "shippingReturnScore": 0.1,
+        "targetAudienceFit": 0.06,
+        "differentiationScore": 0.04
+      },
+      "terms": [
+        "bebek",
+        "cocuk",
+        "bpa",
+        "oyuncak",
+        "emzik",
+        "biberon"
+      ],
+      "importantFields": [
+        "ageGroup",
+        "material",
+        "certifications",
+        "brand"
+      ],
+      "qualityFields": [
+        [
+          [
+            "brand"
+          ],
+          0.1
+        ],
+        [
+          [
+            "ageGroup"
+          ],
+          0.1
+        ],
+        [
+          [
+            "material"
+          ],
+          0.1
+        ],
+        [
+          [
+            "certifications"
+          ],
+          0.16
+        ],
+        [
+          [
+            "useCase"
+          ],
+          0.04
+        ]
+      ],
+      "form": {
+        "exampleName": "BPA İçermeyen Silikon Biberon 250 ml",
+        "descriptionPlaceholder": "Yaş grubu, malzeme, güvenlik sertifikaları, temizlik ve kullanım şeklini yazın.",
+        "fields": [
+          {
+            "name": "brand",
+            "label": "Marka"
+          },
+          {
+            "name": "ageGroup",
+            "label": "Yaş grubu",
+            "placeholder": "0-6 ay, 3+ yaş…",
+            "required": true
+          },
+          {
+            "name": "material",
+            "label": "Malzeme",
+            "placeholder": "Silikon, organik pamuk, ahşap…"
+          },
+          {
+            "name": "certifications",
+            "label": "Güvenlik ve sertifikalar",
+            "placeholder": "CE, BPA içermez, TSE…"
+          },
+          {
+            "name": "useCase",
+            "label": "Kullanım",
+            "placeholder": "Beslenme, uyku, oyun…"
+          }
+        ]
+      },
+      "copy": {
+        "recipeTip": "Yaş grubunu ve güvenlik sertifikalarını başlıkta ve ilk görselde göster; ebeveynlerin ilk baktığı şey güvenlik.",
+        "marketingAngle": "güvenlik, sertifika ve ebeveyn yorumları",
+        "descriptionAdvice": "Açıklamaya yaş grubunu, malzemeyi, güvenlik sertifikalarını, temizlik şeklini ve kutu içeriğini ayrı cümlelerle ekle."
+      }
+    },
+    "spor_outdoor": {
+      "label": "Spor ve outdoor",
+      "icon": "dumbbell",
+      "keywords": [
+        "spor",
+        "outdoor",
+        "fitness",
+        "kamp"
+      ],
+      "traits": [],
+      "trendBoost": 0,
+      "averagePrice": 1500,
+      "marketBreadthBase": 56,
+      "applicableAudienceFields": [
+        "ageRange",
+        "gender",
+        "incomeLevel"
+      ],
+      "defaultMotivation": "ihtiyac",
+      "defaultWeights": {
+        "priceFit": 0.16,
+        "qualityScore": 0.18,
+        "trendFit": 0.08,
+        "brandTrust": 0.1,
+        "descriptionCompleteness": 0.14,
+        "visualAppeal": 0.1,
+        "seasonFit": 0.08,
+        "shippingReturnScore": 0.08,
+        "targetAudienceFit": 0.05,
+        "differentiationScore": 0.03
+      },
+      "terms": [
+        "antrenman",
+        "kamp",
+        "outdoor",
+        "fitness",
+        "egzersiz",
+        "spor salonu"
+      ],
+      "importantFields": [
+        "material",
+        "dimensions",
+        "weight",
+        "useCase"
+      ],
+      "qualityFields": [
+        [
+          [
+            "brand"
+          ],
+          0.08
+        ],
+        [
+          [
+            "material"
+          ],
+          0.12
+        ],
+        [
+          [
+            "dimensions"
+          ],
+          0.08
+        ],
+        [
+          [
+            "weight"
+          ],
+          0.06
+        ],
+        [
+          [
+            "useCase"
+          ],
+          0.08
+        ],
+        [
+          [
+            "waterproof"
+          ],
+          0.05
+        ]
+      ],
+      "form": {
+        "exampleName": "Kaymaz 6 mm Yoga Matı",
+        "descriptionPlaceholder": "Malzeme, ölçü, ağırlık, dayanıklılık, kullanım alanı ve kimler için uygun olduğunu yazın.",
+        "fields": [
+          {
+            "name": "brand",
+            "label": "Marka"
+          },
+          {
+            "name": "material",
+            "label": "Malzeme",
+            "placeholder": "TPE, alüminyum, naylon…"
+          },
+          {
+            "name": "dimensions",
+            "label": "Ölçü",
+            "placeholder": "183 x 61 cm"
+          },
+          {
+            "name": "weight",
+            "label": "Ağırlık",
+            "placeholder": "1,2 kg"
+          },
+          {
+            "name": "useCase",
+            "label": "Kullanım",
+            "placeholder": "Yoga, kamp, koşu…",
+            "required": true
+          },
+          {
+            "name": "waterproof",
+            "label": "Su geçirmez",
+            "type": "checkbox"
+          }
+        ]
+      },
+      "copy": {
+        "recipeTip": "Ürünü kullanım anında gösteren görsel ekle; ölçü, ağırlık ve dayanıklılığı tek blokta yaz.",
+        "marketingAngle": "performans, dayanıklılık ve gerçek kullanım görselleri",
+        "descriptionAdvice": "Açıklamaya malzemeyi, ölçüyü, ağırlığı, dayanıklılığı, kullanım alanını ve kimler için uygun olduğunu ayrı cümlelerle ekle."
+      }
+    },
+    "diger": {
+      "label": "Diğer",
+      "icon": "package",
+      "keywords": [],
+      "traits": [],
+      "trendBoost": 0,
+      "averagePrice": null,
+      "marketBreadthBase": 58,
+      "applicableAudienceFields": [
+        "ageRange",
+        "gender",
+        "incomeLevel"
+      ],
+      "defaultMotivation": "ihtiyac",
+      "defaultWeights": {
+        "priceFit": 0.18,
+        "qualityScore": 0.15,
+        "trendFit": 0.08,
+        "brandTrust": 0.1,
+        "descriptionCompleteness": 0.14,
+        "visualAppeal": 0.12,
+        "seasonFit": 0.03,
+        "shippingReturnScore": 0.12,
+        "targetAudienceFit": 0.05,
+        "differentiationScore": 0.03
+      },
+      "terms": [],
+      "importantFields": [
+        "brand",
+        "material",
+        "dimensions",
+        "useCase"
+      ],
+      "qualityFields": [
+        [
+          [
+            "material"
+          ],
+          0.1
+        ],
+        [
+          [
+            "dimensions"
+          ],
+          0.08
+        ],
+        [
+          [
+            "brand"
+          ],
+          0.06
+        ],
+        [
+          [
+            "useCase"
+          ],
+          0.04
+        ]
+      ],
+      "form": {
+        "exampleName": "Ürününüzün adı",
+        "descriptionPlaceholder": "Ürünün ne işe yaradığını, malzemesini, ölçüsünü, kimler için olduğunu ve kutu içeriğini yazın.",
+        "fields": [
+          {
+            "name": "brand",
+            "label": "Marka"
+          },
+          {
+            "name": "material",
+            "label": "Malzeme"
+          },
+          {
+            "name": "dimensions",
+            "label": "Ölçü / boyut"
+          },
+          {
+            "name": "useCase",
+            "label": "Kullanım alanı",
+            "required": true
+          }
+        ]
+      },
+      "copy": {
+        "recipeTip": "Ürünün tek cümlelik faydasını başlığa ve ilk görsele taşı; kullanım anını gösteren bir görsel ekle.",
+        "marketingAngle": "net fayda ve güven",
+        "descriptionAdvice": "Açıklamaya ürünün ne işe yaradığını, malzemesini, ölçüsünü, kimler için uygun olduğunu ve kutu içeriğini ayrı cümlelerle ekle."
+      }
+    }
+  },
+  "categories": {
+    "tisort": {
+      "family": "giyim",
+      "label": "Tişört",
+      "keywords": [
+        "tişört",
+        "t-shirt",
+        "tshirt",
+        "fanila",
+        "polo yaka",
+        "atlet"
+      ],
+      "averagePrice": 450,
+      "marketBreadthBase": 72,
+      "applicableAudienceFields": [
+        "ageRange",
+        "gender",
+        "incomeLevel"
+      ],
+      "defaultMotivation": "stil_begeni",
+      "defaultWeights": {
+        "priceFit": 0.15,
+        "qualityScore": 0.14,
+        "trendFit": 0.16,
+        "brandTrust": 0.05,
+        "descriptionCompleteness": 0.1,
+        "visualAppeal": 0.19,
+        "seasonFit": 0.1,
+        "shippingReturnScore": 0.06,
+        "targetAudienceFit": 0.04,
+        "differentiationScore": 0.01
+      },
+      "motivationWeights": {
+        "stil_begeni": {
+          "priceFit": 0.13,
+          "qualityScore": 0.13,
+          "trendFit": 0.19,
+          "brandTrust": 0.05,
+          "descriptionCompleteness": 0.09,
+          "visualAppeal": 0.22,
+          "seasonFit": 0.09,
+          "shippingReturnScore": 0.06,
+          "targetAudienceFit": 0.03,
+          "differentiationScore": 0.01
+        },
+        "ihtiyac": {
+          "priceFit": 0.2,
+          "qualityScore": 0.17,
+          "trendFit": 0.08,
+          "brandTrust": 0.06,
+          "descriptionCompleteness": 0.14,
+          "visualAppeal": 0.12,
+          "seasonFit": 0.11,
+          "shippingReturnScore": 0.08,
+          "targetAudienceFit": 0.03,
+          "differentiationScore": 0.01
+        },
+        "trend": {
+          "priceFit": 0.11,
+          "qualityScore": 0.12,
+          "trendFit": 0.23,
+          "brandTrust": 0.05,
+          "descriptionCompleteness": 0.08,
+          "visualAppeal": 0.24,
+          "seasonFit": 0.08,
+          "shippingReturnScore": 0.05,
+          "targetAudienceFit": 0.03,
+          "differentiationScore": 0.01
+        }
+      },
+      "terms": [
+        "baski",
+        "beden",
+        "kol",
+        "kumas",
+        "oversize",
+        "pamuk",
+        "tisort",
+        "tshirt",
+        "yaka"
+      ],
+      "importantFields": [
+        "fabric",
+        "fit",
+        "sizeRange",
+        "collarType",
+        "sleeveLength",
+        "printType",
+        "season"
+      ],
+      "form": {
+        "exampleName": "Oversize Pamuklu Baskılı Tişört",
+        "descriptionPlaceholder": "Kumaş, kalıp, yaka tipi, baskı kalitesi, beden aralığı ve kombin/kullanım senaryosunu yazın.",
+        "fields": [
+          {
+            "name": "fabric",
+            "label": "Kumaş içeriği",
+            "placeholder": "%100 pamuk, modal, polyester karışım...",
+            "required": true
+          },
+          {
+            "name": "fit",
+            "label": "Kalıp",
+            "type": "select",
+            "options": [
+              {
+                "value": "regular",
+                "label": "Regular"
+              },
+              {
+                "value": "oversize",
+                "label": "Oversize"
+              },
+              {
+                "value": "slim",
+                "label": "Slim"
+              }
+            ]
+          },
+          {
+            "name": "sizeRange",
+            "label": "Beden aralığı",
+            "placeholder": "XS-XXL",
+            "required": true
+          },
+          {
+            "name": "collarType",
+            "label": "Yaka tipi",
+            "type": "select",
+            "options": [
+              {
+                "value": "bisiklet",
+                "label": "Bisiklet yaka"
+              },
+              {
+                "value": "v_yaka",
+                "label": "V yaka"
+              },
+              {
+                "value": "polo",
+                "label": "Polo yaka"
+              }
+            ]
+          },
+          {
+            "name": "sleeveLength",
+            "label": "Kol tipi",
+            "type": "select",
+            "options": [
+              {
+                "value": "kisa",
+                "label": "Kısa kol"
+              },
+              {
+                "value": "uzun",
+                "label": "Uzun kol"
+              }
+            ]
+          },
+          {
+            "name": "printType",
+            "label": "Baskı / desen",
+            "placeholder": "Nakış, dijital baskı, düz renk..."
+          },
+          {
+            "name": "colorsText",
+            "label": "Renk seçenekleri",
+            "placeholder": "Siyah, beyaz, lacivert..."
+          },
+          {
+            "name": "season",
+            "label": "Sezon",
+            "type": "select",
+            "options": [
+              {
+                "value": "summer",
+                "label": "Yaz"
+              },
+              {
+                "value": "winter",
+                "label": "Kış"
+              },
+              {
+                "value": "spring",
+                "label": "Bahar"
+              },
+              {
+                "value": "all",
+                "label": "Dört mevsim"
+              }
+            ]
+          }
+        ]
+      },
+      "qualityFields": [
+        [
+          [
+            "fabric"
+          ],
+          0.14
+        ],
+        [
+          [
+            "fit"
+          ],
+          0.08
+        ],
+        [
+          [
+            "sizeRange"
+          ],
+          0.08
+        ],
+        [
+          [
+            "season"
+          ],
+          0.06
+        ],
+        [
+          [
+            "printType",
+            "collarType",
+            "waistType",
+            "legType",
+            "useCase"
+          ],
+          0.06
+        ],
+        [
+          [
+            "stretch"
+          ],
+          0.05
+        ]
+      ],
+      "seasonPeak": {
+        "seasons": [
+          "summer",
+          "yaz"
+        ],
+        "score": 0.88
+      }
+    },
+    "gomlek": {
+      "family": "giyim",
+      "label": "Gömlek",
+      "keywords": [
+        "gömlek",
+        "bluz",
+        "shirt"
+      ],
+      "averagePrice": 700,
+      "terms": [
+        "bluz",
+        "gömlek",
+        "shirt"
+      ]
+    },
+    "kazak": {
+      "family": "giyim",
+      "label": "Kazak ve sweatshirt",
+      "keywords": [
+        "kazak",
+        "hırka",
+        "süveter",
+        "sweatshirt",
+        "hoodie",
+        "triko",
+        "polar"
+      ],
+      "averagePrice": 850,
+      "seasonPeak": {
+        "seasons": [
+          "winter",
+          "kis"
+        ],
+        "score": 0.88
+      },
+      "terms": [
+        "hoodie",
+        "hırka",
+        "kazak",
+        "polar",
+        "sweatshirt",
+        "süveter",
+        "triko"
+      ]
+    },
+    "pantolon": {
+      "family": "giyim",
+      "label": "Pantolon ve şort",
+      "keywords": [
+        "pantolon",
+        "jean",
+        "denim",
+        "trouser",
+        "şort",
+        "tayt",
+        "jogger"
+      ],
+      "averagePrice": 900,
+      "marketBreadthBase": 66,
+      "applicableAudienceFields": [
+        "ageRange",
+        "gender",
+        "incomeLevel"
+      ],
+      "defaultMotivation": "ihtiyac",
+      "defaultWeights": {
+        "priceFit": 0.17,
+        "qualityScore": 0.17,
+        "trendFit": 0.09,
+        "brandTrust": 0.05,
+        "descriptionCompleteness": 0.14,
+        "visualAppeal": 0.12,
+        "seasonFit": 0.1,
+        "shippingReturnScore": 0.08,
+        "targetAudienceFit": 0.07,
+        "differentiationScore": 0.01
+      },
+      "motivationWeights": {
+        "ihtiyac": {
+          "priceFit": 0.19,
+          "qualityScore": 0.19,
+          "trendFit": 0.06,
+          "brandTrust": 0.06,
+          "descriptionCompleteness": 0.16,
+          "visualAppeal": 0.1,
+          "seasonFit": 0.1,
+          "shippingReturnScore": 0.08,
+          "targetAudienceFit": 0.05,
+          "differentiationScore": 0.01
+        },
+        "stil_begeni": {
+          "priceFit": 0.14,
+          "qualityScore": 0.16,
+          "trendFit": 0.16,
+          "brandTrust": 0.05,
+          "descriptionCompleteness": 0.12,
+          "visualAppeal": 0.18,
+          "seasonFit": 0.09,
+          "shippingReturnScore": 0.06,
+          "targetAudienceFit": 0.03,
+          "differentiationScore": 0.01
+        }
+      },
+      "terms": [
+        "beden",
+        "bel",
+        "denim",
+        "esnek",
+        "fit",
+        "keten",
+        "paca",
+        "pantolon"
+      ],
+      "importantFields": [
+        "fabric",
+        "fit",
+        "waistType",
+        "legType",
+        "sizeRange",
+        "useCase",
+        "season"
+      ],
+      "form": {
+        "exampleName": "Regular Fit Keten Pantolon",
+        "descriptionPlaceholder": "Kumaş, bel tipi, paça formu, esneklik, beden/ölçü ve kullanım alanını yazın.",
+        "fields": [
+          {
+            "name": "fabric",
+            "label": "Kumaş içeriği",
+            "placeholder": "Denim, keten, gabardin...",
+            "required": true
+          },
+          {
+            "name": "fit",
+            "label": "Kalıp",
+            "type": "select",
+            "options": [
+              {
+                "value": "regular",
+                "label": "Regular"
+              },
+              {
+                "value": "slim",
+                "label": "Slim"
+              },
+              {
+                "value": "wide",
+                "label": "Wide leg"
+              }
+            ]
+          },
+          {
+            "name": "waistType",
+            "label": "Bel tipi",
+            "type": "select",
+            "options": [
+              {
+                "value": "normal",
+                "label": "Normal bel"
+              },
+              {
+                "value": "yuksek",
+                "label": "Yüksek bel"
+              },
+              {
+                "value": "lastikli",
+                "label": "Lastikli bel"
+              }
+            ]
+          },
+          {
+            "name": "legType",
+            "label": "Paça tipi",
+            "type": "select",
+            "options": [
+              {
+                "value": "duz",
+                "label": "Düz paça"
+              },
+              {
+                "value": "dar",
+                "label": "Dar paça"
+              },
+              {
+                "value": "bol",
+                "label": "Bol paça"
+              }
+            ]
+          },
+          {
+            "name": "stretch",
+            "label": "Esneklik var",
+            "type": "checkbox"
+          },
+          {
+            "name": "sizeRange",
+            "label": "Beden/ölçü aralığı",
+            "placeholder": "30-38 veya S-XL",
+            "required": true
+          },
+          {
+            "name": "useCase",
+            "label": "Kullanım alanı",
+            "placeholder": "Ofis, günlük, spor..."
+          },
+          {
+            "name": "season",
+            "label": "Sezon",
+            "type": "select",
+            "options": [
+              {
+                "value": "summer",
+                "label": "Yaz"
+              },
+              {
+                "value": "winter",
+                "label": "Kış"
+              },
+              {
+                "value": "spring",
+                "label": "Bahar"
+              },
+              {
+                "value": "all",
+                "label": "Dört mevsim"
+              }
+            ]
+          }
+        ]
+      },
+      "qualityFields": [
+        [
+          [
+            "fabric"
+          ],
+          0.14
+        ],
+        [
+          [
+            "fit"
+          ],
+          0.08
+        ],
+        [
+          [
+            "sizeRange"
+          ],
+          0.08
+        ],
+        [
+          [
+            "season"
+          ],
+          0.06
+        ],
+        [
+          [
+            "printType",
+            "collarType",
+            "waistType",
+            "legType",
+            "useCase"
+          ],
+          0.06
+        ],
+        [
+          [
+            "stretch"
+          ],
+          0.05
+        ]
+      ]
+    },
+    "elbise": {
+      "family": "giyim",
+      "label": "Elbise",
+      "keywords": [
+        "elbise",
+        "dress",
+        "abiye",
+        "tulum"
+      ],
+      "averagePrice": 1300,
+      "marketBreadthBase": 66,
+      "applicableAudienceFields": [
+        "ageRange",
+        "gender",
+        "incomeLevel"
+      ],
+      "defaultMotivation": "stil_begeni",
+      "defaultWeights": {
+        "priceFit": 0.14,
+        "qualityScore": 0.14,
+        "trendFit": 0.15,
+        "brandTrust": 0.05,
+        "descriptionCompleteness": 0.1,
+        "visualAppeal": 0.21,
+        "seasonFit": 0.11,
+        "shippingReturnScore": 0.06,
+        "targetAudienceFit": 0.04,
+        "differentiationScore": 0.01
+      },
+      "motivationWeights": {
+        "stil_begeni": {
+          "priceFit": 0.13,
+          "qualityScore": 0.13,
+          "trendFit": 0.19,
+          "brandTrust": 0.05,
+          "descriptionCompleteness": 0.09,
+          "visualAppeal": 0.22,
+          "seasonFit": 0.09,
+          "shippingReturnScore": 0.06,
+          "targetAudienceFit": 0.03,
+          "differentiationScore": 0.01
+        },
+        "ihtiyac": {
+          "priceFit": 0.2,
+          "qualityScore": 0.17,
+          "trendFit": 0.08,
+          "brandTrust": 0.06,
+          "descriptionCompleteness": 0.14,
+          "visualAppeal": 0.12,
+          "seasonFit": 0.11,
+          "shippingReturnScore": 0.08,
+          "targetAudienceFit": 0.03,
+          "differentiationScore": 0.01
+        },
+        "trend": {
+          "priceFit": 0.11,
+          "qualityScore": 0.12,
+          "trendFit": 0.23,
+          "brandTrust": 0.05,
+          "descriptionCompleteness": 0.08,
+          "visualAppeal": 0.24,
+          "seasonFit": 0.08,
+          "shippingReturnScore": 0.05,
+          "targetAudienceFit": 0.03,
+          "differentiationScore": 0.01
+        }
+      },
+      "terms": [
+        "abiye",
+        "askili",
+        "astar",
+        "beden",
+        "boy",
+        "elbise",
+        "kesim",
+        "kol",
+        "kumas"
+      ],
+      "importantFields": [
+        "fabric",
+        "fit",
+        "sizeRange",
+        "sleeveLength",
+        "season",
+        "useCase",
+        "colors"
+      ],
+      "form": {
+        "exampleName": "Midi Boy Keten Elbise",
+        "descriptionPlaceholder": "Kumaş, kesim, astar, boy, beden aralığı, sezon ve hangi ortamda kullanılacağını yazın.",
+        "fields": [
+          {
+            "name": "fabric",
+            "label": "Kumaş içeriği",
+            "placeholder": "Keten, viskon, saten...",
+            "required": true
+          },
+          {
+            "name": "fit",
+            "label": "Kesim / kalıp",
+            "type": "select",
+            "options": [
+              {
+                "value": "regular",
+                "label": "Regular"
+              },
+              {
+                "value": "slim",
+                "label": "Slim"
+              },
+              {
+                "value": "oversize",
+                "label": "Rahat kesim"
+              }
+            ]
+          },
+          {
+            "name": "sizeRange",
+            "label": "Beden aralığı",
+            "placeholder": "XS-XL",
+            "required": true
+          },
+          {
+            "name": "sleeveLength",
+            "label": "Kol / askılı tipi",
+            "type": "select",
+            "options": [
+              {
+                "value": "askili",
+                "label": "Askılı"
+              },
+              {
+                "value": "kisa",
+                "label": "Kısa kol"
+              },
+              {
+                "value": "uzun",
+                "label": "Uzun kol"
+              }
+            ]
+          },
+          {
+            "name": "legType",
+            "label": "Boy / kesim",
+            "placeholder": "Mini, midi, maksi, yırtmaçlı..."
+          },
+          {
+            "name": "colorsText",
+            "label": "Renk seçenekleri",
+            "placeholder": "Siyah, yeşil, ekru..."
+          },
+          {
+            "name": "useCase",
+            "label": "Kullanım alanı",
+            "placeholder": "Günlük, ofis, davet, tatil..."
+          },
+          {
+            "name": "season",
+            "label": "Sezon",
+            "type": "select",
+            "options": [
+              {
+                "value": "summer",
+                "label": "Yaz"
+              },
+              {
+                "value": "winter",
+                "label": "Kış"
+              },
+              {
+                "value": "spring",
+                "label": "Bahar"
+              },
+              {
+                "value": "all",
+                "label": "Dört mevsim"
+              }
+            ]
+          }
+        ]
+      },
+      "qualityFields": [
+        [
+          [
+            "fabric"
+          ],
+          0.14
+        ],
+        [
+          [
+            "fit"
+          ],
+          0.08
+        ],
+        [
+          [
+            "sizeRange"
+          ],
+          0.08
+        ],
+        [
+          [
+            "season"
+          ],
+          0.06
+        ],
+        [
+          [
+            "printType",
+            "collarType",
+            "waistType",
+            "legType",
+            "useCase"
+          ],
+          0.06
+        ],
+        [
+          [
+            "stretch"
+          ],
+          0.05
+        ]
+      ],
+      "seasonPeak": {
+        "seasons": [
+          "spring",
+          "summer",
+          "bahar",
+          "yaz"
+        ],
+        "score": 0.86
+      }
+    },
+    "etek": {
+      "family": "giyim",
+      "label": "Etek",
+      "keywords": [
+        "etek",
+        "skirt"
+      ],
+      "averagePrice": 750,
+      "marketBreadthBase": 58,
+      "applicableAudienceFields": [
+        "ageRange",
+        "gender",
+        "incomeLevel"
+      ],
+      "defaultMotivation": "stil_begeni",
+      "defaultWeights": {
+        "priceFit": 0.16,
+        "qualityScore": 0.14,
+        "trendFit": 0.14,
+        "brandTrust": 0.05,
+        "descriptionCompleteness": 0.1,
+        "visualAppeal": 0.2,
+        "seasonFit": 0.12,
+        "shippingReturnScore": 0.06,
+        "targetAudienceFit": 0.04,
+        "differentiationScore": 0.01
+      },
+      "motivationWeights": {
+        "ihtiyac": {
+          "priceFit": 0.19,
+          "qualityScore": 0.19,
+          "trendFit": 0.06,
+          "brandTrust": 0.06,
+          "descriptionCompleteness": 0.16,
+          "visualAppeal": 0.1,
+          "seasonFit": 0.1,
+          "shippingReturnScore": 0.08,
+          "targetAudienceFit": 0.05,
+          "differentiationScore": 0.01
+        },
+        "stil_begeni": {
+          "priceFit": 0.14,
+          "qualityScore": 0.16,
+          "trendFit": 0.16,
+          "brandTrust": 0.05,
+          "descriptionCompleteness": 0.12,
+          "visualAppeal": 0.18,
+          "seasonFit": 0.09,
+          "shippingReturnScore": 0.06,
+          "targetAudienceFit": 0.03,
+          "differentiationScore": 0.01
+        }
+      },
+      "terms": [
+        "beden",
+        "bel",
+        "etek",
+        "kumas",
+        "midi",
+        "mini",
+        "pile"
+      ],
+      "importantFields": [
+        "fabric",
+        "waistType",
+        "sizeRange",
+        "legType",
+        "season",
+        "useCase",
+        "colors"
+      ],
+      "form": {
+        "exampleName": "Yüksek Bel Midi Etek",
+        "descriptionPlaceholder": "Kumaş, bel tipi, etek boyu, kalıp, beden aralığı, kombin ve sezon bilgisini yazın.",
+        "fields": [
+          {
+            "name": "fabric",
+            "label": "Kumaş içeriği",
+            "placeholder": "Denim, keten, saten...",
+            "required": true
+          },
+          {
+            "name": "waistType",
+            "label": "Bel tipi",
+            "type": "select",
+            "options": [
+              {
+                "value": "normal",
+                "label": "Normal bel"
+              },
+              {
+                "value": "yuksek",
+                "label": "Yüksek bel"
+              },
+              {
+                "value": "lastikli",
+                "label": "Lastikli bel"
+              }
+            ]
+          },
+          {
+            "name": "legType",
+            "label": "Boy / kesim",
+            "placeholder": "Mini, midi, maksi, kalem, pileli..."
+          },
+          {
+            "name": "fit",
+            "label": "Kalıp",
+            "type": "select",
+            "options": [
+              {
+                "value": "regular",
+                "label": "Regular"
+              },
+              {
+                "value": "slim",
+                "label": "Dar"
+              },
+              {
+                "value": "wide",
+                "label": "Bol"
+              }
+            ]
+          },
+          {
+            "name": "sizeRange",
+            "label": "Beden aralığı",
+            "placeholder": "XS-XL",
+            "required": true
+          },
+          {
+            "name": "colorsText",
+            "label": "Renk seçenekleri",
+            "placeholder": "Siyah, bej, lacivert..."
+          },
+          {
+            "name": "useCase",
+            "label": "Kullanım alanı",
+            "placeholder": "Ofis, günlük, davet..."
+          },
+          {
+            "name": "season",
+            "label": "Sezon",
+            "type": "select",
+            "options": [
+              {
+                "value": "summer",
+                "label": "Yaz"
+              },
+              {
+                "value": "winter",
+                "label": "Kış"
+              },
+              {
+                "value": "spring",
+                "label": "Bahar"
+              },
+              {
+                "value": "all",
+                "label": "Dört mevsim"
+              }
+            ]
+          }
+        ]
+      },
+      "qualityFields": [
+        [
+          [
+            "fabric"
+          ],
+          0.14
+        ],
+        [
+          [
+            "fit"
+          ],
+          0.08
+        ],
+        [
+          [
+            "sizeRange"
+          ],
+          0.08
+        ],
+        [
+          [
+            "season"
+          ],
+          0.06
+        ],
+        [
+          [
+            "printType",
+            "collarType",
+            "waistType",
+            "legType",
+            "useCase"
+          ],
+          0.06
+        ],
+        [
+          [
+            "stretch"
+          ],
+          0.05
+        ]
+      ],
+      "seasonPeak": {
+        "seasons": [
+          "spring",
+          "summer",
+          "bahar",
+          "yaz"
+        ],
+        "score": 0.86
+      }
+    },
+    "mont": {
+      "family": "giyim",
+      "label": "Mont ve ceket",
+      "keywords": [
+        "mont",
+        "ceket",
+        "kaban",
+        "parka",
+        "jacket",
+        "yağmurluk",
+        "trençkot",
+        "yelek"
+      ],
+      "averagePrice": 1800,
+      "marketBreadthBase": 68,
+      "applicableAudienceFields": [
+        "ageRange",
+        "gender",
+        "incomeLevel"
+      ],
+      "defaultMotivation": "stil_begeni",
+      "defaultWeights": {
+        "priceFit": 0.12,
+        "qualityScore": 0.17,
+        "trendFit": 0.13,
+        "brandTrust": 0.05,
+        "descriptionCompleteness": 0.08,
+        "visualAppeal": 0.14,
+        "seasonFit": 0.18,
+        "shippingReturnScore": 0.08,
+        "targetAudienceFit": 0.04,
+        "differentiationScore": 0.01
+      },
+      "motivationWeights": {
+        "stil_begeni": {
+          "priceFit": 0.12,
+          "qualityScore": 0.16,
+          "trendFit": 0.16,
+          "brandTrust": 0.05,
+          "descriptionCompleteness": 0.07,
+          "visualAppeal": 0.16,
+          "seasonFit": 0.18,
+          "shippingReturnScore": 0.06,
+          "targetAudienceFit": 0.03,
+          "differentiationScore": 0.01
+        },
+        "ihtiyac": {
+          "priceFit": 0.17,
+          "qualityScore": 0.19,
+          "trendFit": 0.05,
+          "brandTrust": 0.08,
+          "descriptionCompleteness": 0.12,
+          "visualAppeal": 0.08,
+          "seasonFit": 0.18,
+          "shippingReturnScore": 0.1,
+          "targetAudienceFit": 0.02,
+          "differentiationScore": 0.01
+        },
+        "trend": {
+          "priceFit": 0.1,
+          "qualityScore": 0.14,
+          "trendFit": 0.2,
+          "brandTrust": 0.05,
+          "descriptionCompleteness": 0.06,
+          "visualAppeal": 0.2,
+          "seasonFit": 0.15,
+          "shippingReturnScore": 0.06,
+          "targetAudienceFit": 0.03,
+          "differentiationScore": 0.01
+        }
+      },
+      "terms": [
+        "ceket",
+        "dolgu",
+        "kaban",
+        "kapuson",
+        "kis",
+        "kumas",
+        "mont",
+        "ruzgar",
+        "su"
+      ],
+      "importantFields": [
+        "fabric",
+        "innerFilling",
+        "season",
+        "fit",
+        "sizeRange",
+        "waterproof",
+        "windproof"
+      ],
+      "form": {
+        "exampleName": "Su Geçirmez Oversize Kışlık Mont",
+        "descriptionPlaceholder": "Kumaş, iç dolgu, sezon, su/rüzgar koruması, kapüşon, cep ve beden bilgisini yazın.",
+        "fields": [
+          {
+            "name": "fabric",
+            "label": "Dış kumaş",
+            "placeholder": "Polyester, softshell...",
+            "required": true
+          },
+          {
+            "name": "innerFilling",
+            "label": "İç dolgu",
+            "placeholder": "Elyaf, kaz tüyü, polar...",
+            "required": true
+          },
+          {
+            "name": "season",
+            "label": "Sezon",
+            "type": "select",
+            "options": [
+              {
+                "value": "summer",
+                "label": "Yaz"
+              },
+              {
+                "value": "winter",
+                "label": "Kış"
+              },
+              {
+                "value": "spring",
+                "label": "Bahar"
+              },
+              {
+                "value": "all",
+                "label": "Dört mevsim"
+              }
+            ]
+          },
+          {
+            "name": "fit",
+            "label": "Kalıp",
+            "type": "select",
+            "options": [
+              {
+                "value": "regular",
+                "label": "Regular"
+              },
+              {
+                "value": "oversize",
+                "label": "Oversize"
+              },
+              {
+                "value": "slim",
+                "label": "Slim"
+              }
+            ]
+          },
+          {
+            "name": "sizeRange",
+            "label": "Beden aralığı",
+            "placeholder": "S-XXL"
+          },
+          {
+            "name": "waterproof",
+            "label": "Su geçirmez",
+            "type": "checkbox"
+          },
+          {
+            "name": "windproof",
+            "label": "Rüzgar geçirmez",
+            "type": "checkbox"
+          },
+          {
+            "name": "hood",
+            "label": "Kapüşon var",
+            "type": "checkbox"
+          },
+          {
+            "name": "pocketCount",
+            "label": "Cep sayısı",
+            "type": "number",
+            "placeholder": "4"
+          }
+        ]
+      },
+      "qualityFields": [
+        [
+          [
+            "fabric"
+          ],
+          0.12
+        ],
+        [
+          [
+            "innerFilling"
+          ],
+          0.1
+        ],
+        [
+          [
+            "waterproof"
+          ],
+          0.14
+        ],
+        [
+          [
+            "windproof"
+          ],
+          0.1
+        ],
+        [
+          [
+            "hood"
+          ],
+          0.05
+        ]
+      ],
+      "seasonPeak": {
+        "seasons": [
+          "winter",
+          "kis"
+        ],
+        "score": 0.9
+      }
+    },
+    "esofman": {
+      "family": "giyim",
+      "label": "Eşofman ve spor giyim",
+      "keywords": [
+        "eşofman",
+        "eşofman takımı",
+        "spor tayt",
+        "spor sütyeni"
+      ],
+      "averagePrice": 1000,
+      "terms": [
+        "eşofman",
+        "eşofman takımı",
+        "spor sütyeni",
+        "spor tayt"
+      ]
+    },
+    "ic_giyim": {
+      "family": "giyim",
+      "label": "İç giyim ve pijama",
+      "keywords": [
+        "iç giyim",
+        "iç çamaşırı",
+        "külot",
+        "boxer",
+        "sütyen",
+        "pijama",
+        "çorap",
+        "gecelik"
+      ],
+      "averagePrice": 350,
+      "terms": [
+        "boxer",
+        "gecelik",
+        "iç giyim",
+        "iç çamaşırı",
+        "külot",
+        "pijama",
+        "sütyen",
+        "çorap"
+      ]
+    },
+    "spor_ayakkabi": {
+      "family": "ayakkabi",
+      "label": "Spor ayakkabı",
+      "keywords": [
+        "spor ayakkabı",
+        "sneaker",
+        "koşu ayakkabısı",
+        "basketbol ayakkabısı"
+      ],
+      "averagePrice": 2000,
+      "terms": [
+        "basketbol ayakkabısı",
+        "koşu ayakkabısı",
+        "sneaker",
+        "spor ayakkabı"
+      ]
+    },
+    "bot": {
+      "family": "ayakkabi",
+      "label": "Bot ve çizme",
+      "keywords": [
+        "bot",
+        "çizme",
+        "postal",
+        "boots"
+      ],
+      "averagePrice": 2200,
+      "seasonPeak": {
+        "seasons": [
+          "winter",
+          "kis"
+        ],
+        "score": 0.88
+      },
+      "terms": [
+        "boots",
+        "bot",
+        "postal",
+        "çizme"
+      ]
+    },
+    "sandalet": {
+      "family": "ayakkabi",
+      "label": "Sandalet ve terlik",
+      "keywords": [
+        "sandalet",
+        "terlik",
+        "parmak arası",
+        "babet",
+        "espadril"
+      ],
+      "averagePrice": 600,
+      "seasonPeak": {
+        "seasons": [
+          "summer",
+          "yaz"
+        ],
+        "score": 0.88
+      },
+      "terms": [
+        "babet",
+        "espadril",
+        "parmak arası",
+        "sandalet",
+        "terlik"
+      ]
+    },
+    "klasik_ayakkabi": {
+      "family": "ayakkabi",
+      "label": "Klasik ayakkabı",
+      "keywords": [
+        "klasik ayakkabı",
+        "loafer",
+        "oxford",
+        "topuklu",
+        "stiletto"
+      ],
+      "averagePrice": 1800,
+      "terms": [
+        "klasik ayakkabı",
+        "loafer",
+        "oxford",
+        "stiletto",
+        "topuklu"
+      ]
+    },
+    "cuzdan": {
+      "family": "canta",
+      "label": "Cüzdan ve kartlık",
+      "keywords": [
+        "cüzdan",
+        "kartlık",
+        "kartlik"
+      ],
+      "averagePrice": 500,
+      "form": {
+        "exampleName": "Hakiki Deri Kartlıklı Cüzdan",
+        "descriptionPlaceholder": "Malzeme, ölçü, renk seçenekleri, kullanım alanı ve kutu/hediye paketini yazın.",
+        "fields": [
+          {
+            "name": "brand",
+            "label": "Marka",
+            "placeholder": "Marka / koleksiyon"
+          },
+          {
+            "name": "material",
+            "label": "Malzeme",
+            "placeholder": "Hakiki deri, çelik, gümüş…",
+            "required": true
+          },
+          {
+            "name": "colorsText",
+            "label": "Renk seçenekleri",
+            "placeholder": "Siyah, kahve…"
+          },
+          {
+            "name": "dimensions",
+            "label": "Ölçü",
+            "placeholder": "11 x 9 cm, 42 mm kasa…"
+          },
+          {
+            "name": "useCase",
+            "label": "Kullanım",
+            "placeholder": "Günlük, hediye, özel gün…"
+          }
+        ]
+      },
+      "qualityFields": [
+        [
+          [
+            "brand"
+          ],
+          0.08
+        ],
+        [
+          [
+            "material"
+          ],
+          0.14
+        ],
+        [
+          [
+            "colors"
+          ],
+          0.06
+        ],
+        [
+          [
+            "dimensions"
+          ],
+          0.06
+        ],
+        [
+          [
+            "useCase"
+          ],
+          0.04
+        ]
+      ],
+      "importantFields": [
+        "material",
+        "dimensions",
+        "colors"
+      ],
+      "terms": [
+        "cüzdan",
+        "kartlik",
+        "kartlık"
+      ]
+    },
+    "kemer": {
+      "family": "canta",
+      "label": "Kemer",
+      "keywords": [
+        "kemer"
+      ],
+      "averagePrice": 400,
+      "form": {
+        "exampleName": "Hakiki Deri Kartlıklı Cüzdan",
+        "descriptionPlaceholder": "Malzeme, ölçü, renk seçenekleri, kullanım alanı ve kutu/hediye paketini yazın.",
+        "fields": [
+          {
+            "name": "brand",
+            "label": "Marka",
+            "placeholder": "Marka / koleksiyon"
+          },
+          {
+            "name": "material",
+            "label": "Malzeme",
+            "placeholder": "Hakiki deri, çelik, gümüş…",
+            "required": true
+          },
+          {
+            "name": "colorsText",
+            "label": "Renk seçenekleri",
+            "placeholder": "Siyah, kahve…"
+          },
+          {
+            "name": "dimensions",
+            "label": "Ölçü",
+            "placeholder": "11 x 9 cm, 42 mm kasa…"
+          },
+          {
+            "name": "useCase",
+            "label": "Kullanım",
+            "placeholder": "Günlük, hediye, özel gün…"
+          }
+        ]
+      },
+      "qualityFields": [
+        [
+          [
+            "brand"
+          ],
+          0.08
+        ],
+        [
+          [
+            "material"
+          ],
+          0.14
+        ],
+        [
+          [
+            "colors"
+          ],
+          0.06
+        ],
+        [
+          [
+            "dimensions"
+          ],
+          0.06
+        ],
+        [
+          [
+            "useCase"
+          ],
+          0.04
+        ]
+      ],
+      "importantFields": [
+        "material",
+        "dimensions",
+        "colors"
+      ],
+      "terms": [
+        "kemer"
+      ]
+    },
+    "gozluk": {
+      "family": "canta",
+      "label": "Gözlük",
+      "keywords": [
+        "gözlük",
+        "güneş gözlüğü",
+        "sunglasses"
+      ],
+      "averagePrice": 1200,
+      "form": {
+        "exampleName": "Hakiki Deri Kartlıklı Cüzdan",
+        "descriptionPlaceholder": "Malzeme, ölçü, renk seçenekleri, kullanım alanı ve kutu/hediye paketini yazın.",
+        "fields": [
+          {
+            "name": "brand",
+            "label": "Marka",
+            "placeholder": "Marka / koleksiyon"
+          },
+          {
+            "name": "material",
+            "label": "Malzeme",
+            "placeholder": "Hakiki deri, çelik, gümüş…",
+            "required": true
+          },
+          {
+            "name": "colorsText",
+            "label": "Renk seçenekleri",
+            "placeholder": "Siyah, kahve…"
+          },
+          {
+            "name": "dimensions",
+            "label": "Ölçü",
+            "placeholder": "11 x 9 cm, 42 mm kasa…"
+          },
+          {
+            "name": "useCase",
+            "label": "Kullanım",
+            "placeholder": "Günlük, hediye, özel gün…"
+          }
+        ]
+      },
+      "qualityFields": [
+        [
+          [
+            "brand"
+          ],
+          0.08
+        ],
+        [
+          [
+            "material"
+          ],
+          0.14
+        ],
+        [
+          [
+            "colors"
+          ],
+          0.06
+        ],
+        [
+          [
+            "dimensions"
+          ],
+          0.06
+        ],
+        [
+          [
+            "useCase"
+          ],
+          0.04
+        ]
+      ],
+      "importantFields": [
+        "brand",
+        "material",
+        "useCase"
+      ],
+      "terms": [
+        "gözlük",
+        "güneş gözlüğü",
+        "sunglasses"
+      ]
+    },
+    "taki": {
+      "family": "canta",
+      "label": "Takı",
+      "keywords": [
+        "takı",
+        "kolye",
+        "küpe",
+        "bileklik",
+        "yüzük",
+        "bilezik",
+        "broş"
+      ],
+      "averagePrice": 600,
+      "form": {
+        "exampleName": "Hakiki Deri Kartlıklı Cüzdan",
+        "descriptionPlaceholder": "Malzeme, ölçü, renk seçenekleri, kullanım alanı ve kutu/hediye paketini yazın.",
+        "fields": [
+          {
+            "name": "brand",
+            "label": "Marka",
+            "placeholder": "Marka / koleksiyon"
+          },
+          {
+            "name": "material",
+            "label": "Malzeme",
+            "placeholder": "Hakiki deri, çelik, gümüş…",
+            "required": true
+          },
+          {
+            "name": "colorsText",
+            "label": "Renk seçenekleri",
+            "placeholder": "Siyah, kahve…"
+          },
+          {
+            "name": "dimensions",
+            "label": "Ölçü",
+            "placeholder": "11 x 9 cm, 42 mm kasa…"
+          },
+          {
+            "name": "useCase",
+            "label": "Kullanım",
+            "placeholder": "Günlük, hediye, özel gün…"
+          }
+        ]
+      },
+      "qualityFields": [
+        [
+          [
+            "brand"
+          ],
+          0.08
+        ],
+        [
+          [
+            "material"
+          ],
+          0.14
+        ],
+        [
+          [
+            "colors"
+          ],
+          0.06
+        ],
+        [
+          [
+            "dimensions"
+          ],
+          0.06
+        ],
+        [
+          [
+            "useCase"
+          ],
+          0.04
+        ]
+      ],
+      "importantFields": [
+        "material",
+        "dimensions",
+        "colors"
+      ],
+      "terms": [
+        "bileklik",
+        "bilezik",
+        "broş",
+        "kolye",
+        "küpe",
+        "takı",
+        "yüzük"
+      ]
+    },
+    "kol_saati": {
+      "family": "canta",
+      "label": "Kol saati",
+      "keywords": [
+        "kol saati",
+        "saat",
+        "kronograf"
+      ],
+      "averagePrice": 2500,
+      "form": {
+        "exampleName": "Hakiki Deri Kartlıklı Cüzdan",
+        "descriptionPlaceholder": "Malzeme, ölçü, renk seçenekleri, kullanım alanı ve kutu/hediye paketini yazın.",
+        "fields": [
+          {
+            "name": "brand",
+            "label": "Marka",
+            "placeholder": "Marka / koleksiyon"
+          },
+          {
+            "name": "material",
+            "label": "Malzeme",
+            "placeholder": "Hakiki deri, çelik, gümüş…",
+            "required": true
+          },
+          {
+            "name": "colorsText",
+            "label": "Renk seçenekleri",
+            "placeholder": "Siyah, kahve…"
+          },
+          {
+            "name": "dimensions",
+            "label": "Ölçü",
+            "placeholder": "11 x 9 cm, 42 mm kasa…"
+          },
+          {
+            "name": "useCase",
+            "label": "Kullanım",
+            "placeholder": "Günlük, hediye, özel gün…"
+          }
+        ]
+      },
+      "qualityFields": [
+        [
+          [
+            "brand"
+          ],
+          0.08
+        ],
+        [
+          [
+            "material"
+          ],
+          0.14
+        ],
+        [
+          [
+            "colors"
+          ],
+          0.06
+        ],
+        [
+          [
+            "dimensions"
+          ],
+          0.06
+        ],
+        [
+          [
+            "useCase"
+          ],
+          0.04
+        ]
+      ],
+      "importantFields": [
+        "brand",
+        "material",
+        "dimensions"
+      ],
+      "terms": [
+        "kol saati",
+        "kronograf",
+        "saat"
+      ]
+    },
+    "makyaj": {
+      "family": "kozmetik",
+      "label": "Makyaj",
+      "keywords": [
+        "makyaj",
+        "ruj",
+        "maskara",
+        "fondöten",
+        "oje",
+        "allık",
+        "far paleti",
+        "kapatıcı",
+        "eyeliner",
+        "dudak"
+      ],
+      "averagePrice": 400,
+      "terms": [
+        "allık",
+        "dudak",
+        "eyeliner",
+        "far paleti",
+        "fondöten",
+        "kapatıcı",
+        "makyaj",
+        "maskara",
+        "oje",
+        "ruj"
+      ]
+    },
+    "cilt_bakim": {
+      "family": "kozmetik",
+      "label": "Cilt bakımı",
+      "keywords": [
+        "cilt bakım",
+        "serum",
+        "nemlendirici",
+        "krem",
+        "kremi",
+        "güneş kremi",
+        "tonik",
+        "yüz temizleme"
+      ],
+      "averagePrice": 500,
+      "terms": [
+        "cilt bakım",
+        "güneş kremi",
+        "krem",
+        "kremi",
+        "nemlendirici",
+        "serum",
+        "tonik",
+        "yüz temizleme"
+      ]
+    },
+    "sac_bakim": {
+      "family": "kozmetik",
+      "label": "Saç bakımı",
+      "keywords": [
+        "şampuan",
+        "saç kremi",
+        "saç maskesi",
+        "saç bakım",
+        "saç serumu",
+        "saç boyası"
+      ],
+      "averagePrice": 300,
+      "terms": [
+        "saç bakım",
+        "saç boyası",
+        "saç kremi",
+        "saç maskesi",
+        "saç serumu",
+        "şampuan"
+      ]
+    },
+    "parfum": {
+      "family": "kozmetik",
+      "label": "Parfüm",
+      "keywords": [
+        "parfüm",
+        "parfum",
+        "edp",
+        "edt",
+        "eau de"
+      ],
+      "averagePrice": 1500,
+      "terms": [
+        "eau de",
+        "edp",
+        "edt",
+        "parfum",
+        "parfüm"
+      ]
+    },
+    "kisisel_bakim": {
+      "family": "kozmetik",
+      "label": "Kişisel bakım",
+      "keywords": [
+        "deodorant",
+        "duş jeli",
+        "diş macunu",
+        "tıraş köpüğü",
+        "tıraş bıçağı",
+        "losyon",
+        "ağda"
+      ],
+      "averagePrice": 200,
+      "terms": [
+        "ağda",
+        "deodorant",
+        "diş macunu",
+        "duş jeli",
+        "losyon",
+        "tıraş bıçağı",
+        "tıraş köpüğü"
+      ]
+    },
+    "telefon": {
+      "family": "telefon_tablet",
+      "label": "Telefon",
+      "keywords": [
+        "telefon",
+        "smartphone",
+        "iphone",
+        "redmi",
+        "galaxy s",
+        "galaxy a",
+        "galaxy z",
+        "galaxy m",
+        "cep"
+      ],
+      "averagePrice": 16000,
+      "marketBreadthBase": 62,
+      "applicableAudienceFields": [
+        "incomeLevel"
+      ],
+      "defaultMotivation": "ihtiyac",
+      "defaultWeights": {
+        "priceFit": 0.17,
+        "qualityScore": 0.24,
+        "trendFit": 0.06,
+        "brandTrust": 0.11,
+        "descriptionCompleteness": 0.15,
+        "visualAppeal": 0.05,
+        "seasonFit": 0,
+        "shippingReturnScore": 0.12,
+        "targetAudienceFit": 0.08,
+        "differentiationScore": 0.02
+      },
+      "motivationWeights": {
+        "ihtiyac": {
+          "priceFit": 0.18,
+          "qualityScore": 0.22,
+          "trendFit": 0.04,
+          "brandTrust": 0.1,
+          "descriptionCompleteness": 0.16,
+          "visualAppeal": 0.04,
+          "seasonFit": 0,
+          "shippingReturnScore": 0.13,
+          "targetAudienceFit": 0.1,
+          "differentiationScore": 0.03
+        },
+        "trend": {
+          "priceFit": 0.14,
+          "qualityScore": 0.2,
+          "trendFit": 0.14,
+          "brandTrust": 0.1,
+          "descriptionCompleteness": 0.13,
+          "visualAppeal": 0.1,
+          "seasonFit": 0,
+          "shippingReturnScore": 0.09,
+          "targetAudienceFit": 0.07,
+          "differentiationScore": 0.03
+        },
+        "profesyonel_kullanim": {
+          "priceFit": 0.12,
+          "qualityScore": 0.27,
+          "trendFit": 0.03,
+          "brandTrust": 0.12,
+          "descriptionCompleteness": 0.2,
+          "visualAppeal": 0.03,
+          "seasonFit": 0,
+          "shippingReturnScore": 0.1,
+          "targetAudienceFit": 0.1,
+          "differentiationScore": 0.03
+        }
+      },
+      "terms": [
+        "5g",
+        "batarya",
+        "ekran",
+        "gb",
+        "hz",
+        "islemci",
+        "kamera",
+        "ram",
+        "telefon"
+      ],
+      "importantFields": [
+        "brand",
+        "ram",
+        "storage",
+        "processor",
+        "camera",
+        "battery",
+        "screenSize",
+        "refreshRate"
+      ],
+      "form": {
+        "exampleName": "128 GB 5G Akıllı Telefon",
+        "descriptionPlaceholder": "Marka/model, RAM, depolama, kamera, batarya, ekran ve garanti durumunu yazın.",
+        "fields": [
+          {
+            "name": "brand",
+            "label": "Marka / model",
+            "placeholder": "Marka ve model",
+            "required": true
+          },
+          {
+            "name": "ram",
+            "label": "RAM",
+            "placeholder": "8 GB",
+            "required": true
+          },
+          {
+            "name": "storage",
+            "label": "Depolama",
+            "placeholder": "128 GB",
+            "required": true
+          },
+          {
+            "name": "processor",
+            "label": "İşlemci",
+            "placeholder": "Snapdragon / A serisi..."
+          },
+          {
+            "name": "camera",
+            "label": "Kamera",
+            "placeholder": "50 MP OIS, 4K video..."
+          },
+          {
+            "name": "battery",
+            "label": "Batarya",
+            "placeholder": "5000 mAh"
+          },
+          {
+            "name": "screenSize",
+            "label": "Ekran",
+            "placeholder": "6.5 inch AMOLED"
+          },
+          {
+            "name": "refreshRate",
+            "label": "Yenileme hızı",
+            "placeholder": "120 Hz"
+          }
+        ]
+      }
+    },
+    "tablet": {
+      "family": "telefon_tablet",
+      "label": "Tablet",
+      "keywords": [
+        "tablet",
+        "ipad",
+        "galaxy tab"
+      ],
+      "averagePrice": 12000,
+      "marketBreadthBase": 54,
+      "applicableAudienceFields": [
+        "incomeLevel"
+      ],
+      "defaultMotivation": "ihtiyac",
+      "defaultWeights": {
+        "priceFit": 0.17,
+        "qualityScore": 0.23,
+        "trendFit": 0.06,
+        "brandTrust": 0.11,
+        "descriptionCompleteness": 0.16,
+        "visualAppeal": 0.06,
+        "seasonFit": 0,
+        "shippingReturnScore": 0.12,
+        "targetAudienceFit": 0.09,
+        "differentiationScore": 0.02
+      },
+      "motivationWeights": {
+        "ihtiyac": {
+          "priceFit": 0.18,
+          "qualityScore": 0.22,
+          "trendFit": 0.04,
+          "brandTrust": 0.1,
+          "descriptionCompleteness": 0.16,
+          "visualAppeal": 0.04,
+          "seasonFit": 0,
+          "shippingReturnScore": 0.13,
+          "targetAudienceFit": 0.1,
+          "differentiationScore": 0.03
+        },
+        "trend": {
+          "priceFit": 0.14,
+          "qualityScore": 0.2,
+          "trendFit": 0.14,
+          "brandTrust": 0.1,
+          "descriptionCompleteness": 0.13,
+          "visualAppeal": 0.1,
+          "seasonFit": 0,
+          "shippingReturnScore": 0.09,
+          "targetAudienceFit": 0.07,
+          "differentiationScore": 0.03
+        },
+        "profesyonel_kullanim": {
+          "priceFit": 0.12,
+          "qualityScore": 0.27,
+          "trendFit": 0.03,
+          "brandTrust": 0.12,
+          "descriptionCompleteness": 0.2,
+          "visualAppeal": 0.03,
+          "seasonFit": 0,
+          "shippingReturnScore": 0.1,
+          "targetAudienceFit": 0.1,
+          "differentiationScore": 0.03
+        }
+      },
+      "terms": [
+        "batarya",
+        "ekran",
+        "gb",
+        "hafiza",
+        "kalem",
+        "lte",
+        "ram",
+        "tablet",
+        "wifi"
+      ],
+      "importantFields": [
+        "brand",
+        "processor",
+        "ram",
+        "storage",
+        "screenSize",
+        "battery",
+        "connectivity",
+        "useCase"
+      ],
+      "form": {
+        "exampleName": "10.9 inç Kalem Destekli Tablet",
+        "descriptionPlaceholder": "Marka/model, ekran, RAM, depolama, kalem/klavye desteği, batarya ve kullanım amacını yazın.",
+        "fields": [
+          {
+            "name": "brand",
+            "label": "Marka / model",
+            "placeholder": "Marka ve model",
+            "required": true
+          },
+          {
+            "name": "screenSize",
+            "label": "Ekran",
+            "placeholder": "10.9 inch IPS/AMOLED",
+            "required": true
+          },
+          {
+            "name": "ram",
+            "label": "RAM",
+            "placeholder": "6 GB"
+          },
+          {
+            "name": "storage",
+            "label": "Depolama",
+            "placeholder": "128 GB",
+            "required": true
+          },
+          {
+            "name": "processor",
+            "label": "İşlemci",
+            "placeholder": "A serisi, Snapdragon..."
+          },
+          {
+            "name": "battery",
+            "label": "Batarya",
+            "placeholder": "8000 mAh, 10 saat"
+          },
+          {
+            "name": "connectivity",
+            "label": "Bağlantı",
+            "placeholder": "Wi-Fi, LTE, 5G, kalem destekli..."
+          },
+          {
+            "name": "useCase",
+            "label": "Kullanım amacı",
+            "placeholder": "Eğitim, not alma, çizim, medya..."
+          }
+        ]
+      },
+      "qualityFields": [
+        [
+          [
+            "brand"
+          ],
+          0.08
+        ],
+        [
+          [
+            "ram"
+          ],
+          0.1
+        ],
+        [
+          [
+            "storage"
+          ],
+          0.1
+        ],
+        [
+          [
+            "processor"
+          ],
+          0.1
+        ],
+        [
+          [
+            "battery"
+          ],
+          0.07
+        ],
+        [
+          [
+            "screenSize"
+          ],
+          0.08
+        ],
+        [
+          [
+            "connectivity"
+          ],
+          0.08
+        ]
+      ]
+    },
+    "laptop": {
+      "family": "bilgisayar",
+      "label": "Laptop",
+      "keywords": [
+        "laptop",
+        "notebook",
+        "dizüstü",
+        "macbook"
+      ],
+      "averagePrice": 28000,
+      "marketBreadthBase": 54,
+      "applicableAudienceFields": [
+        "incomeLevel"
+      ],
+      "defaultMotivation": "profesyonel_kullanim",
+      "defaultWeights": {
+        "priceFit": 0.15,
+        "qualityScore": 0.27,
+        "trendFit": 0.04,
+        "brandTrust": 0.1,
+        "descriptionCompleteness": 0.18,
+        "visualAppeal": 0.03,
+        "seasonFit": 0,
+        "shippingReturnScore": 0.1,
+        "targetAudienceFit": 0.1,
+        "differentiationScore": 0.03
+      },
+      "motivationWeights": {
+        "profesyonel_kullanim": {
+          "priceFit": 0.12,
+          "qualityScore": 0.3,
+          "trendFit": 0.03,
+          "brandTrust": 0.1,
+          "descriptionCompleteness": 0.2,
+          "visualAppeal": 0.02,
+          "seasonFit": 0,
+          "shippingReturnScore": 0.1,
+          "targetAudienceFit": 0.1,
+          "differentiationScore": 0.03
+        },
+        "ihtiyac": {
+          "priceFit": 0.18,
+          "qualityScore": 0.23,
+          "trendFit": 0.04,
+          "brandTrust": 0.1,
+          "descriptionCompleteness": 0.17,
+          "visualAppeal": 0.03,
+          "seasonFit": 0,
+          "shippingReturnScore": 0.12,
+          "targetAudienceFit": 0.1,
+          "differentiationScore": 0.03
+        }
+      },
+      "terms": [
+        "batarya",
+        "ekran",
+        "gpu",
+        "islemci",
+        "kg",
+        "laptop",
+        "notebook",
+        "ram",
+        "ssd"
+      ],
+      "importantFields": [
+        "brand",
+        "processor",
+        "ram",
+        "storage",
+        "gpu",
+        "screenSize",
+        "battery",
+        "weight",
+        "useCase"
+      ],
+      "form": {
+        "exampleName": "16 GB RAM İş Laptopu",
+        "descriptionPlaceholder": "İşlemci, RAM, depolama, ekran, GPU, batarya, ağırlık ve hangi iş için uygun olduğunu yazın.",
+        "fields": [
+          {
+            "name": "brand",
+            "label": "Marka / model",
+            "placeholder": "Marka ve model",
+            "required": true
+          },
+          {
+            "name": "processor",
+            "label": "İşlemci",
+            "placeholder": "i5, Ryzen 7, M serisi...",
+            "required": true
+          },
+          {
+            "name": "ram",
+            "label": "RAM",
+            "placeholder": "16 GB",
+            "required": true
+          },
+          {
+            "name": "storage",
+            "label": "Depolama",
+            "placeholder": "512 GB SSD",
+            "required": true
+          },
+          {
+            "name": "gpu",
+            "label": "Ekran kartı",
+            "placeholder": "RTX 4050, entegre..."
+          },
+          {
+            "name": "screenSize",
+            "label": "Ekran",
+            "placeholder": "14 inch IPS, 2K..."
+          },
+          {
+            "name": "battery",
+            "label": "Batarya / süre",
+            "placeholder": "8 saat, 60 Wh..."
+          },
+          {
+            "name": "weight",
+            "label": "Ağırlık",
+            "placeholder": "1.4 kg"
+          },
+          {
+            "name": "useCase",
+            "label": "Kullanım amacı",
+            "placeholder": "Ofis, yazılım, oyun, tasarım..."
+          }
+        ]
+      },
+      "qualityFields": [
+        [
+          [
+            "brand"
+          ],
+          0.08
+        ],
+        [
+          [
+            "ram"
+          ],
+          0.1
+        ],
+        [
+          [
+            "storage"
+          ],
+          0.1
+        ],
+        [
+          [
+            "processor"
+          ],
+          0.1
+        ],
+        [
+          [
+            "battery"
+          ],
+          0.07
+        ],
+        [
+          [
+            "screenSize"
+          ],
+          0.08
+        ],
+        [
+          [
+            "gpu"
+          ],
+          0.08
+        ]
+      ]
+    },
+    "masaustu": {
+      "family": "bilgisayar",
+      "label": "Masaüstü bilgisayar",
+      "keywords": [
+        "masaüstü",
+        "all in one",
+        "oyun bilgisayarı",
+        "mini pc"
+      ],
+      "averagePrice": 30000,
+      "terms": [
+        "all in one",
+        "masaüstü",
+        "mini pc",
+        "oyun bilgisayarı"
+      ]
+    },
+    "monitor": {
+      "family": "bilgisayar",
+      "label": "Monitör",
+      "keywords": [
+        "monitör",
+        "monitor"
+      ],
+      "averagePrice": 7000,
+      "form": {
+        "exampleName": "27 inç 165 Hz IPS Oyuncu Monitörü",
+        "descriptionPlaceholder": "Ekran boyutu, panel tipi, yenileme hızı, çözünürlük, girişler ve garantiyi yazın.",
+        "fields": [
+          {
+            "name": "brand",
+            "label": "Marka / model",
+            "required": true
+          },
+          {
+            "name": "screenSize",
+            "label": "Ekran boyutu",
+            "placeholder": "27 inç",
+            "required": true
+          },
+          {
+            "name": "displayType",
+            "label": "Panel tipi",
+            "placeholder": "IPS, VA, OLED"
+          },
+          {
+            "name": "refreshRate",
+            "label": "Yenileme hızı",
+            "placeholder": "165 Hz"
+          },
+          {
+            "name": "connectivity",
+            "label": "Girişler",
+            "placeholder": "HDMI, DisplayPort, USB-C"
+          },
+          {
+            "name": "useCase",
+            "label": "Kullanım",
+            "placeholder": "Oyun, ofis, tasarım"
+          }
+        ]
+      },
+      "qualityFields": [
+        [
+          [
+            "brand"
+          ],
+          0.08
+        ],
+        [
+          [
+            "screenSize"
+          ],
+          0.12
+        ],
+        [
+          [
+            "displayType"
+          ],
+          0.1
+        ],
+        [
+          [
+            "refreshRate"
+          ],
+          0.1
+        ],
+        [
+          [
+            "connectivity"
+          ],
+          0.08
+        ]
+      ],
+      "importantFields": [
+        "brand",
+        "screenSize",
+        "displayType",
+        "refreshRate",
+        "connectivity"
+      ],
+      "terms": [
+        "monitor",
+        "monitör"
+      ]
+    },
+    "klavye_fare": {
+      "family": "bilgisayar",
+      "label": "Klavye ve fare",
+      "keywords": [
+        "klavye",
+        "mouse",
+        "fare",
+        "mousepad"
+      ],
+      "averagePrice": 1200,
+      "form": {
+        "exampleName": "Kablosuz Mekanik Klavye",
+        "descriptionPlaceholder": "Bağlantı tipi, switch/sensör, pil ömrü, uyumlu sistemler ve garantiyi yazın.",
+        "fields": [
+          {
+            "name": "brand",
+            "label": "Marka / model",
+            "required": true
+          },
+          {
+            "name": "connectionType",
+            "label": "Bağlantı",
+            "placeholder": "Kablosuz, Bluetooth, USB"
+          },
+          {
+            "name": "battery",
+            "label": "Pil ömrü",
+            "placeholder": "3 ay"
+          },
+          {
+            "name": "operatingSystem",
+            "label": "Uyumlu sistemler",
+            "placeholder": "Windows, macOS"
+          },
+          {
+            "name": "useCase",
+            "label": "Kullanım",
+            "placeholder": "Oyun, ofis"
+          }
+        ]
+      },
+      "qualityFields": [
+        [
+          [
+            "brand"
+          ],
+          0.1
+        ],
+        [
+          [
+            "connectionType"
+          ],
+          0.12
+        ],
+        [
+          [
+            "battery"
+          ],
+          0.08
+        ],
+        [
+          [
+            "operatingSystem"
+          ],
+          0.06
+        ],
+        [
+          [
+            "useCase"
+          ],
+          0.06
+        ]
+      ],
+      "importantFields": [
+        "brand",
+        "connectionType",
+        "battery",
+        "useCase"
+      ],
+      "terms": [
+        "fare",
+        "klavye",
+        "mouse",
+        "mousepad"
+      ]
+    },
+    "kulaklik": {
+      "family": "ses_giyilebilir",
+      "label": "Kulaklık",
+      "keywords": [
+        "kulaklık",
+        "headphone",
+        "earbud",
+        "airpods",
+        "buds",
+        "headset"
+      ],
+      "averagePrice": 2500,
+      "marketBreadthBase": 60,
+      "applicableAudienceFields": [
+        "incomeLevel"
+      ],
+      "defaultMotivation": "ihtiyac",
+      "defaultWeights": {
+        "priceFit": 0.17,
+        "qualityScore": 0.2,
+        "trendFit": 0.08,
+        "brandTrust": 0.09,
+        "descriptionCompleteness": 0.15,
+        "visualAppeal": 0.08,
+        "seasonFit": 0,
+        "shippingReturnScore": 0.1,
+        "targetAudienceFit": 0.1,
+        "differentiationScore": 0.03
+      },
+      "motivationWeights": {
+        "ihtiyac": {
+          "priceFit": 0.18,
+          "qualityScore": 0.21,
+          "trendFit": 0.06,
+          "brandTrust": 0.09,
+          "descriptionCompleteness": 0.16,
+          "visualAppeal": 0.07,
+          "seasonFit": 0,
+          "shippingReturnScore": 0.1,
+          "targetAudienceFit": 0.1,
+          "differentiationScore": 0.03
+        },
+        "trend": {
+          "priceFit": 0.14,
+          "qualityScore": 0.18,
+          "trendFit": 0.16,
+          "brandTrust": 0.08,
+          "descriptionCompleteness": 0.12,
+          "visualAppeal": 0.14,
+          "seasonFit": 0,
+          "shippingReturnScore": 0.08,
+          "targetAudienceFit": 0.07,
+          "differentiationScore": 0.03
+        }
+      },
+      "terms": [
+        "anc",
+        "bluetooth",
+        "gecikme",
+        "kablolu",
+        "kulaklik",
+        "mikrofon",
+        "pil",
+        "saat"
+      ],
+      "importantFields": [
+        "brand",
+        "connectionType",
+        "battery",
+        "noiseCancellation",
+        "microphone",
+        "waterResistance",
+        "latency",
+        "useCase"
+      ],
+      "form": {
+        "exampleName": "ANC Bluetooth Kulaklık",
+        "descriptionPlaceholder": "Bağlantı tipi, pil, ANC, mikrofon, su dayanımı, gecikme ve kullanım alanını yazın.",
+        "fields": [
+          {
+            "name": "brand",
+            "label": "Marka / model",
+            "placeholder": "Marka ve model"
+          },
+          {
+            "name": "connectionType",
+            "label": "Bağlantı",
+            "type": "select",
+            "options": [
+              {
+                "value": "bluetooth",
+                "label": "Bluetooth"
+              },
+              {
+                "value": "kablolu",
+                "label": "Kablolu"
+              },
+              {
+                "value": "dongle",
+                "label": "2.4 GHz dongle"
+              }
+            ]
+          },
+          {
+            "name": "battery",
+            "label": "Pil süresi",
+            "placeholder": "30 saat"
+          },
+          {
+            "name": "noiseCancellation",
+            "label": "Aktif gürültü engelleme",
+            "type": "checkbox"
+          },
+          {
+            "name": "microphone",
+            "label": "Mikrofon kalitesi",
+            "placeholder": "ENC, çift mikrofon..."
+          },
+          {
+            "name": "waterResistance",
+            "label": "Su/ter dayanımı",
+            "placeholder": "IPX4, IP54..."
+          },
+          {
+            "name": "latency",
+            "label": "Gecikme",
+            "placeholder": "45 ms, düşük gecikme modu..."
+          },
+          {
+            "name": "useCase",
+            "label": "Kullanım amacı",
+            "placeholder": "Müzik, oyun, toplantı, spor..."
+          }
+        ]
+      },
+      "qualityFields": [
+        [
+          [
+            "brand"
+          ],
+          0.07
+        ],
+        [
+          [
+            "connectionType"
+          ],
+          0.12
+        ],
+        [
+          [
+            "battery"
+          ],
+          0.12
+        ],
+        [
+          [
+            "noiseCancellation"
+          ],
+          0.1
+        ],
+        [
+          [
+            "microphone"
+          ],
+          0.08
+        ],
+        [
+          [
+            "waterResistance"
+          ],
+          0.06
+        ],
+        [
+          [
+            "latency"
+          ],
+          0.06
+        ]
+      ]
+    },
+    "akilli_saat": {
+      "family": "ses_giyilebilir",
+      "label": "Akıllı saat",
+      "keywords": [
+        "akıllı saat",
+        "smartwatch",
+        "watch"
+      ],
+      "averagePrice": 4500,
+      "marketBreadthBase": 57,
+      "applicableAudienceFields": [
+        "incomeLevel"
+      ],
+      "defaultMotivation": "ihtiyac",
+      "defaultWeights": {
+        "priceFit": 0.17,
+        "qualityScore": 0.19,
+        "trendFit": 0.1,
+        "brandTrust": 0.09,
+        "descriptionCompleteness": 0.15,
+        "visualAppeal": 0.1,
+        "seasonFit": 0,
+        "shippingReturnScore": 0.1,
+        "targetAudienceFit": 0.09,
+        "differentiationScore": 0.03
+      },
+      "motivationWeights": {
+        "ihtiyac": {
+          "priceFit": 0.18,
+          "qualityScore": 0.21,
+          "trendFit": 0.06,
+          "brandTrust": 0.09,
+          "descriptionCompleteness": 0.16,
+          "visualAppeal": 0.07,
+          "seasonFit": 0,
+          "shippingReturnScore": 0.1,
+          "targetAudienceFit": 0.1,
+          "differentiationScore": 0.03
+        },
+        "trend": {
+          "priceFit": 0.14,
+          "qualityScore": 0.18,
+          "trendFit": 0.16,
+          "brandTrust": 0.08,
+          "descriptionCompleteness": 0.12,
+          "visualAppeal": 0.14,
+          "seasonFit": 0,
+          "shippingReturnScore": 0.08,
+          "targetAudienceFit": 0.07,
+          "differentiationScore": 0.03
+        }
+      },
+      "terms": [
+        "akilli",
+        "amoled",
+        "batarya",
+        "bildirim",
+        "gps",
+        "nabiz",
+        "saat",
+        "spor",
+        "su"
+      ],
+      "importantFields": [
+        "brand",
+        "battery",
+        "screenSize",
+        "displayType",
+        "waterResistance",
+        "sensors",
+        "connectivity",
+        "useCase"
+      ],
+      "form": {
+        "exampleName": "GPS ve AMOLED Ekranlı Akıllı Saat",
+        "descriptionPlaceholder": "Marka/model, pil, ekran, su dayanımı, sensörler, telefon uyumu ve spor/sağlık kullanımını yazın.",
+        "fields": [
+          {
+            "name": "brand",
+            "label": "Marka / model",
+            "placeholder": "Marka ve model",
+            "required": true
+          },
+          {
+            "name": "screenSize",
+            "label": "Ekran boyutu",
+            "placeholder": "1.43 inch"
+          },
+          {
+            "name": "displayType",
+            "label": "Ekran tipi",
+            "placeholder": "AMOLED, Always-on..."
+          },
+          {
+            "name": "battery",
+            "label": "Pil süresi",
+            "placeholder": "7 gün, 14 gün..."
+          },
+          {
+            "name": "waterResistance",
+            "label": "Su dayanımı",
+            "placeholder": "5 ATM, IP68..."
+          },
+          {
+            "name": "sensors",
+            "label": "Sensörler",
+            "placeholder": "Nabız, SpO2, GPS, uyku takibi..."
+          },
+          {
+            "name": "connectivity",
+            "label": "Bağlantı / uyum",
+            "placeholder": "Bluetooth, eSIM, iOS/Android..."
+          },
+          {
+            "name": "useCase",
+            "label": "Kullanım amacı",
+            "placeholder": "Spor, sağlık takibi, bildirim..."
+          }
+        ]
+      },
+      "qualityFields": [
+        [
+          [
+            "brand"
+          ],
+          0.08
+        ],
+        [
+          [
+            "ram"
+          ],
+          0.1
+        ],
+        [
+          [
+            "storage"
+          ],
+          0.1
+        ],
+        [
+          [
+            "processor"
+          ],
+          0.1
+        ],
+        [
+          [
+            "battery"
+          ],
+          0.07
+        ],
+        [
+          [
+            "screenSize"
+          ],
+          0.08
+        ],
+        [
+          [
+            "sensors",
+            "waterResistance"
+          ],
+          0.08
+        ]
+      ]
+    },
+    "akilli_bileklik": {
+      "family": "ses_giyilebilir",
+      "label": "Akıllı bileklik",
+      "keywords": [
+        "akıllı bileklik",
+        "mi band",
+        "fitness bileklik",
+        "smart band"
+      ],
+      "averagePrice": 1500,
+      "form": {
+        "exampleName": "GPS ve AMOLED Ekranlı Akıllı Saat",
+        "descriptionPlaceholder": "Marka/model, pil, ekran, su dayanımı, sensörler, telefon uyumu ve spor/sağlık kullanımını yazın.",
+        "fields": [
+          {
+            "name": "brand",
+            "label": "Marka / model",
+            "placeholder": "Marka ve model",
+            "required": true
+          },
+          {
+            "name": "screenSize",
+            "label": "Ekran boyutu",
+            "placeholder": "1.43 inch"
+          },
+          {
+            "name": "displayType",
+            "label": "Ekran tipi",
+            "placeholder": "AMOLED, Always-on..."
+          },
+          {
+            "name": "battery",
+            "label": "Pil süresi",
+            "placeholder": "7 gün, 14 gün..."
+          },
+          {
+            "name": "waterResistance",
+            "label": "Su dayanımı",
+            "placeholder": "5 ATM, IP68..."
+          },
+          {
+            "name": "sensors",
+            "label": "Sensörler",
+            "placeholder": "Nabız, SpO2, GPS, uyku takibi..."
+          },
+          {
+            "name": "connectivity",
+            "label": "Bağlantı / uyum",
+            "placeholder": "Bluetooth, eSIM, iOS/Android..."
+          },
+          {
+            "name": "useCase",
+            "label": "Kullanım amacı",
+            "placeholder": "Spor, sağlık takibi, bildirim..."
+          }
+        ]
+      },
+      "qualityFields": [
+        [
+          [
+            "brand"
+          ],
+          0.08
+        ],
+        [
+          [
+            "ram"
+          ],
+          0.1
+        ],
+        [
+          [
+            "storage"
+          ],
+          0.1
+        ],
+        [
+          [
+            "processor"
+          ],
+          0.1
+        ],
+        [
+          [
+            "battery"
+          ],
+          0.07
+        ],
+        [
+          [
+            "screenSize"
+          ],
+          0.08
+        ],
+        [
+          [
+            "sensors",
+            "waterResistance"
+          ],
+          0.08
+        ]
+      ],
+      "importantFields": [
+        "brand",
+        "battery",
+        "screenSize",
+        "displayType",
+        "waterResistance",
+        "sensors",
+        "connectivity",
+        "useCase"
+      ],
+      "terms": [
+        "akilli",
+        "amoled",
+        "batarya",
+        "bildirim",
+        "gps",
+        "nabiz",
+        "saat",
+        "spor",
+        "su"
+      ]
+    },
+    "hoparlor": {
+      "family": "ses_giyilebilir",
+      "label": "Hoparlör",
+      "keywords": [
+        "hoparlör",
+        "speaker",
+        "soundbar",
+        "ses bombası"
+      ],
+      "averagePrice": 2500,
+      "form": {
+        "exampleName": "Su Geçirmez Taşınabilir Bluetooth Hoparlör",
+        "descriptionPlaceholder": "Ses gücü, bağlantı, pil süresi, suya dayanıklılık ve kullanım alanını yazın.",
+        "fields": [
+          {
+            "name": "brand",
+            "label": "Marka / model",
+            "required": true
+          },
+          {
+            "name": "power",
+            "label": "Ses gücü (W)",
+            "placeholder": "20 W"
+          },
+          {
+            "name": "connectionType",
+            "label": "Bağlantı",
+            "placeholder": "Bluetooth 5.3, AUX"
+          },
+          {
+            "name": "battery",
+            "label": "Pil süresi",
+            "placeholder": "12 saat"
+          },
+          {
+            "name": "waterResistance",
+            "label": "Suya dayanıklılık",
+            "placeholder": "IPX7"
+          },
+          {
+            "name": "useCase",
+            "label": "Kullanım",
+            "placeholder": "Ev, kamp, parti"
+          }
+        ]
+      },
+      "qualityFields": [
+        [
+          [
+            "brand"
+          ],
+          0.08
+        ],
+        [
+          [
+            "power"
+          ],
+          0.1
+        ],
+        [
+          [
+            "connectionType"
+          ],
+          0.1
+        ],
+        [
+          [
+            "battery"
+          ],
+          0.1
+        ],
+        [
+          [
+            "waterResistance"
+          ],
+          0.08
+        ]
+      ],
+      "importantFields": [
+        "brand",
+        "power",
+        "connectionType",
+        "battery",
+        "waterResistance"
+      ],
+      "terms": [
+        "hoparlör",
+        "ses bombası",
+        "soundbar",
+        "speaker"
+      ]
+    },
+    "kilif": {
+      "family": "elektronik_aksesuar",
+      "label": "Kılıf ve koruyucu",
+      "keywords": [
+        "kılıf",
+        "kapak",
+        "ekran koruyucu",
+        "kırılmaz cam",
+        "temperli cam"
+      ],
+      "averagePrice": 250,
+      "terms": [
+        "ekran koruyucu",
+        "kapak",
+        "kılıf",
+        "kırılmaz cam",
+        "temperli cam"
+      ]
+    },
+    "sarj": {
+      "family": "elektronik_aksesuar",
+      "label": "Şarj aleti ve kablo",
+      "keywords": [
+        "şarj aleti",
+        "şarj cihazı",
+        "adaptör",
+        "şarj kablosu",
+        "kablo",
+        "kablosuz şarj"
+      ],
+      "averagePrice": 450,
+      "terms": [
+        "adaptör",
+        "kablo",
+        "kablosuz şarj",
+        "şarj aleti",
+        "şarj cihazı",
+        "şarj kablosu"
+      ]
+    },
+    "powerbank": {
+      "family": "elektronik_aksesuar",
+      "label": "Powerbank",
+      "keywords": [
+        "powerbank",
+        "power bank",
+        "taşınabilir şarj"
+      ],
+      "averagePrice": 900,
+      "importantFields": [
+        "battery",
+        "power",
+        "connectionType"
+      ],
+      "terms": [
+        "power bank",
+        "powerbank",
+        "taşınabilir şarj"
+      ]
+    },
+    "supurge": {
+      "family": "kucuk_ev_aletleri",
+      "label": "Süpürge",
+      "keywords": [
+        "süpürge",
+        "robot süpürge",
+        "dikey süpürge",
+        "şarjlı süpürge"
+      ],
+      "averagePrice": 6000,
+      "terms": [
+        "dikey süpürge",
+        "robot süpürge",
+        "süpürge",
+        "şarjlı süpürge"
+      ]
+    },
+    "airfryer": {
+      "family": "kucuk_ev_aletleri",
+      "label": "Airfryer ve fritöz",
+      "keywords": [
+        "airfryer",
+        "air fryer",
+        "fritöz",
+        "sıcak hava fritözü"
+      ],
+      "averagePrice": 3500,
+      "terms": [
+        "air fryer",
+        "airfryer",
+        "fritöz",
+        "sıcak hava fritözü"
+      ]
+    },
+    "kahve_makinesi": {
+      "family": "kucuk_ev_aletleri",
+      "label": "Kahve makinesi",
+      "keywords": [
+        "kahve makinesi",
+        "espresso",
+        "türk kahvesi makinesi",
+        "filtre kahve"
+      ],
+      "averagePrice": 4500,
+      "terms": [
+        "espresso",
+        "filtre kahve",
+        "kahve makinesi",
+        "türk kahvesi makinesi"
+      ]
+    },
+    "utu": {
+      "family": "kucuk_ev_aletleri",
+      "label": "Ütü",
+      "keywords": [
+        "ütü",
+        "buharlı ütü",
+        "buhar kazanlı"
+      ],
+      "averagePrice": 1800,
+      "terms": [
+        "buhar kazanlı",
+        "buharlı ütü",
+        "ütü"
+      ]
+    },
+    "blender": {
+      "family": "kucuk_ev_aletleri",
+      "label": "Blender ve mutfak robotu",
+      "keywords": [
+        "blender",
+        "mikser",
+        "doğrayıcı",
+        "mutfak robotu",
+        "rondo"
+      ],
+      "averagePrice": 1500,
+      "terms": [
+        "blender",
+        "doğrayıcı",
+        "mikser",
+        "mutfak robotu",
+        "rondo"
+      ]
+    },
+    "kisisel_bakim_aleti": {
+      "family": "kucuk_ev_aletleri",
+      "label": "Kişisel bakım aleti",
+      "keywords": [
+        "saç kurutma",
+        "fön makinesi",
+        "düzleştirici",
+        "tıraş makinesi",
+        "epilatör",
+        "maşa"
+      ],
+      "averagePrice": 1800,
+      "applicableAudienceFields": [
+        "ageRange",
+        "gender",
+        "incomeLevel"
+      ],
+      "terms": [
+        "düzleştirici",
+        "epilatör",
+        "fön makinesi",
+        "maşa",
+        "saç kurutma",
+        "tıraş makinesi"
+      ]
+    },
+    "mutfak": {
+      "family": "ev_yasam",
+      "label": "Mutfak gereçleri",
+      "keywords": [
+        "tencere",
+        "tava",
+        "bıçak",
+        "bardak",
+        "tabak",
+        "saklama kabı",
+        "çatal",
+        "kaşık",
+        "termos",
+        "demlik"
+      ],
+      "averagePrice": 600,
+      "terms": [
+        "bardak",
+        "bıçak",
+        "demlik",
+        "kaşık",
+        "saklama kabı",
+        "tabak",
+        "tava",
+        "tencere",
+        "termos",
+        "çatal"
+      ]
+    },
+    "dekorasyon": {
+      "family": "ev_yasam",
+      "label": "Dekorasyon ve aydınlatma",
+      "keywords": [
+        "vazo",
+        "çerçeve",
+        "mum",
+        "tablo",
+        "ayna",
+        "duvar saati",
+        "lamba",
+        "avize",
+        "abajur",
+        "dekoratif"
+      ],
+      "averagePrice": 500,
+      "terms": [
+        "abajur",
+        "avize",
+        "ayna",
+        "dekoratif",
+        "duvar saati",
+        "lamba",
+        "mum",
+        "tablo",
+        "vazo",
+        "çerçeve"
+      ]
+    },
+    "ev_tekstili": {
+      "family": "ev_yasam",
+      "label": "Ev tekstili",
+      "keywords": [
+        "nevresim",
+        "havlu",
+        "battaniye",
+        "yastık",
+        "perde",
+        "halı",
+        "kilim",
+        "yorgan",
+        "pike",
+        "masa örtüsü"
+      ],
+      "averagePrice": 900,
+      "terms": [
+        "battaniye",
+        "halı",
+        "havlu",
+        "kilim",
+        "masa örtüsü",
+        "nevresim",
+        "perde",
+        "pike",
+        "yastık",
+        "yorgan"
+      ]
+    },
+    "mobilya": {
+      "family": "ev_yasam",
+      "label": "Mobilya",
+      "keywords": [
+        "mobilya",
+        "masa",
+        "sandalye",
+        "koltuk",
+        "kitaplık",
+        "dolap",
+        "sehpa",
+        "yatak",
+        "baza",
+        "raf"
+      ],
+      "averagePrice": 5000,
+      "form": {
+        "exampleName": "Masif Ahşap 4 Kişilik Yemek Masası",
+        "descriptionPlaceholder": "Malzeme, ölçü, taşıma kapasitesi, kurulum, renk ve garantiyi yazın.",
+        "fields": [
+          {
+            "name": "material",
+            "label": "Malzeme",
+            "placeholder": "Masif ahşap, MDF, metal…",
+            "required": true
+          },
+          {
+            "name": "dimensions",
+            "label": "Ölçü",
+            "placeholder": "120 x 80 x 75 cm",
+            "required": true
+          },
+          {
+            "name": "loadCapacity",
+            "label": "Taşıma kapasitesi",
+            "placeholder": "100 kg"
+          },
+          {
+            "name": "installationEase",
+            "label": "Kurulum",
+            "placeholder": "Kurulu gelir, kolay kurulum…"
+          },
+          {
+            "name": "colorsText",
+            "label": "Renk seçenekleri"
+          },
+          {
+            "name": "style",
+            "label": "Stil",
+            "placeholder": "Modern, rustik…"
+          }
+        ]
+      },
+      "qualityFields": [
+        [
+          [
+            "material"
+          ],
+          0.14
+        ],
+        [
+          [
+            "dimensions"
+          ],
+          0.12
+        ],
+        [
+          [
+            "loadCapacity"
+          ],
+          0.08
+        ],
+        [
+          [
+            "installationEase"
+          ],
+          0.04
+        ],
+        [
+          [
+            "style"
+          ],
+          0.06
+        ],
+        [
+          [
+            "colors"
+          ],
+          0.04
+        ]
+      ],
+      "importantFields": [
+        "material",
+        "dimensions",
+        "loadCapacity",
+        "installationEase"
+      ],
+      "terms": [
+        "baza",
+        "dolap",
+        "kitaplık",
+        "koltuk",
+        "masa",
+        "mobilya",
+        "raf",
+        "sandalye",
+        "sehpa",
+        "yatak"
+      ]
+    },
+    "bebek_bakim": {
+      "family": "anne_bebek",
+      "label": "Bebek bakımı",
+      "keywords": [
+        "biberon",
+        "emzik",
+        "bebek bezi",
+        "ıslak mendil",
+        "mama sandalyesi",
+        "bebek bakım",
+        "alt açma"
+      ],
+      "averagePrice": 700,
+      "terms": [
+        "alt açma",
+        "bebek bakım",
+        "bebek bezi",
+        "biberon",
+        "emzik",
+        "mama sandalyesi",
+        "ıslak mendil"
+      ]
+    },
+    "bebek_arabasi": {
+      "family": "anne_bebek",
+      "label": "Bebek arabası ve oto koltuğu",
+      "keywords": [
+        "bebek arabası",
+        "puset",
+        "oto koltuğu",
+        "ana kucağı",
+        "travel sistem"
+      ],
+      "averagePrice": 7000,
+      "terms": [
+        "ana kucağı",
+        "bebek arabası",
+        "oto koltuğu",
+        "puset",
+        "travel sistem"
+      ]
+    },
+    "oyuncak": {
+      "family": "anne_bebek",
+      "label": "Oyuncak",
+      "keywords": [
+        "oyuncak",
+        "lego",
+        "puzzle",
+        "yapboz",
+        "peluş",
+        "kutu oyunu",
+        "oyun seti",
+        "figür"
+      ],
+      "averagePrice": 600,
+      "terms": [
+        "figür",
+        "kutu oyunu",
+        "lego",
+        "oyun seti",
+        "oyuncak",
+        "peluş",
+        "puzzle",
+        "yapboz"
+      ]
+    },
+    "fitness": {
+      "family": "spor_outdoor",
+      "label": "Fitness ekipmanı",
+      "keywords": [
+        "dambıl",
+        "yoga matı",
+        "pilates",
+        "direnç bandı",
+        "ağırlık",
+        "koşu bandı",
+        "barfiks",
+        "kettlebell"
+      ],
+      "averagePrice": 1200,
+      "terms": [
+        "ağırlık",
+        "barfiks",
+        "dambıl",
+        "direnç bandı",
+        "kettlebell",
+        "koşu bandı",
+        "pilates",
+        "yoga matı"
+      ]
+    },
+    "kamp": {
+      "family": "spor_outdoor",
+      "label": "Kamp ve doğa",
+      "keywords": [
+        "çadır",
+        "uyku tulumu",
+        "kamp sandalyesi",
+        "matara",
+        "kamp ocağı",
+        "trekking",
+        "sırt çantası kamp"
+      ],
+      "averagePrice": 1500,
+      "seasonPeak": {
+        "seasons": [
+          "summer",
+          "yaz",
+          "spring",
+          "bahar"
+        ],
+        "score": 0.86
+      },
+      "terms": [
+        "kamp ocağı",
+        "kamp sandalyesi",
+        "matara",
+        "sırt çantası kamp",
+        "trekking",
+        "uyku tulumu",
+        "çadır"
+      ]
+    },
+    "bisiklet": {
+      "family": "spor_outdoor",
+      "label": "Bisiklet ve scooter",
+      "keywords": [
+        "bisiklet",
+        "scooter",
+        "kask",
+        "paten",
+        "kaykay"
+      ],
+      "averagePrice": 9000,
+      "terms": [
+        "bisiklet",
+        "kask",
+        "kaykay",
+        "paten",
+        "scooter"
+      ]
     }
   }
 }

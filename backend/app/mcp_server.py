@@ -33,7 +33,9 @@ from app.models.category import Category
 from app.models.product import CommerceInfo, ProductFeatures, PurchaseMotivation, SimulationRequest, TargetAudience
 from app.services import history_store, llm_client
 from app.services.labels import MOTIVATION_LABELS, persona_label
-from app.services.normalization_service import load_category_rules, load_persona_data
+from app.services import categories
+from app.services.categories import load_category_rules
+from app.services.normalization_service import load_persona_data
 from app.services.product_link_service import URLValidationError, read_product_link
 from app.services.simulation_service import run_simulation
 
@@ -57,13 +59,17 @@ logger = logging.getLogger("mcp")
 class ProductInput(BaseModel):
     """What the simulation needs. Text limits match the website form."""
 
-    category: Category = Field(description="Kategori kimliği; list_categories ile alınır.")
+    category: Category = Field(description="Kategori kimliği; list_categories ile alınır. Alt tür bilinmiyorsa aile kimliği, hiçbiri uymuyorsa 'diger'.")
     purchase_motivation: PurchaseMotivation = Field(
         alias="purchaseMotivation",
         description="Satın alma motivasyonu: " + ", ".join(f"{k} ({v})" for k, v in MOTIVATION_LABELS.items()),
     )
     product_name: str = Field(alias="productName", min_length=4, max_length=120)
     price: float = Field(gt=0, le=10_000_000, description="TL")
+    market_price: Optional[float] = Field(
+        default=None, alias="marketPrice", gt=0, le=10_000_000,
+        description="Benzer ürünlerin ortalama fiyatı (TL). 'diger' kategorisinde verilmesi önerilir; diğerlerinde kategori ortalamasını ezer.",
+    )
     description: str = Field(min_length=40, max_length=4000, description="Ürün açıklaması; en az 40 karakter.")
     target_audience: TargetAudience = Field(
         alias="targetAudience",
@@ -118,20 +124,27 @@ def _site_url(simulation_id: Optional[str]) -> Optional[str]:
 
 @mcp.tool(title="Kategoriler", annotations=READ_ONLY)
 def list_categories() -> dict[str, Any]:
-    """Desteklenen kategorileri, kategori başına ortalama fiyatı ve skoru etkileyen önemli alanları döndürür."""
+    """Kategori ailelerini ve alt türlerini; her biri için ortalama fiyatı ve skoru etkileyen alanları döndürür."""
     rate_limit.check()
-    rules = load_category_rules()["categories"]
+    data = load_category_rules()
+
+    def entry(cid: str) -> dict[str, Any]:
+        rule = categories.rule_for(cid)
+        return {
+            "id": cid,
+            "label": rule["label"],
+            "averagePrice": rule.get("averagePrice"),
+            "defaultMotivation": rule["defaultMotivation"],
+            "fields": [{"key": "colors" if f["name"] == "colorsText" else f["name"], "label": f["label"]} for f in rule["form"]["fields"]],
+        }
+
     return {
-        "categories": [
-            {
-                "id": key,
-                "label": rule["label"],
-                "averagePrice": rule["averagePrice"],
-                "defaultMotivation": rule["defaultMotivation"],
-                "fields": [{"key": f["key"], "label": f["label"]} for f in rule.get("formFields", [])],
-            }
-            for key, rule in rules.items()
+        "families": [
+            {**entry(fid), "subtypes": [entry(cid) for cid, cat in data["categories"].items() if cat["family"] == fid]}
+            for fid in data["families"]
         ],
+        "note": ("Kategori olarak alt tür kimliğini ver; alt tür bilinmiyorsa aile kimliğini. 'diger' ailesinin ortalama fiyatı yoktur; "
+                 "marketPrice (benzer ürünlerin ortalama fiyatı) verilmezse fiyat nötr kabul edilir."),
         "motivations": MOTIVATION_LABELS,
     }
 

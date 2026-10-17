@@ -76,6 +76,9 @@ class ProductFeatures(BaseModel):
     compatible_model: Optional[ShortText] = Field(default=None, alias="compatibleModel")
     dimensions: Optional[ShortText] = None
     installation_ease: Optional[ShortText] = Field(default=None, alias="installationEase")
+    # Appliances, speakers, chargers / baby and toys (Faz 13a families)
+    power: Optional[ShortText] = None
+    age_group: Optional[ShortText] = Field(default=None, alias="ageGroup")
     # Shoes, bags, cosmetics
     sole_material: Optional[ShortText] = Field(default=None, alias="soleMaterial")
     heel_height: Optional[ShortText] = Field(default=None, alias="heelHeight")
@@ -104,6 +107,8 @@ class SimulationRequest(BaseModel):
     product_name: str = Field(alias="productName", min_length=4, max_length=120)
     product_url: Optional[str] = Field(default=None, alias="productUrl", max_length=2048)
     price: float = Field(gt=0, le=10_000_000, allow_inf_nan=False)
+    # Typical price of similar products; overrides the category average (needed for "diger", which has none).
+    market_price: Optional[float] = Field(default=None, alias="marketPrice", gt=0, le=10_000_000, allow_inf_nan=False)
     description: str = Field(min_length=40, max_length=4000)
     target_audience: TargetAudience = Field(alias="targetAudience")
     features: ProductFeatures = Field(default_factory=ProductFeatures)

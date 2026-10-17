@@ -96,7 +96,8 @@ def _returns_line(available: Any) -> str:
 
 def _price_line(request: dict[str, Any]) -> str:
     price = float(request.get("price") or 0)
-    average = float(get_category_rule(str(request.get("category"))).get("averagePrice") or 0)
+    # No reference for "diger" without a market price: say so rather than compare the price with itself.
+    average = float(request.get("marketPrice") or get_category_rule(str(request.get("category"))).get("averagePrice") or 0)
     if not price or not average:
         return "Fiyatı tam değerlendiremiyorum."
     ratio = price / average

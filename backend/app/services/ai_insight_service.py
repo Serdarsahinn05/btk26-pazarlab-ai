@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List
 
-from app.models.category import BEAUTY, CLOTHING, FASHION_ACCESSORIES, TECH
+from app.services import categories
 from app.models.product import SimulationRequest
 from app.models.simulation import AiInsights, NormalizedProduct, PersonaFeedback, PersonaResult
 from app.services import llm_client
@@ -330,21 +330,19 @@ def _build_sales_recipe(
         f"{first_channel} için 7 günlük A/B test kur: bir varyant fayda odaklı, diğeri fiyat/güven odaklı olsun.",
         "İade, kargo ve garanti/fatura bilgisini fiyat alanına yakın gösterecek şekilde listelemeyi düzenle.",
     ]
-    if category in TECH:
-        recipe.insert(1, "Teknik özellikleri karşılaştırılabilir yaz: model, kapasite, pil, ekran ve garanti aynı blokta dursun.")
-    if category in CLOTHING:
-        recipe.insert(1, "Beden/kalıp bilgisini ve gerçek kullanım/kombin senaryosunu açıklamanın ilk 2 satırına al.")
-    if category == "ayakkabi":
-        recipe.insert(1, "Numara tablosunu, kalıbın dar/geniş olduğunu ve taban malzemesini açıklamanın ilk satırlarına al; yandan ve tabandan görsel ekle.")
-    if category == "canta":
-        recipe.insert(1, "Ölçüleri ve neyin sığdığını (laptop, A4, su şişesi) gösteren bir görsel ekle; bölmeleri ve askıyı tek blokta yaz.")
-    if category in BEAUTY:
-        recipe.insert(1, "İçerik listesini, cilt tipi uyumunu ve hacmi ilk satırlara al; dermatolojik test veya sertifika varsa ilk görselde göster.")
+    tip = _copy(category).get("recipeTip")
+    if tip:
+        recipe.insert(1, tip)
     if "price_sensitive_users_rejected" in weakness_signals or market_breadth_score < 50:
         recipe.append("Fiyat bariyerini ölçmek için ücretsiz kargo veya kupon varyantını ana fiyatı düşürmeden test et.")
     if product_type == "trend/stil ürünü" and getattr(features, "colors", None):
         recipe.append("Renk varyantlarını ayrı görsel setleriyle test et; tek ilanda tüm renkleri gizleme.")
     return recipe[:5]
+
+
+def _copy(category: str) -> dict[str, str]:
+    """Category-specific advice texts from data/category_rules.json (family level, subtypes may override)."""
+    return categories.rule_for(category).get("copy", {})
 
 
 def _build_marketing_advice(
@@ -356,16 +354,7 @@ def _build_marketing_advice(
     intent_conversion_score: int,
 ) -> str:
     channel_text = ", ".join(channels) if channels else "pazar yeri içi arama ve sosyal medya"
-    if category in TECH:
-        angle = "teknik kanıt + güven + karşılaştırma"
-    elif category in CLOTHING:
-        angle = "stil, beden uyumu ve gerçek kullanım görselleri"
-    elif category in FASHION_ACCESSORIES:
-        angle = "stil, malzeme kalitesi ve gerçek kullanımda çekilmiş görseller"
-    elif category in BEAUTY:
-        angle = "içerik şeffaflığı, cilt tipi uyumu ve gerçek kullanıcı yorumları"
-    else:
-        angle = "net fayda ve güven"
+    angle = _copy(category).get("marketingAngle", "net fayda ve güven")
     scope = "geniş kitle kreatifleri" if market_breadth_score >= 55 else "arama niyeti yüksek, daha dar bir kitle"
     return (
         f"Kanal odağı: {channel_text}. Mesaj dili {angle} üzerine kurulsun. "
@@ -376,15 +365,7 @@ def _build_marketing_advice(
 def _build_description_advice(request: SimulationRequest, normalized_product: NormalizedProduct) -> str:
     if normalized_product.description_completeness >= 0.75:
         return "Açıklama temelde güçlü; ilk paragrafı daha net fayda, ikinci paragrafı teknik/beden detayları olacak şekilde düzenle."
-    if request.category in TECH:
-        return "Açıklamaya model, kapasite, pil/ekran, garanti-fatura ve kimler için uygun olduğunu tablo gibi okunacak netlikte ekle."
-    if request.category == "ayakkabi":
-        return "Açıklamaya saya ve taban malzemesini, numara aralığını, kalıbın dar/geniş olduğunu, kullanım alanını ve iade bilgisini ayrı cümlelerle ekle."
-    if request.category == "canta":
-        return "Açıklamaya ölçüleri, malzemeyi, bölme sayısını, askı tipini ve neyin sığdığını ayrı cümlelerle ekle."
-    if request.category in BEAUTY:
-        return "Açıklamaya öne çıkan içerikleri, cilt/saç tipini, hacmi, kullanım şeklini ve test/sertifika bilgisini ayrı cümlelerle ekle."
-    return "Açıklamaya kumaş, kalıp, beden aralığı, sezon, kombin/kullanım senaryosu ve iade bilgisini ayrı cümlelerle ekle."
+    return _copy(request.category)["descriptionAdvice"]
 
 
 def _build_pricing_advice(request: SimulationRequest, normalized_product: NormalizedProduct) -> str:
@@ -400,10 +381,10 @@ def _build_pricing_advice(request: SimulationRequest, normalized_product: Normal
             "küçük indirim + aciliyet mesajı.")
 
 def _build_season_advice(request: SimulationRequest, normalized_product: NormalizedProduct) -> str:
-    category = request.category
     season = getattr(request.features, "season", None)
-    if category in TECH:
-        return "Teknoloji ürünlerinde sezon etkisi düşük; okul dönemi, yılbaşı, maaş haftası ve kampanya dönemleri ayrı test edilmeli."
+    fixed = _copy(request.category).get("seasonAdvice")
+    if fixed:
+        return fixed
     if normalized_product.season_fit >= 0.80:
         return f"Sezon uyumu güçlü ({season or 'belirtilen sezon'}). Başlık, ilk görsel ve kampanya metninde bu kullanım dönemini öne çıkar."
     return "Sezon uyumu zayıfsa ürünü indirim/alternatif kullanım senaryosuyla konumlandır; ana reklam bütçesini sezon zirvesine sakla."
@@ -427,6 +408,9 @@ def _build_improved_description(request: SimulationRequest, category_str: str) -
         ("RAM", getattr(features, "ram", None)),
         ("Depolama", getattr(features, "storage", None)),
         ("Batarya", getattr(features, "battery", None)),
+        ("Güç", getattr(features, "power", None)),
+        ("Yaş grubu", getattr(features, "age_group", None)),
+        ("Uyumlu model", getattr(features, "compatible_model", None)),
         ("Kullanım", getattr(features, "use_case", None)),
     ]:
         if value:

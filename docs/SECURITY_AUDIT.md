@@ -103,7 +103,7 @@ Bu alanların tamamı LLM prompt'larına giriyor. Sınırsız girdi, maliyet sal
 | `product_name` | `max_length=120` |
 | `description` | `max_length=4000` |
 | `ageRange`, `gender`, `incomeLevel` | `max_length=40` |
-| `category` | `Literal[...]` veya Enum (10 kategori) |
+| `category` | `Literal[...]` veya Enum (10 kategori). Faz 13a: `category_rules.json`'daki aile/alt tür kimlikleri (beyaz liste, bilinmeyen → 422) |
 | `price` | `gt=0, le=10_000_000, allow_inf_nan=False` |
 | `images` | `max_length=6`; öğe başına URL ≤ 2048 karakter veya data URL ≤ 1.5 MB |
 | `features` | `extra="forbid"`; liste alanları ≤ 20 öğe, metin alanları ≤ 120 karakter |

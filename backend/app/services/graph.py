@@ -7,6 +7,7 @@ from langgraph.graph import StateGraph, END
 from app.models.product import SimulationRequest
 from app.models.simulation import SimulationResponse
 from app.services import llm_client
+from app.services.labels import category_label
 from app.services.prompt_safety import clip
 from app.utils.text_utils import fold_text
 from app.services.simulation_service import run_simulation
@@ -65,7 +66,7 @@ def benchmark_node(state: GraphState) -> Dict[str, Any]:
     data = {
         "urun": clip(state["product_name"], 120),
         "fiyat": state["request"].price,
-        "kategori": clip(state["category"], 40),
+        "kategori": clip(state["category"], 80),
         "rakipler": [
             {"baslik": clip(c.get("title"), 120), "fiyat": clip(c.get("price"), 30), "kaynak": clip(c.get("source"), 60)}
             for c in competitors[:5]
@@ -222,7 +223,7 @@ def debate_node_v2(state: GraphState) -> Dict[str, Any]:
     data = {
         "urun": clip(state["product_name"], 120),
         "fiyat": state["request"].price,
-        "kategori": clip(state["category"], 40),
+        "kategori": clip(state["category"], 80),
         "genelSkor": response.overall_score,
         "pazarAnalizi": clip(state["benchmark_analysis"], 1500),
         "personalar": [
@@ -295,7 +296,7 @@ def iter_agentic_simulation(request: SimulationRequest) -> Iterator[tuple[str, A
     state: Dict[str, Any] = {
         "request": request,
         "product_name": request.product_name,
-        "category": request.category,
+        "category": category_label(request.category),
         "competitors": [],
         "benchmark_analysis": "",
         "debate_logs": [],

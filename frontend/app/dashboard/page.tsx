@@ -13,7 +13,8 @@ import { addToHistory, findInHistory, storableRequest } from "@/lib/history";
 import { DASHBOARD_VIEWS, DashboardView } from "@/components/TopBar";
 import personasData from "@/data/personas.json";
 import { aiFallbackNote, analyzeProductInput, apiErrorMessage, getSimulation, simulateProductStream } from "@/lib/api";
-import { CATEGORIES, InputAnalysisResponse, SimulationRequest, SimulationResponse } from "@/types";
+import { InputAnalysisResponse, SimulationRequest, SimulationResponse } from "@/types";
+import { FAMILY_COUNT } from "@/lib/categories";
 
 const PERSONA_COUNT = personasData.personaTypes.length;
 // Only called from event handlers; kept outside the component so the React Compiler doesn't flag it as render-time.
@@ -162,7 +163,7 @@ function DashboardContent() {
         <header className="space-y-2">
           <h1 className="text-[clamp(32px,5vw,52px)] font-extrabold leading-[1.02] tracking-tight">Ürününü test et</h1>
           <p className="text-foreground-2">
-            {BOT_COUNT} sentetik tüketici · {PERSONA_COUNT} persona · {CATEGORIES.length} kategori{" "}
+            {BOT_COUNT} sentetik tüketici · {PERSONA_COUNT} persona · {FAMILY_COUNT} kategori{" "}
             <span className="ml-1 inline-block -rotate-2 font-hand text-xl text-muted-foreground">satmadan önce dene</span>
           </p>
         </header>

@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.models.product import SimulationRequest
 from app.models.simulation import DecisionDistribution
 from app.security import RateLimit
+from app.services import categories
 from app.services.simulation_service import simulate_core
 
 router = APIRouter(prefix="/api", tags=["what-if"])
@@ -84,6 +85,7 @@ def _metrics(request: SimulationRequest) -> CoreMetrics:
 )
 def price_sweep(request: SimulationRequest) -> SweepResponse:
     points: list[SweepPoint] = []
+    request = categories.anchored(request)
     for factor in SWEEP_FACTORS:
         price = round(request.price * factor, 2)
         m = _metrics(request.model_copy(update={"price": price}))
@@ -110,4 +112,5 @@ def price_sweep(request: SimulationRequest) -> SweepResponse:
     dependencies=[Depends(RateLimit("RATE_LIMIT_WHATIF_PER_MIN", 20))],
 )
 def compare(payload: CompareRequest) -> CompareResponse:
-    return CompareResponse(base=_metrics(payload.base), variant=_metrics(payload.variant))
+    base = categories.anchored(payload.base)
+    return CompareResponse(base=_metrics(base), variant=_metrics(categories.anchored(payload.variant, base)))

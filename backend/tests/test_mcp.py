@@ -54,8 +54,9 @@ def test_tools_are_listed_with_turkish_metadata():
 
 
 def test_list_categories_and_personas():
-    categories = call("list_categories").structured_content["categories"]
-    assert len(categories) == 13 and {"id", "label", "averagePrice", "fields"} <= set(categories[0])
+    families = call("list_categories").structured_content["families"]
+    assert len(families) == 13 and {"id", "label", "averagePrice", "fields", "subtypes"} <= set(families[0])
+    assert any(sub["id"] == "tisort" for sub in families[0]["subtypes"])
     personas = call("list_personas").structured_content["personas"]
     assert len(personas) == 12 and personas[1]["name"] == "Trend Takipçisi" and personas[1]["rolePrompt"]
 
@@ -83,7 +84,7 @@ def test_price_sweep_and_compare(no_network_ai):
 
 
 def test_bad_input_and_unknown_ids_are_tool_errors():
-    assert call("simulate_product", {"product": {**PRODUCT, "category": "mobilya"}}).is_error
+    assert call("simulate_product", {"product": {**PRODUCT, "category": "televizyon"}}).is_error
     assert call("get_simulation", {"simulation_id": "../etc/passwd"}).is_error
     link = call("read_product_link", {"url": "http://127.0.0.1/admin"})  # SSRF protection applies here too
     assert link.is_error and "okunamadı" in json.dumps([c.model_dump() for c in link.content], ensure_ascii=False)
