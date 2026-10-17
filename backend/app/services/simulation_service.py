@@ -39,14 +39,17 @@ def _seed_payload(request: SimulationRequest) -> dict[str, Any]:
     return payload
 
 
-def simulate_core(request: SimulationRequest, input_analysis: Optional[InputAnalysisResponse] = None) -> dict[str, Any]:
+def simulate_core(
+    request: SimulationRequest, input_analysis: Optional[InputAnalysisResponse] = None, seed: Optional[int] = None
+) -> dict[str, Any]:
     """Run the 500-bot simulation without any LLM call (deterministic, ~ms).
 
     Used by run_simulation and by the what-if endpoints (price sweep, A/B compare).
-    Without an explicit analysis it falls back to the deterministic input checks.
+    Without an explicit analysis it falls back to the deterministic input checks. `seed` fixes the
+    crowd regardless of the input (the draft check compares many variants of one draft).
     """
     input_analysis = input_analysis or request.input_analysis or deterministic_analysis(request)
-    return _simulate(request, input_analysis)
+    return _simulate(request, input_analysis, seed)
 
 
 def _candidate_changes(request: SimulationRequest) -> list[tuple[str, str, SimulationRequest]]:
@@ -138,11 +141,11 @@ def run_simulation(request: SimulationRequest) -> SimulationResponse:
     )
 
 
-def _simulate(request: SimulationRequest, input_analysis: InputAnalysisResponse) -> dict[str, Any]:
+def _simulate(request: SimulationRequest, input_analysis: InputAnalysisResponse, seed: Optional[int] = None) -> dict[str, Any]:
     normalized = normalize_product(request, input_analysis.signals)
     persona_data = load_persona_data()
     config = persona_data["simulationConfig"]
-    seed = stable_seed(_seed_payload(request), config["seedSalt"])
+    seed = seed if seed is not None else stable_seed(_seed_payload(request), config["seedSalt"])
     market_breadth = _market_breadth_score(request)
     weights = get_normalized_weights(request.category, request.purchase_motivation)
     preferred = {p["name"]: p.get("preferredMotivations", []) for p in persona_data["personaTypes"]}
@@ -180,10 +183,17 @@ def _simulate(request: SimulationRequest, input_analysis: InputAnalysisResponse)
     weakness_signals = _weakness_signals(request, normalized, input_analysis)
     weaknesses = [_weakness_message(signal) for signal in weakness_signals]
     all_personas = _ranked_personas(persona_stats, normalized, weakness_signals, persona_data)
+    # Unrounded and capped like overall_score, so small differences between variants show (draft check).
+    cap = input_quality_cap(input_analysis)
+    score_exact = total_probability / simulated_consumers * 100
+    if cap:
+        score_exact = min(score_exact, INPUT_CAPS[cap][0])
 
     return {
         "normalized": normalized,
         "overall_score": overall_score,
+        "score_exact": score_exact,
+        "score_cap": cap,
         "market_breadth": market_breadth,
         "intent_conversion": intent_conversion,
         "problem_solution": problem_solution,
@@ -348,24 +358,33 @@ def _problem_solution_fit(motivation: PurchaseMotivation, product: NormalizedPro
     return clamp_score(score)
 
 
+# Weak input caps the scores: (overall, intent, problem/solution); None = no cap.
+INPUT_CAPS = {"implausible": (35, 38, 42), "doubtful": (48, 50, 55), "thin": (55, 55, None)}
+
+
+def input_quality_cap(input_analysis: Any) -> Optional[str]:
+    """Which cap a weak input gets, if any (see INPUT_CAPS)."""
+    signals = input_analysis.signals
+    if signals.plausibility < 0.30:
+        return "implausible"
+    if input_analysis.should_warn and (signals.plausibility < 0.45 or signals.category_fit < 0.45):
+        return "doubtful"
+    if signals.description_completeness < 0.40 and signals.spec_completeness < 0.35:
+        return "thin"
+    return None
+
+
 def _apply_input_quality_caps(
     overall_score: int,
     intent_conversion: int,
     problem_solution: int,
     input_analysis: Any,
 ) -> tuple[int, int, int]:
-    plausibility = input_analysis.signals.plausibility
-    category_fit = input_analysis.signals.category_fit
-    description = input_analysis.signals.description_completeness
-    spec = input_analysis.signals.spec_completeness
-
-    if plausibility < 0.30:
-        return min(overall_score, 35), min(intent_conversion, 38), min(problem_solution, 42)
-    if input_analysis.should_warn and (plausibility < 0.45 or category_fit < 0.45):
-        return min(overall_score, 48), min(intent_conversion, 50), min(problem_solution, 55)
-    if description < 0.40 and spec < 0.35:
-        return min(overall_score, 55), min(intent_conversion, 55), problem_solution
-    return overall_score, intent_conversion, problem_solution
+    cap = input_quality_cap(input_analysis)
+    if cap is None:
+        return overall_score, intent_conversion, problem_solution
+    overall, intent, problem = INPUT_CAPS[cap]
+    return min(overall_score, overall), min(intent_conversion, intent), problem_solution if problem is None else min(problem_solution, problem)
 
 
 def _weakness_signals(request: SimulationRequest, product: NormalizedProduct, input_analysis: Any) -> list[str]:

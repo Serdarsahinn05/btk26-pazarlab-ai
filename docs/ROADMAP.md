@@ -35,7 +35,7 @@
 | 12c | `feat/town-dynamics` | Arkadaşlık ağı ve yayılma, "en etkili iyileştirme", segmentler | 1 gün | ✅ |
 | 12d | `feat/engine-v2-ui` | Arayüz: ± aralık, kasaba temsilcileri, segment grafiği, iyileştirme kartı | 1 gün | ✅ |
 | 13a | `feat/category-families` | 12 kategori ailesi + alt türler + Diğer, tek veri dosyası, linkten kategori tanıma | 1 gün | ✅ |
-| 13b | `feat/product-entry-v2` | Ürün ekleme ekranı: link öncelikli akış + yeni yerleşim | 1,5 gün | ⬜ |
+| 13b | `feat/product-entry-v2` | Ürün ekleme ekranı: link öncelikli akış, canlı Hazırlık paneli, taslak | 1,5 gün | ✅ |
 | 14 | `feat/link-reader-v2` | Site okuyucuları, kayıtlı HTML testleri, "HTML ver" ucu | 2 gün | ⬜ |
 | 15 | `feat/layout-pass` | Diğer ekranların yerleşimi (audit → critique → ponytail-review) | 1,5 gün | ⬜ |
 | 16 | `feat/insight-features` | İlan yeniden yazma, rakip kartı, segment grafiği, görsel analizi | 2–3 gün | ⬜ |
@@ -216,8 +216,8 @@ Kabul kriteri: DESIGN.md'deki tüm kalıplar uygulanmış; bileşenlerde ham ren
 
 ## Şu an neredeyiz
 
-- **Son tamamlanan:** Faz 13a (kategori aileleri): 12 aile + Diğer, 52 alt tür, tek veri dosyası; form, skorlama, girdi analizi, tavsiye metinleri ve link okuyucu bu dosyadan çalışıyor. Eski 13 kimlik birebir aynı sonucu veriyor.
-- **Sıradaki:** Faz 13b (ürün ekleme ekranı: link öncelikli akış, adım adım form, canlı kalite göstergesi). Kural: önce `impeccable audit`/`critique`, sonra tasarım, en sonda `ponytail-review`. 12'nin ertelenen maddeleri (rakipli seçim, belirli bir sakinle sohbet) Faz 16'da değerlendirilebilir.
+- **Son tamamlanan:** Faz 13b (ürün ekleme ekranı): link öncelikli akış, canlı "Hazırlık" paneli (tahmini skor + alan başına "+X puan", `/api/draft-check`), dürüst varsayılanlar, linkten gelen alanların işaretlenmesi, otomatik taslak, son üründen kopyalama, her kategoride isteğe bağlı referans fiyat. Faz 13 bitti.
+- **Sıradaki:** Faz 14 (link okuma v2: site başına okuyucular, kayıtlı HTML testleri, "HTML ver" ucu, yorum sayısı/puan). 12'nin ertelenen maddeleri (rakipli seçim, belirli bir sakinle sohbet) Faz 16'da değerlendirilebilir.
 - **Ertelenen (kullanıcı kararı, 2026-10-17):** Faz 11'in Claude.ai denemesi sonra birlikte yapılacak. Gerekenler: `cloudflared` kurulumu (`winget install Cloudflare.cloudflared`), tünel adresinin `MCP_ALLOWED_HOSTS`'a yazılması, Claude'da connector eklenmesi; açık soru `?key=` sorgu dizesinin korunup korunmadığı. Adımlar: docs/mcp-connector.md. (sıra aşağıdaki tabloda). Her faz kendi dalında, bitince bu bölüm güncellenir.
 - **Bekleyen kararlar:** Faz 9 için API anahtarı yok. Süpermarket/gıda, pet shop, otomotiv, kitap/kırtasiye aileleri bilerek dışarıda ("Diğer"e düşüyorlar); talep olursa eklenecek.
 - **Ortam notları:** `backend/venv` bozuk (eski bir kullanıcı yolunu gösteriyor). Testler geçici bir venv ile koşuyor. Gemini sık sık 429 veriyor; arayüz testlerinde AI kapalı ya da sahte SSE kullanılıyor. `gh`, nginx ve Docker daemon yok.
@@ -340,12 +340,15 @@ Dört alt faza bölündü (12a–12d); her biri ayrı dalda, ayrı testlerle. A�
 - Tarayıcıda bulunan hatalar: aile değişince alt tür listesi yeniden kurulurken Radix Select boş değer gönderiyor, form da bunu "bilinmeyen → Diğer" sanıyordu (boş değer artık yok sayılıyor). Seçim listesindeki ikon, Tailwind'in `svg { display: block }` kuralı yüzünden kendi satırına düşüyordu.
 - Yeni bulgular: F22, F23.
 
-**13b Ekran** (`feat/product-entry-v2`)
-- [ ] Önce `impeccable audit` / `critique` (kural: önce doğruluk ve kalite), sonra tasarım; en sonda `ponytail-review`.
-- [ ] Link öncelikli akış: "Linki yapıştır → doldurduk → kontrol et"; elle giriş ikinci yol.
-- [ ] Adım adım form, canlı kalite göstergesi ("bu alan skora +X katkı veriyor"; `qualityFields` artık veride), eksik alan ipuçları, taslak kaydetme, önceki ürünü kopyalama.
-- [ ] `marketPrice` her kategoride isteğe bağlı gelişmiş alan olarak gösterilsin mi? (şu an yalnızca Diğer'de)
-- Kabul: DESIGN.md'ye uygun; 375 px'te taşma yok; mevcut uçtan uca testler geçiyor; kullanıcı onayı.
+**13b ✅ Ekran** (`feat/product-entry-v2`)
+- **Denetim (önce):** `impeccable audit` + `critique`. Eleştiri tek bağlamda yapıldı (yönerge iki ayrı alt ajan istiyor; bu oturumda alt ajan ancak kullanıcı isterse açılıyor). Detektörün statik taraması temiz; URL taraması tam `puppeteer` paketi istediği için kendi Puppeteer ölçümüyle yapıldı. Bulgular: **P1** sessiz varsayılanlar (sezon "Yaz", kalıp "Regular", yaş "18-30" seçilmeden simülasyona giriyordu); **P1** linkten okununca neyin dolduğu görünmüyordu ve doldurma `setTimeout` ile DOM'a yazmaya dayanıyordu; **P1** ~20 alan aynı anda, hiçbirinin skora etkisi görünmüyordu, mobilde yapışkan çubuk ekranın %16'sı; **P2** alanların odak göstergesi yalnızca kenar rengiydi (DESIGN §6 halka istiyor), "Linkten oku" ve iade/garanti 40 px, görsel silme 28 px. İyi: bütün kontrollerin erişilebilir adı vardı, başlık sırası doğru, token'lar tutarlı, 375 px'te taşma yok.
+- **Akış:** "Linkten başla" kartı en üstte (Enter ile okur); okununca "N alan dolduruldu" ve kategori notu; doldurulan alanlarda "linkten" işareti, kullanıcı değiştirince kalkar. Linkin yoksa aynı sayfada elle doldurma. "Son ürününden başla": son 3 simülasyonun girdisi tek tıkla forma.
+- **Canlı Hazırlık paneli:** yeni `POST /api/draft-check` (AI yok, deterministik, ~350 ms, `RATE_LIMIT_DRAFT_PER_MIN`=60). Yarım taslağı kabul ediyor (ad, uzun açıklama gerekmez), tahmini skoru ve her boş alanın, iade/garanti/2 gün kargonun ve daha uzun açıklamanın skora katkısını dönüyor. Bütün denemeler kategoriye sabit bir kalabalıkla koşuyor (`simulate_core(seed=…)`), yani "+X" o alanın kendi etkisi; sezon için nötr "Dört mevsim" deneniyor (zirve sezon kazancı şişirirdi). Girdi zayıfken skor tavanı (35/48/55; `simulation_service.INPUT_CAPS`, tek yerde) sebebiyle gösteriliyor ve tavan kalkana kadar alan önerisi verilmiyor; aksi hâlde her alan aynı küçük kazancı gösteriyordu. Kazançlar yuvarlanmamış, tavanlı skordan (`score_exact`) hesaplanıyor; tam sayı skorla hepsi "+1" çıkıyordu.
+- **Form:** kontrollü duruma geçti (`lib/productDraft.ts`: değerler ↔ istek/taslak dönüşümü, zorunlu alan listesi, yerel taslak). Bölümler: 1 Ürün, 2 {Tür} özellikleri, 3 Kitle ve satış; zorunluları dolunca "tamam". Boş alanların etiketinde "+X puan" rozeti; paneldeki öneriye tıklayınca alana kayıp odaklanıyor. Özellik seçimleri "Seçin" ile başlıyor ("Belirtilmedi" ile temizleniyor), yaş "Tüm yaşlar". Açıklamada kelime sayacı. "Benzerlerinin ortalama fiyatı" artık her kategoride isteğe bağlı (kullanıcı kararı); ipucu kategori ortalamasını söylüyor. Taslak tarayıcıda otomatik saklanıyor (yüklenen fotoğraflar hariç), yenilemede geri geliyor; "Formu temizle". Mobilde tek satırlık yapışkan çubuk (skor + öneri sayısı + Başlat).
+- **Erişilebilirlik:** `.field` odakta 2 px halka (DESIGN §6); düğme ve seçenekler ≥ 44 px; görsel silme 36 px.
+- **Fazlalık denetimi (sonra):** `ponytail-review` üç küçük kesinti buldu (işe yaramayan üçlü ifade, gereksiz tip gevşetmesi, gereksiz export); uygulandı.
+- **Doğrulama:** `tests/test_draft.py` (5 test, toplam 255): fiyatsız taslakta skor yok, dolu alan öneri almıyor ve kazançlar sıralı, bir alanın kazancı o alanı doldurunca oluşan farkla tutarlı, deterministik ve gevşek doğrulama, tavanlı taslakta alan önerisi yok ama sebep ve uyarılar var. tsc/eslint/ruff temiz. Puppeteer (gerçek backend, AI kapalı, link yanıtı sahte): boş form → yazınca tahmin (53) ve 5 öneri, alan rozetleri, öneriye tıklayınca odak, yenilemede taslak geri, linkten okuma (5 alan + işaretler + kategori notu), gönderme, 1280 açık/koyu ve 375 px, taşma yok, konsol hatası yok.
+- Bulunan hata: 13b'nin başında açık kalan backend süreci yeni ucu görmüyordu (yeniden başlatma gerekti); kodda sorun değil.
 
 ### Faz 14: Link okuma v2
 - [ ] `product_link_service.py` (1.509 satır) site başına okuyuculara bölünür: Trendyol, Hepsiburada, Amazon TR, n11, Çiçeksepeti (+ genel okuyucu). Yapısal veri (JSON-LD, sayfa içi state) öncelikli.

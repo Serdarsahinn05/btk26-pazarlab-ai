@@ -1,15 +1,34 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Check, History, Link2, Loader2, Trash2, Upload } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Features, ProductLinkReadResponse, PurchaseMotivation, SimulationRequest } from "@/types";
-import { apiErrorMessage, readProductLink } from "@/lib/api";
-import { FAMILIES, OTHER, categoryInfo, categoryLabel, isKnownCategory } from "@/lib/categories";
-import { Link2, Loader2, Sparkles, Trash2, Upload } from "lucide-react";
+import ReadinessPanel, { ReadinessBar, formatGain } from "@/components/ReadinessPanel";
+import { DraftCheckResponse, ProductLinkReadResponse, PurchaseMotivation, SimulationRequest } from "@/types";
+import { apiErrorMessage, draftCheck, readProductLink } from "@/lib/api";
+import { FAMILIES, OTHER, type FormField, categoryInfo, categoryLabel, isKnownCategory } from "@/lib/categories";
+import { type HistoryEntry, loadHistory } from "@/lib/history";
+import {
+  EMPTY_VALUES, type Values, clearDraft, fromRequest, hasContent, loadDraft, missingRequired, saveDraft, toDraft, toRequest,
+} from "@/lib/productDraft";
+import { cn } from "@/lib/utils";
 
 // Backend accepts at most 6 images of ~1.5 MB each (see SimulationRequest.images).
 const MAX_IMAGES = 6;
 const MAX_IMAGE_EDGE = 1280;
+const DRAFT_CHECK_DELAY_MS = 700;
+// Radix Select cannot hold "" as an item value; this item clears a choice.
+const NONE = "__none";
+
+const MOTIVATIONS: Array<[PurchaseMotivation, string]> = [
+  ["stil_begeni", "Stil / beğeni"],
+  ["ihtiyac", "Günlük ihtiyaç"],
+  ["problem_cozme", "Problem çözme"],
+  ["yedek_parca_tamir", "Yedek parça / tamir"],
+  ["hediye", "Hediye"],
+  ["trend", "Trend / sosyal medya"],
+  ["profesyonel_kullanim", "Profesyonel kullanım"],
+];
 
 /** Re-encode an uploaded photo as a JPEG no larger than MAX_IMAGE_EDGE on its long side. */
 function downscaleImage(file: File): Promise<string> {
@@ -38,28 +57,69 @@ interface ProductFormProps {
   isLoading: boolean;
 }
 
-function getString(formData: FormData, key: string): string | undefined {
-  const value = String(formData.get(key) || "").trim();
-  return value || undefined;
-}
+type LinkState =
+  | { status: "idle" }
+  | { status: "reading" }
+  | { status: "done"; text: string; note?: { text: string; check: boolean } | null }
+  | { status: "error"; text: string };
 
 export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
-  const formRef = useRef<HTMLFormElement>(null);
   const [category, setCategory] = useState("tisort");
-  // How the link reader found the category; cleared when the user picks one.
-  const [categoryNote, setCategoryNote] = useState<{ text: string; check: boolean } | null>(null);
-  const [motivation, setMotivation] = useState<PurchaseMotivation>("stil_begeni");
-  const [linkStatus, setLinkStatus] = useState<string>("");
-  const [isReadingLink, setIsReadingLink] = useState(false);
+  const [motivation, setMotivation] = useState<PurchaseMotivation>(categoryInfo("tisort").defaultMotivation);
+  const [values, setValues] = useState<Values>(EMPTY_VALUES);
+  // Inputs the link reader filled; the mark goes away once the seller touches the field.
+  const [autoFilled, setAutoFilled] = useState<Set<string>>(new Set());
   const [images, setImages] = useState<string[]>([]);
+  const [link, setLink] = useState<LinkState>({ status: "idle" });
+  const [savedAt, setSavedAt] = useState<number | null>(null);
+  const [restored, setRestored] = useState(false);
+  const [recent, setRecent] = useState<HistoryEntry[]>([]);
   const [isDragging, setIsDragging] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const info = useMemo(() => categoryInfo(category), [category]);
   const family = FAMILIES.find((f) => f.id === info.family) ?? FAMILIES[0];
+  const fields = info.form.fields;
 
-  const handleCategoryChange = (value: string | null) => {
-    // Values can come from the link reader, so only accept categories the API knows.
-    const next = isKnownCategory(value) ? value : OTHER;
+  // Browser-only state (draft, history) is read after mount so the server render matches the first client render.
+  useEffect(() => {
+    const draft = loadDraft();
+    const history = loadHistory().filter((entry) => entry.request).slice(0, 3);
+    queueMicrotask(() => {
+      setRecent(history);
+      if (draft && hasContent(draft.values) && isKnownCategory(draft.category)) {
+        setCategory(draft.category);
+        setMotivation(draft.motivation);
+        setValues({ ...EMPTY_VALUES, ...draft.values });
+        setImages(draft.images ?? []);
+        setSavedAt(draft.savedAt);
+        setRestored(true);
+      }
+    });
+  }, []);
+
+  // Keep the draft in this browser while typing.
+  useEffect(() => {
+    if (!hasContent(values)) return;
+    const timer = setTimeout(() => setSavedAt(saveDraft({ category, motivation, values, images })), 500);
+    return () => clearTimeout(timer);
+  }, [category, motivation, values, images]);
+
+  const draft = useMemo(() => toDraft(category, motivation, values, fields), [category, motivation, values, fields]);
+  const check = useDraftCheck(draft);
+  const missing = missingRequired(values, fields);
+  const gainOf = useMemo(() => new Map((check.data?.gains ?? []).map((g) => [g.field, g.delta])), [check.data]);
+
+  const set = (name: string, value: string | boolean) => {
+    setValues((prev) => ({ ...prev, [name]: value }));
+    setAutoFilled((prev) => {
+      if (!prev.has(name)) return prev;
+      const next = new Set(prev);
+      next.delete(name);
+      return next;
+    });
+  };
+
+  const changeCategory = (next: string) => {
     setCategory(next);
     setMotivation(categoryInfo(next).defaultMotivation);
   };
@@ -67,438 +127,391 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
   const pickCategory = (value: string | null) => {
     // Radix fires "" when the subtype list is rebuilt after a family change; that is not a choice.
     if (!value) return;
-    setCategoryNote(null);
-    handleCategoryChange(value);
+    if (link.status === "done") setLink({ ...link, note: null });
+    changeCategory(value);
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-
-    const requestData: SimulationRequest = {
-      category,
-      purchaseMotivation: motivation,
-      productName: String(formData.get("productName") || ""),
-      productUrl: getString(formData, "productUrl"),
-      price: Number(String(formData.get("price") || "0").replace(",", ".")),
-      marketPrice: Number(String(formData.get("marketPrice") || "").replace(",", ".")) || undefined,
-      description: String(formData.get("description") || ""),
-      targetAudience: {
-        ageRange: getString(formData, "ageRange") || "genel",
-        gender: getString(formData, "gender") || "unisex",
-        incomeLevel: getString(formData, "incomeLevel") || "middle"
-      },
-      features: readFeatures(formData, info.form.fields),
-      commerce: {
-        shippingDays: Number(formData.get("shippingDays") || 3),
-        returnAvailable: formData.get("returnAvailable") === "on",
-        warranty: formData.get("warranty") === "on"
-      },
-      images
-    };
-
-    onSubmit(requestData);
-  };
-
-  const adjustHeight = (el: HTMLElement) => {
-    if (el instanceof HTMLTextAreaElement) {
-      el.style.height = "auto";
-      el.style.height = `${el.scrollHeight}px`;
-    }
-  };
-
-  const setFormValue = (name: string, value?: string | number | null) => {
-    if (value === undefined || value === null || value === "") return;
-    // Mirror backend limits (SimulationRequest) so scraped text never causes a 422.
-    const limit = name === "description" ? 4000 : name === "productName" ? 120 : 200;
-    const text = String(value).slice(0, limit);
-
-    const trySet = (attempt = 0) => {
-      if (!formRef.current || attempt > 20) return; // 2 saniye boyunca dene
-
-      const field = formRef.current.elements.namedItem(name) as HTMLInputElement | HTMLTextAreaElement | null;
-      if (field) {
-        field.value = text;
-        if (name === "description") adjustHeight(field);
-      } else {
-        // Eleman henüz render olmamis olabilir, biraz bekle tekrar dene
-        setTimeout(() => trySet(attempt + 1), 100);
-      }
-    };
-    
-    trySet();
-  };
-
-  const handleReadLink = async () => {
-    const urlField = formRef.current?.elements.namedItem("productUrl") as HTMLInputElement | null;
-    const url = urlField?.value.trim();
+  const readLink = async () => {
+    const url = String(values.productUrl ?? "").trim();
     if (!url) {
-      setLinkStatus("Önce ürün linkini girin.");
+      setLink({ status: "error", text: "Önce ürün linkini yapıştır." });
       return;
     }
-
-    setIsReadingLink(true);
-    setLinkStatus("Link okunuyor…");
+    setLink({ status: "reading" });
     try {
       const result = await readProductLink(url);
-      
-      // Kategori varsa degistir (bu yeni alanlari render eder)
-      if (result.category) {
-        handleCategoryChange(result.category);
-        setCategoryNote(linkCategoryNote(result));
-      }
-
-      // DOM guncellenmesi ve alanlarin render olmasi icin biraz bekle
-      setTimeout(() => {
-        setFormValue("productName", result.title);
-        setFormValue("description", result.description);
-        setFormValue("brand", result.brand);
-        
-        // type="number" alanlar yalnizca noktali ondalik kabul eder; virgullu deger alani bos birakir.
-        if (result.price) {
-          setFormValue("price", String(result.price));
-        }
-        
-        // Dinamik ozellikleri doldur
-        if (result.features) {
-          Object.entries(result.features).forEach(([key, value]) => {
-            if (value !== undefined && value !== null && value !== "") {
-              setFormValue(key, value);
-            }
-          });
-        }
-      }, 500); // Kategori degisimi sonrasi render icin 500ms ideal
-      
-      // Yeni link okundugunda eskileri temizle ve yenileri ekle
-      if (result.images && result.images.length > 0) {
-        setImages(result.images.slice(0, MAX_IMAGES));
-      } else if (result.image) {
-        setImages([result.image]);
-      } else {
-        setImages([]);
-      }
-      setLinkStatus(result.warnings[0] || "Linkten bilgiler, kategori ve teknik detaylar okundu.");
+      const next = isKnownCategory(result.category) ? result.category : OTHER;
+      const patch = linkValues(result);
+      changeCategory(next);
+      setValues((prev) => ({ ...prev, ...patch }));
+      setAutoFilled(new Set(Object.keys(patch)));
+      setImages((result.images?.length ? result.images : result.image ? [result.image] : []).slice(0, MAX_IMAGES));
+      const visible = new Set(["productName", "description", "price", ...categoryInfo(next).form.fields.map((f) => f.name)]);
+      const filled = Object.keys(patch).filter((key) => visible.has(key)).length;
+      setLink({
+        status: "done",
+        text: result.warnings[0] ?? (filled ? `${filled} alan dolduruldu. Mavi işaretli alanları kontrol et.` : "Sayfadan bilgi okunamadı; alanları elle doldur."),
+        note: linkCategoryNote(result),
+      });
     } catch (err: unknown) {
-      setLinkStatus(apiErrorMessage(err));
-    } finally {
-      setIsReadingLink(false);
+      setLink({ status: "error", text: apiErrorMessage(err) });
     }
   };
 
-  const handleFileUpload = (files: FileList | null) => {
+  const copyFrom = (entry: HistoryEntry) => {
+    if (!entry.request) return;
+    const request = entry.request;
+    setCategory(isKnownCategory(request.category) ? request.category : OTHER);
+    setMotivation(request.purchaseMotivation);
+    setValues(fromRequest(request));
+    setAutoFilled(new Set());
+    setImages([]);
+    setLink({ status: "done", text: `“${entry.productName}” yüklendi; değiştirmek istediklerini düzenle.` });
+  };
+
+  const clearForm = () => {
+    clearDraft();
+    setValues(EMPTY_VALUES);
+    setAutoFilled(new Set());
+    setImages([]);
+    setSavedAt(null);
+    setRestored(false);
+    setLink({ status: "idle" });
+    changeCategory("tisort");
+  };
+
+  const focusField = (name: string) => {
+    const target = document.getElementById(name);
+    target?.scrollIntoView({ behavior: "smooth", block: "center" });
+    target?.focus({ preventScroll: true });
+  };
+
+  const addFiles = (files: FileList | null) => {
     if (!files) return;
-    
     Array.from(files).forEach(async (file) => {
       if (!file.type.startsWith("image/")) return;
       try {
         const result = await downscaleImage(file);
         setImages((prev) => (prev.includes(result) ? prev : [...prev, result].slice(0, MAX_IMAGES)));
       } catch {
-        setLinkStatus("Görsel okunamadı.");
+        setLink({ status: "error", text: "Görsel okunamadı." });
       }
     });
   };
 
-  const onDragOver = (e: React.DragEvent) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsDragging(true);
+    onSubmit(toRequest(category, motivation, values, fields, images));
   };
 
-  const onDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
-
-  const onDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    handleFileUpload(e.dataTransfer.files);
-  };
+  const descriptionWords = String(values.description ?? "").trim().split(/\s+/).filter(Boolean).length;
+  const productDone = !missing.some((m) => m === "Ürün adı" || m === "Fiyat" || m.startsWith("Açıklama"));
+  const featuresDone = !fields.some((f) => f.required && !String(values[f.name] ?? "").trim());
+  const textProps = (name: string) => ({
+    id: name,
+    name,
+    value: String(values[name] ?? ""),
+    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => set(name, e.target.value),
+  });
 
   return (
-    <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
-      {/* 1 · Link ile doldur */}
-      <Step n={1} title="Linkten doldur" hint="İsteğe bağlı">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+      {/* Link first: the fastest way in is the product page the seller already has. */}
+      <section aria-labelledby="link-title" className="card-paper flex flex-col gap-4">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+          <h2 id="link-title" className="squiggle text-[21px] font-bold">Linkten başla</h2>
+          <span className="text-sm text-muted-foreground">Trendyol, Hepsiburada, Amazon, n11…</span>
+        </div>
         <div className="flex flex-col gap-3 sm:flex-row">
           <label htmlFor="productUrl" className="sr-only">Ürün linki</label>
           <input
-            id="productUrl"
-            name="productUrl"
+            {...textProps("productUrl")}
             type="url"
             maxLength={2048}
-            placeholder="Trendyol, Hepsiburada, Amazon, n11 linki yapıştırın…"
-            className="field"
+            placeholder="Ürün sayfasının linkini yapıştır"
+            className="field h-12 text-base"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                readLink();
+              }
+            }}
           />
-          <button type="button" onClick={handleReadLink} disabled={isReadingLink} className="btn-sticker-primary shrink-0 sm:w-44">
-            {isReadingLink ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Link2 className="h-4 w-4" aria-hidden />}
-            {isReadingLink ? "Okunuyor…" : "Linkten oku"}
+          <button type="button" onClick={readLink} disabled={link.status === "reading"} className="btn-sticker-primary min-h-12 shrink-0 justify-center sm:w-44">
+            {link.status === "reading" ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Link2 className="h-4 w-4" aria-hidden />}
+            {link.status === "reading" ? "Okunuyor…" : "Linkten oku"}
           </button>
         </div>
-        <p className="text-sm text-muted-foreground" aria-live="polite">
-          {linkStatus || "Okunan bilgiler aşağıdaki alanlara otomatik dolar; dilediğiniz gibi düzenleyebilirsiniz."}
-        </p>
-      </Step>
+        <div aria-live="polite" className="flex flex-col gap-2 text-sm">
+          {link.status === "idle" && (
+            <p className="text-muted-foreground">Sayfadaki bilgileri aşağıya dolduruyoruz, sen kontrol edip düzeltiyorsun. Linkin yoksa alanları elle doldur.</p>
+          )}
+          {link.status === "reading" && <p className="text-muted-foreground">Sayfa okunuyor; bu birkaç saniye sürebilir.</p>}
+          {link.status === "done" && (
+            <p className="flex items-start gap-2 text-foreground-2">
+              <Check className="mt-0.5 h-4 w-4 shrink-0 text-buy-text" aria-hidden /> {link.text}
+            </p>
+          )}
+          {link.status === "error" && <p className="note-risk">{link.text} Bilgileri aşağıya elle de girebilirsin.</p>}
+          {link.status === "done" && link.note && (
+            <p className={link.note.check ? "note-risk" : "text-muted-foreground"}>{link.note.text}</p>
+          )}
+        </div>
+        {recent.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 border-t-2 border-dashed border-border pt-3 text-sm">
+            <span className="font-bold text-foreground-2">Son ürününden başla:</span>
+            {recent.map((entry) => (
+              <button
+                key={entry.id}
+                type="button"
+                onClick={() => copyFrom(entry)}
+                className="inline-flex min-h-11 max-w-full items-center gap-1.5 rounded-full border-2 border-border bg-card px-3.5 font-bold hover:bg-secondary"
+              >
+                <History className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+                <span className="truncate">{entry.productName}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </section>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* 2 · Temel bilgiler */}
-        <Step n={2} title="Temel bilgiler">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <FieldLabel htmlFor="category" label="Kategori" className={family.subtypes.length ? undefined : "sm:col-span-2"}>
-              <Select value={info.family} onValueChange={pickCategory}>
-                <SelectTrigger id="category" className="field h-11">
-                  <SelectValue placeholder="Kategori seçin" />
-                </SelectTrigger>
-                <SelectContent>
-                  {FAMILIES.map((f) => (
-                    <SelectItem key={f.id} value={f.id}>
-                      {/* inline-flex: Tailwind makes svg a block, which would put the icon on its own line */}
-                      <span className="inline-flex items-center gap-2">
-                        <f.icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden /> {f.label}
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FieldLabel>
-            {family.subtypes.length > 0 && (
-              <FieldLabel htmlFor="subtype" label="Ürün türü">
-                <Select value={category} onValueChange={pickCategory}>
-                  <SelectTrigger id="subtype" className="field h-11">
-                    <SelectValue />
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="flex min-w-0 flex-col gap-6">
+          {/* 1 · Ürün */}
+          <Step n={1} title="Ürün" done={productDone}>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FieldLabel htmlFor="category" label="Kategori" className={family.subtypes.length ? undefined : "sm:col-span-2"}>
+                <Select value={info.family} onValueChange={pickCategory}>
+                  <SelectTrigger id="category" className="field h-11">
+                    <SelectValue placeholder="Kategori seçin" />
                   </SelectTrigger>
                   <SelectContent>
-                    {family.subtypes.map((sub) => (
-                      <SelectItem key={sub.id} value={sub.id}>{sub.label}</SelectItem>
+                    {FAMILIES.map((f) => (
+                      <SelectItem key={f.id} value={f.id}>
+                        {/* inline-flex: Tailwind makes svg a block, which would put the icon on its own line */}
+                        <span className="inline-flex items-center gap-2">
+                          <f.icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden /> {f.label}
+                        </span>
+                      </SelectItem>
                     ))}
-                    <SelectItem value={family.id}>Genel / emin değilim</SelectItem>
                   </SelectContent>
                 </Select>
               </FieldLabel>
-            )}
-          </div>
-          {categoryNote && (
-            <p className={categoryNote.check ? "note-risk" : "text-sm text-muted-foreground"} aria-live="polite">
-              {categoryNote.text}
-            </p>
-          )}
-
-          <FieldLabel htmlFor="motivation" label="Satın alma motivasyonu">
-              <Select name="motivation" value={motivation} onValueChange={(val) => setMotivation((val as PurchaseMotivation) || info.defaultMotivation)}>
-                <SelectTrigger id="motivation" className="field h-11">
-                  <SelectValue placeholder="Motivasyon seçin" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="stil_begeni">Stil / beğeni</SelectItem>
-                  <SelectItem value="ihtiyac">Günlük ihtiyaç</SelectItem>
-                  <SelectItem value="problem_cozme">Problem çözme</SelectItem>
-                  <SelectItem value="yedek_parca_tamir">Yedek parça / tamir</SelectItem>
-                  <SelectItem value="hediye">Hediye</SelectItem>
-                  <SelectItem value="trend">Trend / sosyal medya</SelectItem>
-                  <SelectItem value="profesyonel_kullanim">Profesyonel kullanım</SelectItem>
-                </SelectContent>
-              </Select>
-          </FieldLabel>
-
-          <div className="grid gap-4 sm:grid-cols-[1fr_9rem]">
-            <FieldLabel htmlFor="productName" label="Ürün adı" required>
-              <input id="productName" name="productName" placeholder={info.form.exampleName} minLength={4} maxLength={120} required className="field" />
-            </FieldLabel>
-            <FieldLabel htmlFor="price" label="Fiyat (TL)" required>
-              <input id="price" name="price" type="number" min="1" max="10000000" step="0.01" placeholder="1200" required className="field" />
-            </FieldLabel>
-          </div>
-
-          {info.averagePrice === null && (
-            <FieldLabel
-              htmlFor="marketPrice"
-              label="Benzer ürünlerin ortalama fiyatı (TL)"
-              hint="Bu kategoride hazır bir fiyat ortalaması yok. Boş bırakırsan kasaba fiyatını ne pahalı ne ucuz bulur."
-            >
-              <input id="marketPrice" name="marketPrice" type="number" min="1" max="10000000" step="0.01" placeholder="Örn. 750" className="field" />
-            </FieldLabel>
-          )}
-
-          <FieldLabel htmlFor="description" label="Ürün açıklaması" required hint="En az 40 karakter. Detay arttıkça simülasyon isabeti artar.">
-            <textarea
-              id="description"
-              name="description"
-              minLength={40}
-              maxLength={4000}
-              rows={6}
-              placeholder={info.form.descriptionPlaceholder}
-              required
-              className="field resize-y"
-            />
-          </FieldLabel>
-
-          <div className="flex flex-col gap-2">
-            <span className="text-sm leading-6 font-bold text-foreground-2">Görseller <span className="font-semibold text-muted-foreground">(en fazla {MAX_IMAGES})</span></span>
-            <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
-              {images.map((url, idx) => (
-                <div key={idx} className="group relative aspect-square overflow-hidden rounded-wobble border-2 border-border bg-card">
-                  {/* eslint-disable-next-line @next/next/no-img-element -- user uploads / scraped URLs */}
-                  <img src={url} alt={`Ürün görseli ${idx + 1}`} className="h-full w-full object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => setImages((prev) => prev.filter((_, i) => i !== idx))}
-                    aria-label={`Görsel ${idx + 1}'i kaldır`}
-                    className="absolute right-1.5 top-1.5 grid h-7 w-7 place-items-center rounded-full border-2 border-foreground bg-card shadow-sticker-ink"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              ))}
-              {images.length < MAX_IMAGES && (
-                <label
-                  onDragOver={onDragOver}
-                  onDragLeave={onDragLeave}
-                  onDrop={onDrop}
-                  className={`flex aspect-square cursor-pointer flex-col items-center justify-center gap-1 rounded-wobble border-2 border-dashed text-sm font-bold text-muted-foreground transition-colors focus-within:outline-solid focus-within:outline-2 focus-within:outline-ring ${
-                    isDragging ? "border-accent bg-accent/10" : "border-border bg-card hover:bg-secondary"
-                  }`}
-                >
-                  <Upload className="h-5 w-5" aria-hidden />
-                  Yükle
-                  <input
-                    type="file"
-                    multiple
-                    accept="image/*"
-                    className="sr-only"
-                    ref={fileInputRef}
-                    onChange={(e) => handleFileUpload(e.target.files)}
-                  />
-                </label>
+              {family.subtypes.length > 0 && (
+                <FieldLabel htmlFor="subtype" label="Ürün türü">
+                  <Select value={category} onValueChange={pickCategory}>
+                    <SelectTrigger id="subtype" className="field h-11">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {family.subtypes.map((sub) => (
+                        <SelectItem key={sub.id} value={sub.id}>{sub.label}</SelectItem>
+                      ))}
+                      <SelectItem value={family.id}>Genel / emin değilim</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FieldLabel>
               )}
             </div>
-          </div>
-        </Step>
 
-        <div className="space-y-6">
-          {/* 3 · Kategoriye özel özellikler */}
-          <Step n={3} title={`${info.label} özellikleri`}>
+            <div className="grid gap-4 sm:grid-cols-[1fr_9rem]">
+              <FieldLabel htmlFor="productName" label="Ürün adı" required auto={autoFilled.has("productName")}>
+                <input {...textProps("productName")} placeholder={info.form.exampleName} minLength={4} maxLength={120} required className="field" />
+              </FieldLabel>
+              <FieldLabel htmlFor="price" label="Fiyat (TL)" required auto={autoFilled.has("price")}>
+                <input {...textProps("price")} type="number" inputMode="decimal" min="1" max="10000000" step="0.01" placeholder="Örn. 1200" required className="field" />
+              </FieldLabel>
+            </div>
+
             <div className="grid gap-4 sm:grid-cols-2">
-              {info.form.fields.map((field) => {
-                if (field.type === "checkbox") {
-                  return (
-                    <label key={field.name} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border-2 border-border bg-card px-3.5 text-sm font-bold hover:bg-secondary">
-                      <input name={field.name} type="checkbox" className="h-4 w-4 accent-[hsl(var(--primary))]" />
-                      {field.label}
-                    </label>
-                  );
+              <FieldLabel
+                htmlFor="marketPrice"
+                label={info.averagePrice === null ? "Benzer ürünlerin ortalama fiyatı" : "Benzerlerinin ortalama fiyatı (isteğe bağlı)"}
+                hint={
+                  info.averagePrice === null
+                    ? "Bu kategoride hazır ortalama yok; boş bırakırsan fiyatın ne pahalı ne ucuz sayılır."
+                    : `Boş bırakırsan ${info.label} için ~${info.averagePrice.toLocaleString("tr-TR")} TL kabul edilir.`
                 }
-                if (field.type === "select") {
-                  return (
-                    <FieldLabel key={field.name} htmlFor={field.name} label={field.label}>
-                      <Select name={field.name} defaultValue={field.options?.[0]?.value}>
-                        <SelectTrigger id={field.name} className="field h-11">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {field.options?.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </FieldLabel>
-                  );
-                }
-                return (
-                  <FieldLabel key={field.name} htmlFor={field.name} label={field.label} required={field.required}>
-                    <input
-                      id={field.name}
-                      name={field.name}
-                      type={field.type === "number" ? "number" : "text"}
-                      placeholder={field.placeholder}
-                      required={field.required}
-                      maxLength={200}
-                      className="field"
-                    />
-                  </FieldLabel>
-                );
-              })}
+              >
+                <input {...textProps("marketPrice")} type="number" inputMode="decimal" min="1" max="10000000" step="0.01" placeholder="TL" className="field" />
+              </FieldLabel>
+              <FieldLabel htmlFor="motivation" label="Neden alınır?" hint="Alıcının asıl satın alma sebebi.">
+                <Select value={motivation} onValueChange={(v) => v && setMotivation(v as PurchaseMotivation)}>
+                  <SelectTrigger id="motivation" className="field h-11"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {MOTIVATIONS.map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </FieldLabel>
+            </div>
+
+            <FieldLabel
+              htmlFor="description"
+              label="Ürün açıklaması"
+              required
+              auto={autoFilled.has("description")}
+              gain={gainOf.get("description")}
+              hint={`${descriptionWords} kelime · en az 40 karakter; ~28 kelimeden sonra açıklama tam puan alır.`}
+            >
+              <textarea {...textProps("description")} minLength={40} maxLength={4000} rows={6} placeholder={info.form.descriptionPlaceholder} required className="field resize-y" />
+            </FieldLabel>
+
+            <div className="flex flex-col gap-2">
+              <span className="text-sm leading-6 font-bold text-foreground-2">
+                Görseller <span className="font-semibold text-muted-foreground">(en fazla {MAX_IMAGES}, AI yorumlarında kullanılır)</span>
+              </span>
+              <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
+                {images.map((url, idx) => (
+                  <div key={idx} className="group relative aspect-square overflow-hidden rounded-wobble border-2 border-border bg-card">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- user uploads / scraped URLs */}
+                    <img src={url} alt={`Ürün görseli ${idx + 1}`} className="h-full w-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => setImages((prev) => prev.filter((_, i) => i !== idx))}
+                      aria-label={`Görsel ${idx + 1}'i kaldır`}
+                      className="absolute right-1 top-1 grid h-9 w-9 place-items-center rounded-full border-2 border-foreground bg-card shadow-sticker-ink"
+                    >
+                      <Trash2 className="h-4 w-4" aria-hidden />
+                    </button>
+                  </div>
+                ))}
+                {images.length < MAX_IMAGES && (
+                  <label
+                    onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                    onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
+                    onDrop={(e) => { e.preventDefault(); setIsDragging(false); addFiles(e.dataTransfer.files); }}
+                    className={cn(
+                      "flex aspect-square cursor-pointer flex-col items-center justify-center gap-1 rounded-wobble border-2 border-dashed text-sm font-bold text-muted-foreground transition-colors focus-within:outline-solid focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ring",
+                      isDragging ? "border-accent bg-accent/10" : "border-border bg-card hover:bg-secondary",
+                    )}
+                  >
+                    <Upload className="h-5 w-5" aria-hidden />
+                    Yükle
+                    <input type="file" multiple accept="image/*" className="sr-only" onChange={(e) => addFiles(e.target.files)} />
+                  </label>
+                )}
+              </div>
             </div>
           </Step>
 
-          {/* 4 · Hedef kitle ve satış koşulları */}
-          <Step n={4} title="Hedef kitle ve satış koşulları">
+          {/* 2 · Özellikler */}
+          <Step n={2} title={`${info.label} özellikleri`} done={featuresDone} hint="Doldurdukça skor değişir">
+            <div className="grid gap-4 sm:grid-cols-2">
+              {fields.map((field) => (
+                <FeatureInput key={field.name} field={field} value={values[field.name]} auto={autoFilled.has(field.name)} gain={gainOf.get(field.name)} onChange={set} />
+              ))}
+            </div>
+          </Step>
+
+          {/* 3 · Kitle ve satış */}
+          <Step n={3} title="Kitle ve satış koşulları">
             <div className="grid gap-4 sm:grid-cols-2">
               {info.audienceFields.includes("ageRange") && (
-                  <FieldLabel htmlFor="ageRange" label="Yaş aralığı">
-                    <Select name="ageRange" defaultValue="18-30">
-                      <SelectTrigger id="ageRange" className="field h-11"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="13-17">13-17</SelectItem>
-                        <SelectItem value="18-30">18-30</SelectItem>
-                        <SelectItem value="30-45">30-45</SelectItem>
-                        <SelectItem value="45+">45+</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FieldLabel>
+                <ChoiceField name="ageRange" label="Yaş aralığı" value={values.ageRange} onChange={set}
+                  options={[["genel", "Tüm yaşlar"], ["13-17", "13-17"], ["18-30", "18-30"], ["30-45", "30-45"], ["45+", "45+"]]} />
               )}
               {info.audienceFields.includes("gender") && (
-                  <FieldLabel htmlFor="gender" label="Cinsiyet">
-                    <Select name="gender" defaultValue="unisex">
-                      <SelectTrigger id="gender" className="field h-11"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="unisex">Unisex</SelectItem>
-                        <SelectItem value="kadin">Kadın</SelectItem>
-                        <SelectItem value="erkek">Erkek</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FieldLabel>
+                <ChoiceField name="gender" label="Cinsiyet" value={values.gender} onChange={set}
+                  options={[["unisex", "Herkes (unisex)"], ["kadin", "Kadın"], ["erkek", "Erkek"]]} />
               )}
-              <FieldLabel htmlFor="incomeLevel" label="Fiyat segmenti">
-                <Select name="incomeLevel" defaultValue="middle">
-                  <SelectTrigger id="incomeLevel" className="field h-11"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low">Ekonomik</SelectItem>
-                    <SelectItem value="middle">Orta</SelectItem>
-                    <SelectItem value="high">Premium</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FieldLabel>
+              <ChoiceField name="incomeLevel" label="Fiyat segmenti" value={values.incomeLevel} onChange={set}
+                options={[["low", "Ekonomik"], ["middle", "Orta"], ["high", "Premium"]]} />
               {/* Spans the row when the audience fields leave it alone (no empty cell). */}
-              <FieldLabel htmlFor="shippingDays" label="Kargo süresi (gün)" className={info.audienceFields.filter((f) => f !== "incomeLevel").length % 2 ? "sm:col-span-2" : undefined}>
-                <input id="shippingDays" name="shippingDays" type="number" defaultValue="3" min="0" max="60" className="field" />
+              <FieldLabel htmlFor="shippingDays" label="Kargo süresi (gün)" gain={gainOf.get("shippingDays")}
+                className={info.audienceFields.filter((f) => f !== "incomeLevel").length % 2 ? "sm:col-span-2" : undefined}>
+                <input {...textProps("shippingDays")} type="number" inputMode="numeric" min="0" max="60" className="field" />
               </FieldLabel>
             </div>
             <div className="flex flex-wrap gap-3">
-              <label className="flex cursor-pointer items-center gap-2 rounded-full border-2 border-border bg-card px-3.5 py-2 text-sm font-bold">
-                <input name="returnAvailable" type="checkbox" defaultChecked className="h-4 w-4 accent-[hsl(var(--primary))]" />
-                İade imkânı var
-              </label>
-              <label className="flex cursor-pointer items-center gap-2 rounded-full border-2 border-border bg-card px-3.5 py-2 text-sm font-bold">
-                <input name="warranty" type="checkbox" className="h-4 w-4 accent-[hsl(var(--primary))]" />
-                Garanti / fatura var
-              </label>
+              <Toggle name="returnAvailable" label="İade imkânı var" checked={values.returnAvailable === true} gain={gainOf.get("returnAvailable")} onChange={set} />
+              <Toggle name="warranty" label="Garanti / fatura var" checked={values.warranty === true} gain={gainOf.get("warranty")} onChange={set} />
             </div>
           </Step>
         </div>
+
+        <ReadinessPanel
+          check={check.data}
+          checking={check.checking}
+          failed={check.failed}
+          missing={missing}
+          showWarnings={String(values.description ?? "").trim().length >= 40}
+          isLoading={isLoading}
+          savedAt={savedAt}
+          restored={restored}
+          onGainClick={focusField}
+          onClear={clearForm}
+        />
       </div>
 
-      {/* Sticky submit bar: always visible while filling the form (DESIGN.md §9.2) */}
-      <div className="no-print sticky bottom-4 z-30 flex flex-col items-stretch gap-3 rounded-wobble-lg border-2 border-foreground bg-card px-5 py-3.5 shadow-sticker-ink sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-foreground-2">
-          <b className="font-display">{info.label}</b> · 500 sentetik tüketici · genelde 30–90 sn
-        </p>
-        <button type="submit" disabled={isLoading} className="btn-sticker-primary px-6 py-2.5 text-base">
-          {isLoading ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <Sparkles className="h-5 w-5" aria-hidden />}
-          {isLoading ? "Hazırlanıyor…" : "Simülasyonu başlat"}
-        </button>
-      </div>
+      <ReadinessBar score={check.data?.score ?? null} gainCount={check.data?.gains.length ?? 0} isLoading={isLoading} />
     </form>
   );
 }
 
-function Step({ n, title, hint, children }: { n: number; title: string; hint?: string; children: React.ReactNode }) {
+/* ------------------------------------------------------------------ live check */
+
+function useDraftCheck(draft: object) {
+  const key = JSON.stringify(draft);
+  const [state, setState] = useState<{ key: string; data: DraftCheckResponse | null; failed: boolean }>({ key: "", data: null, failed: false });
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      draftCheck(JSON.parse(key), controller.signal)
+        .then((data) => setState({ key, data, failed: false }))
+        .catch(() => {
+          if (!controller.signal.aborted) setState((prev) => ({ key, data: prev.data, failed: true }));
+        });
+    }, DRAFT_CHECK_DELAY_MS);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [key]);
+
+  return { data: state.data, checking: state.key !== key, failed: state.key === key && state.failed };
+}
+
+/* ------------------------------------------------------------------ link reader */
+
+function linkValues(result: ProductLinkReadResponse): Values {
+  const patch: Values = {};
+  // Mirror backend limits (SimulationRequest) so scraped text never causes a 422.
+  if (result.title) patch.productName = result.title.slice(0, 120);
+  if (result.description) patch.description = result.description.slice(0, 4000);
+  // type="number" inputs only take a dot decimal.
+  if (result.price) patch.price = String(result.price);
+  if (result.brand) patch.brand = result.brand.slice(0, 200);
+  for (const [key, value] of Object.entries(result.features ?? {})) {
+    if (value === null || value === undefined || value === "") continue;
+    patch[key === "colors" ? "colorsText" : key] = String(value).slice(0, 200);
+  }
+  return patch;
+}
+
+function linkCategoryNote(result: ProductLinkReadResponse): { text: string; check: boolean } | null {
+  const label = categoryLabel(result.category ?? OTHER);
+  if (result.category_confidence === "high") return { text: `Kategori sayfanın kendi kategorisinden okundu: ${label}.`, check: false };
+  if (result.category_confidence === "medium") return { text: `Kategoriyi ürün adından tahmin ettik (${label}). Doğru değilse aşağıdan değiştir.`, check: true };
+  if (result.category_confidence === "low") return { text: "Kategori tanınamadı; “Diğer” seçildi. Aşağıdan uygun kategoriyi seç.", check: true };
+  return null;
+}
+
+/* ------------------------------------------------------------------ pieces */
+
+function Step({ n, title, hint, done, children }: { n: number; title: string; hint?: string; done?: boolean; children: React.ReactNode }) {
   return (
-    <fieldset className="card-paper space-y-4">
+    <fieldset className="card-paper flex flex-col gap-4">
       <legend className="sr-only">{title}</legend>
-      {/* mt-4: the sr-only legend is the first child, so space-y leaves no gap above the title in Tailwind 4. */}
-      <div className="mt-4 flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <span className="num-badge" aria-hidden>{n}</span>
         <h2 className="text-[19px] font-bold">{title}</h2>
-        {hint && <span className="text-sm text-muted-foreground">{hint}</span>}
+        {done && (
+          <span className="chip text-buy-text">
+            <Check className="h-3.5 w-3.5" aria-hidden /> tamam
+          </span>
+        )}
+        {hint && <span className="ml-auto text-sm text-muted-foreground">{hint}</span>}
       </div>
       {children}
     </fieldset>
@@ -506,47 +519,120 @@ function Step({ n, title, hint, children }: { n: number; title: string; hint?: s
 }
 
 function FieldLabel({
-  htmlFor,
-  label,
-  required,
-  hint,
-  className,
-  children,
+  htmlFor, label, required, hint, auto, gain, className, children,
 }: {
   htmlFor: string;
   label: string;
   required?: boolean;
   hint?: string;
+  /** Filled from the product link and not edited yet. */
+  auto?: boolean;
+  /** Score points this empty input would add (draft check). */
+  gain?: number;
   className?: string;
   children: React.ReactNode;
 }) {
   return (
     // gap, not space-y: Radix Select appends a hidden native <select> as the last child.
-    <div className={`flex flex-col gap-1.5 ${className ?? ""}`}>
-      <label htmlFor={htmlFor} className="text-sm leading-6 font-bold text-foreground-2">
-        {label} {required && <span className="text-skip-text" aria-hidden>*</span>}
-      </label>
+    <div className={cn("flex flex-col gap-1.5", className)}>
+      <div className="flex min-h-6 flex-wrap items-center gap-x-2 gap-y-1">
+        <label htmlFor={htmlFor} className="text-sm leading-6 font-bold text-foreground-2">
+          {label} {required && <span className="text-skip-text" aria-hidden>*</span>}
+        </label>
+        {auto && <span className="chip text-accent" title="Linkten dolduruldu; kontrol et">linkten</span>}
+        {gain !== undefined && (
+          <span className="chip ml-auto text-buy-text" title="Bu alanı doldurursan tahmini skor bu kadar artar">
+            {formatGain(gain)} puan
+          </span>
+        )}
+      </div>
       {children}
       {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
     </div>
   );
 }
 
-/** Feature values of the fields this category shows (the form only renders those). */
-function readFeatures(formData: FormData, fields: Array<{ name: string; type?: string }>): Features {
-  const features: Record<string, unknown> = {};
-  for (const field of fields) {
-    if (field.type === "checkbox") features[field.name] = formData.get(field.name) === "on";
-    else if (field.name === "colorsText") features.colors = getString(formData, "colorsText")?.split(",").map((c) => c.trim()).filter(Boolean);
-    else features[field.name] = getString(formData, field.name);
+function FeatureInput({ field, value, auto, gain, onChange }: {
+  field: FormField;
+  value: string | boolean | undefined;
+  auto: boolean;
+  gain?: number;
+  onChange: (name: string, value: string | boolean) => void;
+}) {
+  if (field.type === "checkbox") {
+    return <Toggle name={field.name} label={field.label} checked={value === true} gain={gain} onChange={onChange} wide />;
   }
-  return features as Features;
+  if (field.type === "select") {
+    return (
+      <FieldLabel htmlFor={field.name} label={field.label} auto={auto} gain={gain}>
+        <Select value={typeof value === "string" ? value : ""} onValueChange={(v) => v && onChange(field.name, v === NONE ? "" : v)}>
+          <SelectTrigger id={field.name} className="field h-11">
+            <SelectValue placeholder="Seçin" />
+          </SelectTrigger>
+          <SelectContent>
+            {field.options?.map((option) => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}
+            <SelectItem value={NONE}>Belirtilmedi</SelectItem>
+          </SelectContent>
+        </Select>
+      </FieldLabel>
+    );
+  }
+  return (
+    <FieldLabel htmlFor={field.name} label={field.label} required={field.required} auto={auto} gain={gain}>
+      <input
+        id={field.name}
+        name={field.name}
+        type={field.type === "number" ? "number" : "text"}
+        value={typeof value === "string" ? value : ""}
+        onChange={(e) => onChange(field.name, e.target.value)}
+        placeholder={field.placeholder}
+        required={field.required}
+        maxLength={200}
+        className="field"
+      />
+    </FieldLabel>
+  );
 }
 
-function linkCategoryNote(result: ProductLinkReadResponse): { text: string; check: boolean } | null {
-  const label = categoryLabel(result.category ?? OTHER);
-  if (result.category_confidence === "high") return { text: `Kategori sayfanın kendi kategorisinden okundu: ${label}.`, check: false };
-  if (result.category_confidence === "medium") return { text: `Kategoriyi ürün adından tahmin ettik (${label}). Doğru değilse değiştirin.`, check: true };
-  if (result.category_confidence === "low") return { text: "Kategori tanınamadı; “Diğer” seçildi. Uygun kategoriyi seçin.", check: true };
-  return null;
+function ChoiceField({ name, label, value, options, onChange }: {
+  name: string;
+  label: string;
+  value: string | boolean | undefined;
+  options: Array<[string, string]>;
+  onChange: (name: string, value: string) => void;
+}) {
+  return (
+    <FieldLabel htmlFor={name} label={label}>
+      <Select value={String(value ?? "")} onValueChange={(v) => v && onChange(name, v)}>
+        <SelectTrigger id={name} className="field h-11"><SelectValue /></SelectTrigger>
+        <SelectContent>
+          {options.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
+        </SelectContent>
+      </Select>
+    </FieldLabel>
+  );
 }
+
+function Toggle({ name, label, checked, gain, wide, onChange }: {
+  name: string;
+  label: string;
+  checked: boolean;
+  gain?: number;
+  /** Feature checkboxes sit in the field grid; commerce toggles are pills. */
+  wide?: boolean;
+  onChange: (name: string, value: boolean) => void;
+}) {
+  return (
+    <label
+      className={cn(
+        "flex min-h-11 cursor-pointer items-center gap-3 border-2 border-border bg-card px-3.5 text-sm font-bold hover:bg-secondary",
+        wide ? "rounded-xl self-end" : "rounded-full",
+      )}
+    >
+      <input id={name} name={name} type="checkbox" checked={checked} onChange={(e) => onChange(name, e.target.checked)} className="h-4 w-4 accent-[hsl(var(--primary))]" />
+      {label}
+      {gain !== undefined && !checked && <span className="chip text-buy-text">{formatGain(gain)}</span>}
+    </label>
+  );
+}
+

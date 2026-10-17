@@ -262,6 +262,25 @@ export interface StoredSimulation {
   request?: SimulationRequest | null; // images stripped; null for rows saved before v2
 }
 
+/** POST /api/draft-check */
+export interface DraftGain {
+  /** Form input name ("fit", "colorsText") or "warranty" | "returnAvailable" | "shippingDays" | "description". */
+  field: string;
+  label: string;
+  /** Score points, one decimal. */
+  delta: number;
+}
+
+export interface DraftCheckResponse {
+  score: number | null;
+  buyers: number | null;
+  descriptionWords: number;
+  gains: DraftGain[];
+  /** Weak input holds the score at this limit whatever else is filled. */
+  cap: { limit: number; reason: string } | null;
+  warnings: string[];
+}
+
 /** POST /api/price-sweep */
 export interface SweepPoint {
   factor: number;
