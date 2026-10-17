@@ -1,15 +1,16 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Loader2, Send, Square } from "lucide-react";
 import { postSse } from "@/lib/sse";
 import { apiErrorMessage } from "@/lib/api";
 import { ChatMessage, loadChat, saveChat } from "@/lib/history";
 import Image from "next/image";
-import { avatarSrc, pickAvatars } from "@/lib/avatars";
+import { avatarSrc, pickAvatars, residentAvatars } from "@/lib/avatars";
 import { personaColor, personaIndex, personaLabel } from "@/lib/personas";
-import { Persona } from "@/types";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Persona, TownRepresentative } from "@/types";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const MAX_TURNS = 12; // backend limit per request
 const RULE_BASED_NOTE = {
@@ -19,22 +20,40 @@ const RULE_BASED_NOTE = {
 const SUGGESTIONS = ["Neden bu kararı verdin?", "Fiyat ne olsa alırdın?", "Açıklamada neyi eksik buldun?"];
 
 const canChat = (id?: string | null): id is string => !!id && !id.startsWith("local-");
+// Chat keys: a persona id, or this prefix + a resident id (also the key of the saved transcript).
+const RESIDENT = "resident:";
 
 /**
- * Ask one simulated persona follow-up questions; answers stream in (POST /api/persona-chat).
- * Each persona's transcript is kept on the result's history entry, so it survives a reload.
+ * Ask one simulated persona, or one of the town residents shown on the result, follow-up questions; answers stream
+ * in (POST /api/persona-chat). Each transcript is kept on the result's history entry, so it survives a reload.
  */
-export default function PersonaChat({ simulationId, personas }: { simulationId?: string | null; personas: Persona[] }) {
-  const [persona, setPersona] = useState(personas[0]?.name ?? "");
+export default function PersonaChat({ simulationId, personas, residents = [] }: {
+  simulationId?: string | null;
+  personas: Persona[];
+  residents?: TownRepresentative[];
+}) {
+  // "… ile konuş" on a resident card opens this view with ?chat=<resident id>.
+  const wanted = useSearchParams().get("chat");
+  const [persona, setPersona] = useState(() =>
+    wanted && residents.some((r) => r.id === wanted) ? RESIDENT + wanted : personas[0]?.name ?? "",
+  );
   // Mounted only on the client after a result loads, so reading localStorage here cannot cause a hydration mismatch.
   const [messages, setMessages] = useState<ChatMessage[]>(() => (canChat(simulationId) ? loadChat(simulationId, persona) : []));
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const abortRef = useRef<AbortController | null>(null);
+  const resident = persona.startsWith(RESIDENT) ? residents.find((r) => RESIDENT + r.id === persona) : undefined;
+  const speaker = resident ? resident.name : personaLabel(persona);
+  const color = personaColor(resident ? resident.persona : persona);
   const listRef = useRef<HTMLOListElement>(null);
 
   useEffect(() => () => abortRef.current?.abort(), []);
+  const sectionRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (persona.startsWith(RESIDENT)) sectionRef.current?.scrollIntoView({ block: "center" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only for the resident a card link opened
+  }, []);
   useEffect(() => {
     listRef.current?.lastElementChild?.scrollIntoView({ block: "nearest" });
   }, [messages]);
@@ -98,7 +117,11 @@ export default function PersonaChat({ simulationId, personas }: { simulationId?:
     try {
       await postSse(
         "/api/persona-chat",
-        { simulationId, persona, messages: window.map((m) => ({ role: m.role, text: m.text.slice(0, 600) })) },
+        {
+          simulationId,
+          ...(resident ? { resident: resident.id } : { persona }),
+          messages: window.map((m) => ({ role: m.role, text: m.text.slice(0, 600) })),
+        },
         (event, data) => {
           const payload = data as { text?: string; detail?: string; ruleBased?: boolean; reason?: "quota" | "unavailable" };
           if (event === "delta" && payload.text) appendToAnswer(payload.text);
@@ -124,24 +147,38 @@ export default function PersonaChat({ simulationId, personas }: { simulationId?:
     }
   };
 
-  const color = personaColor(persona);
   const index = personaIndex(persona);
-  const avatar = index === undefined ? null : pickAvatars([index])[0];
+  const avatar = resident
+    ? residentAvatars(residents.map((r) => r.id)).get(resident.id) ?? null
+    : index === undefined ? null : pickAvatars([index])[0];
 
   return (
-    <section className="card-paper space-y-4" aria-labelledby="persona-chat-title">
+    <section ref={sectionRef} className="card-paper space-y-4" aria-labelledby="persona-chat-title">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3 id="persona-chat-title" className="squiggle text-[19px] font-bold">Personaya sor</h3>
+        <h3 id="persona-chat-title" className="squiggle text-[19px] font-bold">{resident ? "Sakine sor" : "Personaya sor"}</h3>
         <Select value={persona} onValueChange={switchPersona}>
-          <SelectTrigger className="field h-10 w-60" aria-label="Persona seçin">
+          <SelectTrigger className="field h-10 w-64" aria-label="Kiminle konuşulacağını seçin">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {personas.map((p) => (
-              <SelectItem key={p.name} value={p.name}>
-                {personaLabel(p.name)} · %{Math.round(p.purchaseProbability * 100)}
-              </SelectItem>
-            ))}
+            <SelectGroup>
+              {residents.length > 0 && <SelectLabel>Personalar</SelectLabel>}
+              {personas.map((p) => (
+                <SelectItem key={p.name} value={p.name}>
+                  {personaLabel(p.name)} · %{Math.round(p.purchaseProbability * 100)}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+            {residents.length > 0 && (
+              <SelectGroup>
+                <SelectLabel>Kasabadan</SelectLabel>
+                {residents.map((r) => (
+                  <SelectItem key={r.id} value={RESIDENT + r.id}>
+                    {r.name} · {r.age} · {r.city}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            )}
           </SelectContent>
         </Select>
       </div>
@@ -171,7 +208,7 @@ export default function PersonaChat({ simulationId, personas }: { simulationId?:
                   {avatar && (
                     <Image src={avatarSrc(avatar)} alt="" width={28} height={28} className="h-7 w-7 rounded-blob border-2 object-cover" style={{ borderColor: color }} />
                   )}
-                  {personaLabel(persona)}
+                  {speaker}
                   {m.ruleBased && (
                     <span className="chip font-sans text-muted-foreground" title={RULE_BASED_NOTE[m.ruleBased]}>
                       kural tabanlı
@@ -206,7 +243,7 @@ export default function PersonaChat({ simulationId, personas }: { simulationId?:
           value={input}
           onChange={(e) => setInput(e.target.value)}
           maxLength={600}
-          placeholder={`${personaLabel(persona)} kişisine bir soru sorun…`}
+          placeholder={resident ? `${resident.name} kişisine bir soru sor…` : `${speaker} kişisine bir soru sorun…`}
           className="field"
           disabled={busy}
         />
