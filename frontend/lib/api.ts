@@ -47,7 +47,7 @@ export function apiErrorMessage(error: unknown): string {
   return `Sunucu hatası${requestId}.`;
 }
 
-export const simulateProduct = async (data: SimulationRequest): Promise<SimulationResponse> => {
+const simulateProduct = async (data: SimulationRequest): Promise<SimulationResponse> => {
   const response = await client.post("/api/simulate", data);
   return response.data;
 };

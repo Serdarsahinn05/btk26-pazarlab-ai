@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import type { PurchaseMotivation } from "@/types";
 
-/* Category catalog (Faz 13a). Same file as backend/app/data/category_rules.json (a test keeps them identical).
+/* Category catalog (Faz 13a). Copy of backend/app/data/category_rules.json: edit there, then run backend/scripts/sync_frontend_data.py.
    An id is a family ("giyim") or a subtype ("tisort"); a subtype inherits its family and overrides what it lists. */
 
 export type FieldType = "text" | "select" | "checkbox" | "number";

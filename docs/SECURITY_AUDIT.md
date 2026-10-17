@@ -242,4 +242,4 @@ Bu alanların tamamı LLM prompt'larına giriyor. Sınırsız girdi, maliyet sal
 - [x] Bilinmeyen kategori 422 dönüyor.
 - [ ] Yavaş bir `/simulate` sürerken `/api/health` 100 ms altında yanıt veriyor. (Handler'lar artık threadpool'da; yük altında ölçülmedi.)
 - [x] Response'ta `aiRoleplayPrompt` alanı yok.
-- [ ] `docker exec <backend> whoami` → root değil. (Docker daemon kapalıydı; doğrulanmadı.)
+- [x] `whoami` → backend `app`, frontend `node`; root değil (Faz 17, Docker 29.6).

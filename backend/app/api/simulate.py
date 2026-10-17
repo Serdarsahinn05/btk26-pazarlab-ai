@@ -17,7 +17,7 @@ def _history_enabled() -> bool:
     return os.getenv("HISTORY_ENABLED", "true").lower() != "false"
 
 
-# Sync handlers on purpose: the LangGraph run and sqlite are blocking and FastAPI
+# Sync handlers on purpose: the simulation pipeline and sqlite are blocking and FastAPI
 # executes sync handlers in a threadpool instead of on the event loop.
 @router.post(
     "/simulate",
