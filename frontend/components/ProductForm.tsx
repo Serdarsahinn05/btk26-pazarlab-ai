@@ -7,6 +7,7 @@ import ReadinessPanel, { ReadinessBar, formatGain } from "@/components/Readiness
 import { DraftCheckResponse, ImageAnalysis, ProductLinkReadResponse, PurchaseMotivation, SimulationRequest } from "@/types";
 import { analyzeImages, apiErrorMessage, draftCheck, readProductLink, readProductPage } from "@/lib/api";
 import { FAMILIES, OTHER, type FormField, categoryInfo, categoryLabel, isKnownCategory } from "@/lib/categories";
+import { readImportHash } from "@/lib/extensionImport";
 import { type HistoryEntry, loadHistory } from "@/lib/history";
 import {
   EMPTY_VALUES, type Values, clearDraft, fromRequest, hasContent, loadDraft, missingRequired, saveDraft, toDraft, toRequest,
@@ -154,6 +155,18 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
     });
     if (!filled) setPasteOpen(true);
   };
+
+  // A product sent by the browser extension (#import=…) wins over the saved draft; the hash is dropped after use.
+  useEffect(() => {
+    const imported = readImportHash(window.location.hash);
+    if (!imported) return;
+    window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    queueMicrotask(() => {
+      applyRead(imported);
+      if (imported.url) setValues((prev) => ({ ...prev, productUrl: imported.url }));
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once on mount, after the draft restore above
+  }, []);
 
   const readLink = async () => {
     const url = String(values.productUrl ?? "").trim();

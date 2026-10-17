@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <title>PazarLab'a gönder</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <img src="icons/icon-48.png" alt="" width="28" height="28">
+    <span class="brand">PazarLab <b>AI</b></span>
+  </header>
+
+  <main>
+    <p class="label">Bu sayfa</p>
+    <p id="page" class="page">…</p>
+
+    <button id="send" type="button" class="primary">Bu ürünü PazarLab'da test et</button>
+    <p id="status" class="status" role="status" aria-live="polite"></p>
+    <p class="hint">Sayfanın içeriği yalnızca okunmak için PazarLab API'sine gider; hiçbir yere kaydedilmez.</p>
+
+    <details id="settings">
+      <summary>Ayarlar</summary>
+      <form id="settings-form">
+        <label for="site">Site adresi</label>
+        <input id="site" type="url" required placeholder="http://localhost:3000">
+        <label for="api">API adresi</label>
+        <input id="api" type="url" required placeholder="http://localhost:8000">
+        <button type="submit">Kaydet</button>
+        <p id="settings-status" class="status" role="status" aria-live="polite"></p>
+      </form>
+    </details>
+  </main>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>
