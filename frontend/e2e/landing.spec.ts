@@ -17,3 +17,13 @@ test("landing fits a 375 px phone", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   await noHorizontalOverflow(page);
 });
+
+test("privacy page (linked from the landing and the extension) renders and fits a phone", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("link", { name: "Gizlilik" }).click();
+  await expect(page).toHaveURL(/\/gizlilik$/);
+  await expect(page.getByRole("heading", { level: 1, name: "Gizlilik" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Tarayıcı eklentisi" })).toBeVisible();
+  await page.setViewportSize({ width: 375, height: 812 });
+  await noHorizontalOverflow(page);
+});

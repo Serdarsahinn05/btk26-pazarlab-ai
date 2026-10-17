@@ -17,20 +17,13 @@
 
     <button id="send" type="button" class="primary">Bu ürünü PazarLab'da test et</button>
     <p id="status" class="status" role="status" aria-live="polite"></p>
-    <p class="hint">Sayfanın içeriği yalnızca okunmak için PazarLab API'sine gider; hiçbir yere kaydedilmez.</p>
-
-    <details id="settings">
-      <summary>Ayarlar</summary>
-      <form id="settings-form">
-        <label for="site">Site adresi</label>
-        <input id="site" type="url" required placeholder="http://localhost:3000">
-        <label for="api">API adresi</label>
-        <input id="api" type="url" required placeholder="http://localhost:8000">
-        <button type="submit">Kaydet</button>
-        <p id="settings-status" class="status" role="status" aria-live="polite"></p>
-      </form>
-    </details>
+    <p class="hint">Sayfa yalnızca ürün bilgilerini okumak için PazarLab'a gider; sayfanın kendisi saklanmaz.</p>
   </main>
+
+  <footer>
+    <a id="privacy" href="#" target="_blank" rel="noopener">Gizlilik</a>
+    <a id="site" href="#" target="_blank" rel="noopener">PazarLab'ı aç</a>
+  </footer>
 
   <script type="module" src="popup.js"></script>
 </body>
