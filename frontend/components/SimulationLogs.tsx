@@ -4,7 +4,7 @@ import { Check, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Same order and ids as the backend graph (app/services/graph.py STEP_LABELS).
-export const SIMULATION_STEPS = [
+const SIMULATION_STEPS = [
   { id: "input_analysis", label: "Girdi kalitesi kontrol ediliyor" },
   { id: "research", label: "Rakipler aranıyor" },
   { id: "benchmark", label: "Pazar karşılaştırması yazılıyor" },

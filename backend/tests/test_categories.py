@@ -2,6 +2,7 @@
 
 import copy
 import json
+import sys
 
 import pytest
 
@@ -111,9 +112,12 @@ def test_legacy_ids_keep_their_values():
     assert categories.label("tisort") == "Giyim / Tişört" and categories.label("ayakkabi") == "Ayakkabı"
 
 
-def test_frontend_copy_is_identical():
-    frontend = categories.DATA_FILE.parents[3] / "frontend" / "data" / "category_rules.json"
-    assert json.loads(frontend.read_text(encoding="utf-8")) == DATA
+def test_frontend_data_copies_are_current():
+    # backend/app/data is the source; frontend/data is a copy (separate build contexts).
+    sys.path.insert(0, str(categories.DATA_FILE.parents[2] / "scripts"))
+    from sync_frontend_data import stale
+
+    assert not stale(), "run: python backend/scripts/sync_frontend_data.py"
 
 
 # ------------------------------------------------------------------ simulation

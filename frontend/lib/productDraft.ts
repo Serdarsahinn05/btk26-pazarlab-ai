@@ -33,7 +33,7 @@ function text(value: string | boolean | undefined): string | undefined {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
 
-export function featuresFrom(values: Values, fields: FormField[]): Features {
+function featuresFrom(values: Values, fields: FormField[]): Features {
   const features: Record<string, unknown> = {};
   for (const field of fields) {
     const value = values[field.name];

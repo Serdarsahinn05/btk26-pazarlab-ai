@@ -2,14 +2,12 @@
 
 import json
 import re
-from pathlib import Path
 
 from app.services.ai_insight_service import _parse_persona_feedback
 from app.services.graph import _sanitize_debate_logs
 from app.services.normalization_service import load_persona_data
 from app.utils.text_utils import fold_text
 
-ROOT = Path(__file__).resolve().parents[2]
 # ASCII spellings that only appear when Turkish letters were stripped.
 # Case-sensitive on purpose: with re.IGNORECASE, Unicode matching treats "ı" like "i" and flags correct text.
 ASCII_TURKISH = re.compile(
@@ -52,10 +50,7 @@ def test_rule_based_output_has_no_stripped_turkish(client, payload):
     assert "stil_begeni" not in prose and "Trend Takipcisi" not in prose
 
 
-def test_persona_files_match_and_display_names_fold_to_ids():
-    backend = (ROOT / "backend/app/data/personas.json").read_text(encoding="utf-8")
-    frontend = (ROOT / "frontend/data/personas.json").read_text(encoding="utf-8")
-    assert backend == frontend
+def test_persona_display_names_fold_to_ids():
     for persona in load_persona_data()["personaTypes"]:
         assert fold_text(persona["displayName"]) == fold_text(persona["name"])
         assert not ASCII_TURKISH.search(persona["reason"] + " " + persona["advice"]), persona["name"]
