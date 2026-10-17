@@ -47,6 +47,7 @@
 | 18f | `feat/resident-chat` | Kasabadaki bir sakinle sohbet | 0,5 gün | ✅ |
 | 19 | `feat/bring-your-population` | Kendi nüfusunu yükle + kalibrasyon (hesap sistemi, KVKK) | 3+ gün | ⬜ |
 | 20 | `feat/claude-artifact` | Claude içinde bağımsız PazarLab sayfası (11b, seçenek B) | 1,5 gün | ⬜ isteğe bağlı |
+| 21 | `feat/competitor-choice` | Rakipli seçim: rakip linkleri aynı motordan, sakin başına çok seçenekli karar, tahmini pay | 1,5 gün | ⬜ sıradaki |
 
 Sıralamanın gerekçesi: Önce güvenlik geliyor, çünkü açık CORS ve SSRF ile kota ve iç ağ riski demo sırasında bile var. Sonra B1 geliyor; AI katmanı çalışmıyorsa tasarımın gösterecek içeriği olmaz. Tasarım bunların üzerine kurulur.
 
@@ -225,9 +226,12 @@ Kabul kriteri: DESIGN.md'deki tüm kalıplar uygulanmış; bileşenlerde ham ren
 - **Ara iş (2026-10-17, `feat/resident-avatars`):** "Kasabadan 5 sakin" kartlarına repodaki kullanılmayan `public/pp_icons` çizimleri avatar olarak eklendi (sakin kimliğinden sabit, kartlarda tekrarsız, `next/image` ile küçültülmüş). Ayrıca dağıtım düzeltmeleri: `render.yaml`'da Dockerfile yolları `rootDir`'e göreli (`fix/render-blueprint`), CORS listesinde sondaki `/` tolere ediliyor ve liste açılışta loglanıyor (`fix/cors-origins`).
 - **Ara iş (2026-10-17, `chore/deploy-vercel-render`):** Vercel (website) + Render (API) ile yayın hazırlığı: `render.yaml` Blueprint, [deployment.md §6](deployment.md#6-vercel--render) (adımlar, ücretsiz planın kısıtları, ne zaman VPS), `CLIENT_IP_HEADER` (platform proxy'sinin yazdığı IP başlığı; Render'da `CF-Connecting-IP`, ilk deploy'da `/api/health`'teki `clientIp` ile doğrulanacak). 2 test (toplam 257). Gerçek bir Render/Vercel hesabında denenmedi.
 - **Önceki:** Faz 16 (yeni özellikler) dört adımıyla bitti ve main'e merge edildi: ilan yeniden yazma + öncesi/sonrası, rakip fiyat kartı, AI görsel analizi, paylaşım görseli.
-- **Son biten:** Faz 17 (temizlik ve CI testleri): ölü kod ve 2 paket silindi, veri kopyaları tek kaynağa bağlandı, LangGraph kaldırıldı, Playwright testleri repoda ve CI'da, Docker imajları doğrulandı, README yenilendi.
-- **Son biten:** Faz 18d (küçük işler; F31: kırık frontend Docker build'i bulundu ve düzeltildi). Öncesinde 18 (eklenti), 18b (avatarlar), 18c (mağaza paketi; yükleme kullanıcıda).
-- **Sıradaki:** Faz 19 (kendi nüfusunu yükle; hesap sistemi ve KVKK gerektiriyor, kapsamı kullanıcıyla netleşmeli) ya da isteğe bağlı Faz 20. Eklenti ikonu şimdilik favicon; kalıcı ikon kullanıcıyla seçilecek. Açık karar: görsel puanı simülasyona girsin mi (F29); pazar payı için rakipli seçim (multinomial logit) ne zaman. 12'nin ertelenen maddeleri (rakipli seçim, belirli bir sakinle sohbet) Faz 16'da değerlendirilebilir.
+- **Son biten (2026-10-17):** Faz 17–18f: temizlik ve CI testleri, tarayıcı eklentisi + mağaza paketi + gizlilik sayfası, tartışmada avatarlar, küçük işler (F31 kırık Docker build'i dahil), B13, F23, bağımlılıklar ve venv, sakinle sohbet.
+- **Sıradaki oturum (kullanıcıyla kararlaştırıldı):**
+  1. **Faz 11 Claude.ai connector denemesi** (kullanıcı başında olmalı): API Render'da yayında, tünel gerekmiyor. Adımlar [mcp-connector.md](mcp-connector.md); Render'da `MCP_ALLOWED_HOSTS=pazarlab-api.onrender.com` ve isteğe bağlı `MCP_ACCESS_KEY`.
+  2. **Faz 21 Rakipli seçim** (aşağıda, öneri onaylandı, uygulanmadı).
+  3. Kullanıcıda: eklentiyi Chrome Web Mağazası'na yüklemek ([LISTING.md](../extension/store/LISTING.md)), kalıcı eklenti ikonu.
+  Sonra: Faz 19 (kapsam kullanıcıyla netleşmeli), Faz 9 (API anahtarı gelince), Faz 20 (isteğe bağlı).
 - **Kullanıcıdan beklenen (isteğe bağlı):** Trendyol, Hepsiburada, Amazon TR, n11, Çiçeksepeti'den birer ürün sayfasını tarayıcıda "Farklı kaydet → Yalnızca HTML" ile kaydedip `backend/tests/fixtures/links/` altına koymak; siteye özel okuma kuralları bu gerçek sayfalara göre yazılır.
 - **Ertelenen (kullanıcı kararı, 2026-10-17):** Faz 11'in Claude.ai denemesi sonra birlikte yapılacak. Gerekenler: `cloudflared` kurulumu (`winget install Cloudflare.cloudflared`), tünel adresinin `MCP_ALLOWED_HOSTS`'a yazılması, Claude'da connector eklenmesi; açık soru `?key=` sorgu dizesinin korunup korunmadığı. Adımlar: docs/mcp-connector.md. (sıra aşağıdaki tabloda). Her faz kendi dalında, bitince bu bölüm güncellenir.
 - **Bekleyen kararlar:** Faz 9 için API anahtarı yok. Süpermarket/gıda, pet shop, otomotiv, kitap/kırtasiye aileleri bilerek dışarıda ("Diğer"e düşüyorlar); talep olursa eklenecek.
@@ -455,6 +459,19 @@ Dört alt faza bölündü (12a–12d); her biri ayrı dalda, ayrı testlerle. A�
 - [ ] Satıcı kendi sipariş dökümünden (Trendyol satıcı paneli, Shopify vb.) **anonim/toplu segmentler** yükler (JSON/CSV şeması); kasaba bu dağılımlara göre üretilir.
 - [ ] Gerçek dönüşüm verisiyle motor ağırlıklarının kalibrasyonu ve geriye dönük test.
 - [ ] Ön koşullar: hesap sistemi, satıcı başına ayrı veri, açık rıza, silme. Ham kişisel veri kabul edilmez (KVKK).
+
+### Faz 21: Rakipli seçim (öneri, 2026-10-17; uygulanmadı)
+**Neden bu biçimde:** Serper'dan rakiplerin yalnızca adı ve fiyatı geliyor; kalite, açıklama, puan, kargo yok. Bu veriyle "pazar payı %23" demek fiilen yalnızca fiyat karşılaştırması olur ama gerçek pay gibi görünür (yanıltıcı kesinlik). Bugünkü "Rakip fiyatlarını referans al" bu karşılaştırmayı zaten dürüstçe yapıyor. Gerçek pay için rakiplerin de bizim ürün kadar bilinmesi gerekir.
+
+**Plan**
+- [ ] **Girdi:** sonuç ekranında (Benchmark sekmesi ya da "Ne olur?") satıcı 1–3 rakip **linki** ekler. Her link mevcut okuyucuyla okunur (`/api/read-product-link`; olmazsa sayfa metni yapıştırma ya da eklenti): ad, fiyat, açıklama, özellikler, puan, yorum sayısı. Okunan alanlar düzenlenebilir (yanlış okunan fiyat düzeltilebilsin).
+- [ ] **Motor:** her rakip bizim ürünle aynı kategori ve aynı kasaba üzerinde aynı faydayla puanlanır (`engine.py`: uyum + `β·ln(ödeme isteği / fiyat)` + sosyal kanıt…). Her sakin için seçenekler: bizim ürün, rakipler, "hiçbiri" (sabit fayda = bugünkü alma eşiği). **Multinomial logit:** `P(i) = e^{U_i} / Σ e^{U_j}`; 30 Monte Carlo turu, aynı tohum. Yeni uç: `POST /api/competitor-choice` (`simulationId` + rakip girdileri; AI yok, deterministik, rate limit).
+- [ ] **Çıktı:** tahmini pay (bizim / her rakip / hiçbiri, aralıkla), kimin hangi rakibe kaçtığı (segment ve persona kırılımı), en çok kaçıran sebep (fiyat mı, uyum mu, güven mi; `town_insights` gerekçeleri gibi), "rakibe karşı en etkili değişiklik" (bugünkü iyileştirme denemelerinin rakipli hâli).
+- [ ] **Linksiz yedek:** rakip linki yoksa Serper fiyatlarıyla yalnızca fiyat farkı üzerinden aynı hesap; kartta açıkça **"eşit kalite varsayımıyla"** etiketi.
+- [ ] **Dürüstlük:** her yerde "tahmini" ve "sentetik kasaba"; rakip okunamayan alanlarda kategori ortalaması kullanıldığı yazılır. Kayda `competitorInputs` (görseller hariç) yazılır ki paylaşılan link aynı sonucu göstersin.
+- [ ] MCP: `simulate_product` yanına `compare_with_competitors` aracı (isteğe bağlı).
+- **Kabul:** rakip bizimkiyle aynı girdiye sahipse paylar eşit (± Monte Carlo aralığı); rakip ucuzladıkça bizim payımız monoton düşer; "hiçbiri" payı tek ürünlü simülasyondaki almayanlarla tutarlı; deterministik; 3 rakiple < 1,5 sn; linksiz yedek etiketli; e2e: link ekle → pay kartı.
+- **Bağımlılık:** sunucudan pazar yeri sayfası okumak bazı sitelerde engellenebilir (F26); eklenti ve "sayfa metnini yapıştır" yolları rakip için de çalışmalı.
 
 ## Riskler
 - **Gemini model adları sık değişiyor.** B1'de model env'den okunacak; varsayılan seçilirken o günkü güncel model listesi kontrol edilecek.
