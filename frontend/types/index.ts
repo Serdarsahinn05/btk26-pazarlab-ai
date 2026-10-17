@@ -226,6 +226,15 @@ export interface SimulationResponse {
   segments?: Record<"age" | "gender" | "incomeLevel" | "cityType", SegmentRate[]>;
   representatives?: TownRepresentative[];
   improvements?: Improvement[];
+  /** Similar products from the shopping search; empty without SERPER_API_KEY (Faz 16). */
+  competitors?: Competitor[];
+}
+
+export interface Competitor {
+  title: string;
+  price: number | null;
+  source: string | null;
+  link: string | null;
 }
 
 export interface SegmentRate {
@@ -264,6 +273,11 @@ export interface StoredSimulation {
   response: SimulationResponse;
   request?: SimulationRequest | null; // images stripped; null for rows saved before v2
 }
+
+/** POST /api/analyze-images (optional, needs AI) */
+export type ImageAnalysis =
+  | { available: false; reason: string }
+  | { available: true; score: number; strengths: string[]; issues: string[]; suggestions: string[]; missingShots: string[]; imagesUsed: number };
 
 /** POST /api/draft-check */
 export interface DraftGain {

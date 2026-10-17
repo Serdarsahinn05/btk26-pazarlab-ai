@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Check, ClipboardPaste, History, Link2, Loader2, Star, Trash2, Upload } from "lucide-react";
+import { Check, ClipboardPaste, History, Link2, Loader2, Sparkles, Star, Trash2, Upload } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ReadinessPanel, { ReadinessBar, formatGain } from "@/components/ReadinessPanel";
-import { DraftCheckResponse, ProductLinkReadResponse, PurchaseMotivation, SimulationRequest } from "@/types";
-import { apiErrorMessage, draftCheck, readProductLink, readProductPage } from "@/lib/api";
+import { DraftCheckResponse, ImageAnalysis, ProductLinkReadResponse, PurchaseMotivation, SimulationRequest } from "@/types";
+import { analyzeImages, apiErrorMessage, draftCheck, readProductLink, readProductPage } from "@/lib/api";
 import { FAMILIES, OTHER, type FormField, categoryInfo, categoryLabel, isKnownCategory } from "@/lib/categories";
 import { type HistoryEntry, loadHistory } from "@/lib/history";
 import {
@@ -423,7 +423,7 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
 
             <div className="flex flex-col gap-2">
               <span className="text-sm leading-6 font-bold text-foreground-2">
-                Görseller <span className="font-semibold text-muted-foreground">(en fazla {MAX_IMAGES}, AI yorumlarında kullanılır)</span>
+                Görseller <span className="font-semibold text-muted-foreground">(en fazla {MAX_IMAGES}; skoru etkilemez, AI ile değerlendirilebilir)</span>
               </span>
               <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
                 {images.map((url, idx) => (
@@ -457,6 +457,9 @@ export default function ProductForm({ onSubmit, isLoading }: ProductFormProps) {
                 )}
               </div>
             </div>
+            {images.length > 0 && (
+              <PhotoReview images={images} category={category} productName={String(values.productName ?? "")} />
+            )}
           </Step>
 
           {/* 2 · Özellikler */}
@@ -710,6 +713,62 @@ function Toggle({ name, label, checked, gain, wide, onChange }: {
       {label}
       {gain !== undefined && !checked && <span className="chip text-buy-text">{formatGain(gain)}</span>}
     </label>
+  );
+}
+
+/** Optional AI look at the photos (Faz 16). Does not change the simulation; says why when AI is off. */
+function PhotoReview({ images, category, productName }: { images: string[]; category: string; productName: string }) {
+  const [review, setReview] = useState<{ for: string; data?: ImageAnalysis; error?: string } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const key = images.join("|");
+  const current = review?.for === key ? review : null;
+
+  const run = async () => {
+    setBusy(true);
+    try {
+      setReview({ for: key, data: await analyzeImages(images, category, productName) });
+    } catch (err: unknown) {
+      setReview({ for: key, error: apiErrorMessage(err) });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const data = current?.data;
+  return (
+    <div className="flex flex-col gap-3 rounded-wobble border-2 border-dashed border-border bg-secondary px-4 py-3" aria-live="polite">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-foreground-2">
+          <b className="font-bold">Görseller alıcıyı ikna ediyor mu?</b> AI ilk {Math.min(images.length, 4)} görsele bakar.
+        </p>
+        <button type="button" onClick={run} disabled={busy} className="btn-sticker min-h-11">
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Sparkles className="h-4 w-4" aria-hidden />}
+          Görselleri değerlendir
+        </button>
+      </div>
+      {current?.error && <p className="note-risk">{current.error}</p>}
+      {data && !data.available && <p className="text-sm text-muted-foreground">{data.reason}</p>}
+      {data && data.available && (
+        <div className="flex flex-col gap-2 text-sm">
+          <p>
+            <span className="font-display text-2xl font-extrabold">{data.score}</span>
+            <span className="font-semibold text-muted-foreground">/100 görsel puanı</span>
+          </p>
+          {[
+            ["İyi olan", data.strengths, "text-buy-text"],
+            ["Sorun", data.issues, "text-skip-text"],
+            ["Öneri", data.suggestions, "text-foreground"],
+            ["Eksik çekim", data.missingShots, "text-foreground"],
+          ].map(([label, items, tone]) =>
+            (items as string[]).length ? (
+              <p key={label as string} className="text-foreground-2">
+                <b className={cn("font-bold", tone as string)}>{label as string}:</b> {(items as string[]).join(" · ")}
+              </p>
+            ) : null,
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 

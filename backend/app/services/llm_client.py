@@ -264,7 +264,10 @@ def _extract_text(response: dict, strip: bool = True) -> str:
     return text.strip() if strip else text
 
 
-def _generate(instructions: str, data: Any, *, temperature: float, json_mode: bool, max_tokens: int, timeout: float) -> str:
+def _generate(
+    instructions: str, data: Any, *, temperature: float, json_mode: bool, max_tokens: int, timeout: float,
+    images: tuple[tuple[str, str], ...] = (),
+) -> str:
     if not is_configured():
         raise LLMUnavailable("GEMINI_API_KEY is not set")
 
@@ -278,7 +281,9 @@ def _generate(instructions: str, data: Any, *, temperature: float, json_mode: bo
         generation_config["responseMimeType"] = "application/json"
     body = json.dumps({
         "systemInstruction": {"parts": [{"text": instructions + UNTRUSTED_DATA_RULE}]},
-        "contents": [{"role": "user", "parts": [{"text": wrap_data(data)}]}],
+        # images: (mime type, base64) pairs sent as inline parts after the text (Faz 16 image analysis).
+        "contents": [{"role": "user", "parts": [{"text": wrap_data(data)}]
+                      + [{"inline_data": {"mime_type": mime, "data": b64}} for mime, b64 in images]}],
         "generationConfig": generation_config,
     }).encode("utf-8")
 
@@ -411,10 +416,11 @@ def generate_text(
 
 
 def generate_json(
-    instructions: str, data: Any, *, temperature: float = 0.4, max_tokens: int = MAX_OUTPUT_TOKENS, timeout: float = TIMEOUT_SECONDS
+    instructions: str, data: Any, *, temperature: float = 0.4, max_tokens: int = MAX_OUTPUT_TOKENS, timeout: float = TIMEOUT_SECONDS,
+    images: tuple[tuple[str, str], ...] = (),
 ) -> Any:
     def produce() -> Any:
-        text = _generate(instructions, data, temperature=temperature, json_mode=True, max_tokens=max_tokens, timeout=timeout)
+        text = _generate(instructions, data, temperature=temperature, json_mode=True, max_tokens=max_tokens, timeout=timeout, images=images)
         text = text.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
         try:
             return json.loads(text)
@@ -423,4 +429,6 @@ def generate_json(
             raise
 
     # Parsed before caching, so a truncated answer is retried next time instead of repeated.
-    return _cached("json", instructions, data, temperature, max_tokens, produce)
+    # Images join the cache key as a digest, not as megabytes of base64.
+    keyed = [data, hashlib.sha256("".join(b64 for _, b64 in images).encode()).hexdigest()] if images else data
+    return _cached("json", instructions, keyed, temperature, max_tokens, produce)

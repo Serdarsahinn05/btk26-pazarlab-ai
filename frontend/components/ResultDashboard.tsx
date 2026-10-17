@@ -5,11 +5,12 @@ import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import confetti from "canvas-confetti";
-import { Check, Copy, FileDown, Link2, Printer, RotateCcw } from "lucide-react";
+import { Check, Copy, FileDown, ImageDown, Link2, Loader2, Printer, RotateCcw, Sparkles } from "lucide-react";
 import { downloadBlob } from "@/lib/history";
 import { simulationToMarkdown } from "@/lib/report";
-import { NormalizedProduct, Persona, SimulationRequest, SimulationResponse } from "@/types";
-import { aiFallbackNote } from "@/lib/api";
+import { renderShareCard } from "@/lib/shareImage";
+import { CompareResponse, Competitor, NormalizedProduct, Persona, SimulationRequest, SimulationResponse } from "@/types";
+import { aiFallbackNote, compareVariants } from "@/lib/api";
 import WhatIf from "@/components/WhatIf";
 import PersonaChat from "@/components/PersonaChat";
 import { SegmentRing, Ring } from "@/components/ui/ring";
@@ -44,7 +45,7 @@ export default function ResultDashboard({ data, view, productName, request, onRe
     [request, data.inputAnalysis]
   );
 
-  if (view === "benchmark") return <BenchmarkView markdown={data.benchmarkAnalysis} />;
+  if (view === "benchmark") return <BenchmarkView markdown={data.benchmarkAnalysis} competitors={data.competitors ?? []} request={whatIfRequest} />;
   if (view === "debate") {
     const personas = data.allPersonas?.length ? data.allPersonas : data.topPersonas;
     return (
@@ -126,7 +127,7 @@ export default function ResultDashboard({ data, view, productName, request, onRe
         </Disclosure>
       )}
       <Disclosure id="aciklama" title="İyileştirilmiş açıklama" summary="İlana kopyalayabileceğin, eksikleri tamamlanmış açıklama.">
-        <ImprovedDescription text={data.aiInsights.improvedDescription} images={data.images} />
+        <ImprovedDescription text={data.aiInsights.improvedDescription} images={data.images} request={whatIfRequest} />
       </Disclosure>
       <Disclosure id="parametreler" title="Ürün parametreleri" summary="Skorun dayandığı 11 ölçü: fiyat uyumu, kalite, trend, güven…">
         <ParamBars product={data.normalizedProduct} />
@@ -208,6 +209,23 @@ function ActionCard({ data, productName, onReset }: { data: SimulationResponse; 
     }
   };
 
+  const fileSlug = productName.toLowerCase().replace(/[^a-z0-9ğüşıöç]+/gi, "-").slice(0, 40) || "simulasyon";
+
+  /** Phones (touch) with file sharing get the share sheet; desktops, and a failed share, download the PNG. */
+  const shareImage = async () => {
+    const blob = await renderShareCard(data, productName);
+    const file = new File([blob], `pazarlab-${fileSlug}.png`, { type: "image/png" });
+    if (window.matchMedia("(pointer: coarse)").matches && navigator.canShare?.({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: `PazarLab: ${productName}`, text: shareUrl });
+        return;
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") return; // the seller closed the sheet
+      }
+    }
+    downloadBlob(blob, file.name);
+  };
+
   const downloadMarkdown = () => {
     const md = simulationToMarkdown(data, productName, shareUrl);
     const slug = productName.toLowerCase().replace(/[^a-z0-9ğüşıöç]+/gi, "-").slice(0, 40) || "simulasyon";
@@ -251,6 +269,9 @@ function ActionCard({ data, productName, onReset }: { data: SimulationResponse; 
         )}
         <button type="button" onClick={downloadMarkdown} className="btn-sticker px-3.5" title="Raporu Markdown dosyası olarak indir">
           <FileDown className="h-4 w-4" aria-hidden /> .md
+        </button>
+        <button type="button" onClick={shareImage} className="btn-sticker px-3.5" title="Sonucun paylaşılabilir görseli (PNG)">
+          <ImageDown className="h-4 w-4" aria-hidden /> Görsel
         </button>
         <button type="button" onClick={() => window.print()} className="btn-sticker px-3.5" title="Yazdır ya da PDF olarak kaydet">
           <Printer className="h-4 w-4" aria-hidden /> PDF
@@ -409,7 +430,18 @@ function ParamBars({ product }: { product: NormalizedProduct }) {
   );
 }
 
-function ImprovedDescription({ text, images }: { text: string; images?: string[] }) {
+/** Markdown the model may answer with, as the plain text a listing takes (Faz 16). */
+function plainText(markdown: string): string {
+  return markdown
+    .replace(/^#+\s*/gm, "")
+    .replace(/^\s*[-*•]\s+/gm, "")
+    .replace(/\*\*|__|\*|`/g, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim()
+    .slice(0, 4000);
+}
+
+function ImprovedDescription({ text, images, request }: { text: string; images?: string[]; request: SimulationRequest | null }) {
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     try {
@@ -429,6 +461,7 @@ function ImprovedDescription({ text, images }: { text: string; images?: string[]
           {copied ? "Kopyalandı" : "Kopyala"}
         </button>
       </div>
+      {request && <BeforeAfter request={request} description={plainText(text)} />}
       {/* The LLM often answers in Markdown (bold, bullet lists); raw HTML stays escaped (no rehype-raw). */}
       <div className="prose prose-neutral max-w-none text-foreground-2 dark:prose-invert prose-strong:text-foreground prose-li:my-0.5">
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
@@ -445,11 +478,12 @@ function ImprovedDescription({ text, images }: { text: string; images?: string[]
   );
 }
 
-function BenchmarkView({ markdown }: { markdown?: string }) {
+function BenchmarkView({ markdown, competitors, request }: { markdown?: string; competitors: Competitor[]; request: SimulationRequest | null }) {
   const content = useMemo(() => markdown?.trim(), [markdown]);
   return (
     <section className="space-y-5">
       <h2 className="squiggle text-2xl font-bold">Rakip ve pazar analizi</h2>
+      {request && competitors.some((c) => c.price) && <CompetitorCard competitors={competitors} request={request} />}
       {content ? (
         <article className="card-paper prose prose-neutral max-w-none dark:prose-invert prose-headings:font-display prose-strong:text-foreground prose-li:my-1">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
@@ -463,4 +497,164 @@ function BenchmarkView({ markdown }: { markdown?: string }) {
 
 function EmptyState({ text }: { text: string }) {
   return <p className="rounded-wobble border-2 border-dashed border-border p-10 text-center text-muted-foreground">{text}</p>;
+}
+
+/** The rewritten description on the same 500 people: score, buyers and revenue before and after (Faz 16). */
+function BeforeAfter({ request, description }: { request: SimulationRequest; description: string }) {
+  const [result, setResult] = useState<CompareResponse | null>(null);
+  const [state, setState] = useState<"idle" | "busy" | "error">("idle");
+  const tooShort = description.length < 40;
+
+  const run = async () => {
+    setState("busy");
+    try {
+      // The stored AI analysis describes the old text, so both sides use the rule-based one (as in A/B).
+      const base: SimulationRequest = { ...request, inputAnalysis: undefined };
+      setResult(await compareVariants(base, { ...base, description }));
+      setState("idle");
+    } catch {
+      setState("error");
+    }
+  };
+
+  return (
+    <div className="no-print flex flex-col gap-3 rounded-wobble border-2 border-dashed border-border bg-secondary px-4 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-foreground-2">
+          <b className="font-bold">Bu açıklama işe yarar mı?</b> Aynı 500 kişiyle eski ve yeni açıklamayı karşılaştır.
+        </p>
+        <button type="button" onClick={run} disabled={state === "busy" || tooShort} className="btn-sticker-primary min-h-11">
+          {state === "busy" ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Sparkles className="h-4 w-4" aria-hidden />}
+          Bu açıklamayla dene
+        </button>
+      </div>
+      {state === "error" && <p className="note-risk">Karşılaştırma şu an yapılamadı; biraz sonra tekrar dene.</p>}
+      {result && <BeforeAfterTable result={result} />}
+    </div>
+  );
+}
+
+/** Score, buyers and revenue of two runs on the same 500 people. */
+function BeforeAfterTable({ result }: { result: CompareResponse }) {
+  const rows: Array<[string, number, number, (n: number) => string]> = [
+    ["Genel skor", result.base.overallScore, result.variant.overallScore, String],
+    ["Alıcı", result.base.estimatedBuyers, result.variant.estimatedBuyers, String],
+    ["Tahmini ciro", result.base.estimatedBuyers * result.base.price, result.variant.estimatedBuyers * result.variant.price,
+      (n) => `${Math.round(n).toLocaleString("tr-TR")} TL`],
+  ];
+  return (
+        <table className="w-full text-sm" aria-live="polite">
+          <thead>
+            <tr className="text-left text-muted-foreground">
+              <th className="py-1 font-bold">Gösterge</th>
+              <th className="py-1 text-right font-bold">Önce</th>
+              <th className="py-1 text-right font-bold">Sonra</th>
+              <th className="py-1 text-right font-bold">Fark</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(([label, before, after, fmt]) => {
+              const delta = after - before;
+              return (
+                <tr key={label} className="border-t border-dashed border-border">
+                  <td className="py-1.5">{label}</td>
+                  <td className="py-1.5 text-right">{fmt(before)}</td>
+                  <td className="py-1.5 text-right font-bold">{fmt(after)}</td>
+                  <td className={cn("py-1.5 text-right font-bold", delta > 0 ? "text-buy-text" : delta < 0 ? "text-skip-text" : "text-muted-foreground")}>
+                    {delta > 0 ? "+" : delta < 0 ? "−" : ""}{fmt(Math.abs(delta))}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+  );
+}
+
+const tl = (n: number) => `${Math.round(n).toLocaleString("tr-TR")} TL`;
+
+/** Where the seller's price sits among similar products, and the town re-run with their median as the going price (Faz 16).
+ *  Not a market share: the engine does not simulate the competitors themselves (multinomial choice is a later step). */
+function CompetitorCard({ competitors, request }: { competitors: Competitor[]; request: SimulationRequest }) {
+  const [result, setResult] = useState<CompareResponse | null>(null);
+  const [state, setState] = useState<"idle" | "busy" | "error">("idle");
+  const prices = competitors.flatMap((c) => (c.price ? [c.price] : [])).sort((a, b) => a - b);
+  const median = prices.length % 2 ? prices[(prices.length - 1) / 2] : (prices[prices.length / 2 - 1] + prices[prices.length / 2]) / 2;
+  const own = request.price;
+  const diff = Math.round(((own - median) / median) * 100);
+  const cheaper = prices.filter((p) => p < own).length;
+  const lo = Math.min(own, prices[0]);
+  const hi = Math.max(own, prices[prices.length - 1]);
+  const at = (p: number) => `${hi > lo ? ((p - lo) / (hi - lo)) * 100 : 50}%`;
+
+  const run = async () => {
+    setState("busy");
+    try {
+      setResult(await compareVariants(request, { ...request, marketPrice: median }));
+      setState("idle");
+    } catch {
+      setState("error");
+    }
+  };
+
+  return (
+    <div className="card-paper flex flex-col gap-4">
+      <h3 className="text-[19px] font-bold">Fiyatın rakipler arasında</h3>
+      <p className="text-foreground-2">
+        Senin fiyatın <b className="font-display">{tl(own)}</b>; {prices.length} benzer ürünün medyanı <b className="font-display">{tl(median)}</b>
+        {" "}({diff === 0 ? "aynı" : diff > 0 ? `%${diff} daha pahalı` : `%${-diff} daha ucuz`}). {cheaper} rakip senden ucuz.
+      </p>
+      <figure>
+        <figcaption className="sr-only">Rakip fiyatları ve senin fiyatın, en ucuzdan en pahalıya</figcaption>
+        <div className="relative mx-3 h-12" aria-hidden>
+          <div className="absolute inset-x-0 top-6 h-0.5 bg-border" />
+          {prices.map((p, i) => (
+            <span key={i} title={tl(p)} className="absolute top-[18px] h-3.5 w-3.5 -translate-x-1/2 rounded-full border-2 border-card bg-accent" style={{ left: at(p) }} />
+          ))}
+          <span className="absolute top-0 -translate-x-1/2 text-center" style={{ left: at(own) }}>
+            <span className="block text-xs font-bold">sen</span>
+            <span className="mx-auto mt-0.5 block h-4 w-4 rotate-45 rounded-[3px] border-2 border-card bg-primary" />
+          </span>
+        </div>
+        <div className="mx-3 flex justify-between text-xs text-muted-foreground" aria-hidden>
+          <span>{tl(lo)}</span>
+          <span>{tl(hi)}</span>
+        </div>
+      </figure>
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="text-left text-muted-foreground">
+            <th className="py-1 pr-3 font-bold">Ürün</th>
+            <th className="py-1 pr-3 font-bold">Satıcı</th>
+            <th className="py-1 text-right font-bold">Fiyat</th>
+          </tr>
+        </thead>
+        <tbody>
+          {competitors.map((c, i) => (
+            <tr key={i} className="border-t border-dashed border-border">
+              <td className="py-1.5 pr-3">
+                {c.link ? <a href={c.link} target="_blank" rel="noopener noreferrer nofollow" className="text-accent underline-offset-2 hover:underline">{c.title}</a> : c.title}
+              </td>
+              <td className="py-1.5 pr-3 text-muted-foreground">{c.source ?? "–"}</td>
+              <td className="py-1.5 text-right font-bold">{c.price ? tl(c.price) : "–"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div className="no-print flex flex-col gap-3 rounded-wobble border-2 border-dashed border-border bg-secondary px-4 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-foreground-2">
+            <b className="font-bold">Kasaba rakip fiyatlarını bilseydi?</b> Kategori ortalaması yerine rakiplerin medyanıyla yeniden hesapla.
+          </p>
+          <button type="button" onClick={run} disabled={state === "busy"} className="btn-sticker-primary min-h-11">
+            {state === "busy" ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Sparkles className="h-4 w-4" aria-hidden />}
+            Rakip fiyatlarını referans al
+          </button>
+        </div>
+        {state === "error" && <p className="note-risk">Hesaplama şu an yapılamadı; biraz sonra tekrar dene.</p>}
+        {result && <BeforeAfterTable result={result} />}
+      </div>
+      <p className="text-xs text-muted-foreground">Bu bir pazar payı tahmini değil: kasaba rakip ürünleri ayrıca seçmiyor, yalnızca fiyat karşılaştırmasının dayanağı değişiyor.</p>
+    </div>
+  );
 }

@@ -5,7 +5,7 @@ from typing import Any, Dict, Iterator, List, Optional, Set, TypedDict
 from langgraph.graph import StateGraph, END
 
 from app.models.product import SimulationRequest
-from app.models.simulation import SimulationResponse
+from app.models.simulation import Competitor, SimulationResponse
 from app.services import llm_client
 from app.services.labels import category_label
 from app.services.prompt_safety import clip
@@ -49,6 +49,25 @@ def research_node(state: GraphState) -> Dict[str, Any]:
     results = serper.search(state["product_name"])
     competitors = serper.filter_competitors(results, state["product_name"])
     return {"competitors": competitors}
+
+
+def competitors_for_response(raw: List[Dict[str, Any]]) -> List[Competitor]:
+    """Shopping results as typed rows; prices like "1.299,90 TL" become numbers, links only http(s)."""
+    from app.services.link_reader.html_parse import PriceEngine
+
+    rows = []
+    for item in raw:
+        title = str(item.get("title") or "").strip()
+        if not title:
+            continue
+        link = item.get("link")
+        rows.append(Competitor(
+            title=title[:200],
+            price=PriceEngine.parse_price(item.get("price"))[0],
+            source=(str(item.get("source")) or None) if item.get("source") else None,
+            link=link if isinstance(link, str) and link.startswith(("http://", "https://")) else None,
+        ))
+    return rows
 
 
 def benchmark_node(state: GraphState) -> Dict[str, Any]:
@@ -316,6 +335,7 @@ def iter_agentic_simulation(request: SimulationRequest) -> Iterator[tuple[str, A
         # debate_node_v2 already sanitized the logs and filled in a fallback.
         response.debate_logs = state.get("debate_logs") or [{"name": "Sistem", "text": "Tartışma kurgulanamadı."}]
         response.benchmark_analysis = state.get("benchmark_analysis", "")
+        response.competitors = competitors_for_response(state.get("competitors") or [])
         yield "result", response
 
     except Exception:
