@@ -48,3 +48,19 @@ def test_capped_draft_only_suggests_what_lifts_the_cap(client):
     # Filling a field cannot get past the cap, so no field is offered; the reason and the warnings say what to fix.
     assert not {g["field"] for g in data["gains"]} & {"fit", "sizeRange", "warranty", "season"}
     assert data["warnings"]
+
+
+def test_same_draft_is_answered_from_memory(client, monkeypatch):
+    from app.api import draft
+
+    draft._check.cache_clear()
+    calls = []
+    real = draft.simulate_core
+    monkeypatch.setattr(draft, "simulate_core", lambda *a, **k: calls.append(1) or real(*a, **k))
+    first = client.post("/api/draft-check", json=DRAFT).json()
+    runs = len(calls)
+    assert runs > 1
+    assert client.post("/api/draft-check", json=DRAFT).json() == first
+    assert len(calls) == runs, "an unchanged draft runs no simulation"
+    client.post("/api/draft-check", json={**DRAFT, "price": 299.9})
+    assert len(calls) > runs

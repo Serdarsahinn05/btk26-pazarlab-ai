@@ -110,6 +110,7 @@ class RateLimit:
         self.limit = int(os.getenv(env_name, str(default_per_minute)))
         self.window = 60.0
         self._hits: dict[str, deque[float]] = defaultdict(deque)
+        self._swept = time.monotonic()
         self._lock = threading.Lock()
         RateLimit._instances.add(self)
 
@@ -125,6 +126,10 @@ class RateLimit:
         client = client_ip(request)
         now = time.monotonic()
         with self._lock:
+            # Once a window, forget clients with no hit inside it; otherwise every IP ever seen stays in memory.
+            if now - self._swept > self.window:
+                self._hits = defaultdict(deque, {ip: h for ip, h in self._hits.items() if h and now - h[-1] <= self.window})
+                self._swept = now
             hits = self._hits[client]
             while hits and now - hits[0] > self.window:
                 hits.popleft()

@@ -166,30 +166,3 @@ class ImageProcessor:
             return int(str(val).replace("px", "").replace("%", "").strip())
         except ValueError:
             return None
-
-    # Legacy clean method for simple string list normalization (used by AI response)
-    @classmethod
-    def clean(cls, images: Any) -> List[str]:
-        if not images:
-            return []
-        if not isinstance(images, list):
-            images = [images]
-
-        cleaned: List[str] = []
-        for img in images:
-            if isinstance(img, str):
-                url = img.strip()
-                if url.startswith(("http://", "https://", "//")):
-                    cleaned.append(url)
-            elif isinstance(img, dict):
-                url = img.get("url") or img.get("contentUrl")
-                if isinstance(url, str):
-                    cleaned.append(url.strip())
-
-        seen: Set[str] = set()
-        result: List[str] = []
-        for url in cleaned:
-            if url not in seen:
-                seen.add(url)
-                result.append(url)
-        return result

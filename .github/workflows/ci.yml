@@ -77,3 +77,11 @@ jobs:
           name: playwright-report
           path: frontend/playwright-report
           retention-days: 7
+
+  # The images build from backend/ and frontend/ alone; this catches files that reach outside them.
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t pazarlab-backend backend
+      - run: docker build -t pazarlab-frontend --build-arg NEXT_PUBLIC_API_URL=http://localhost:8000 frontend

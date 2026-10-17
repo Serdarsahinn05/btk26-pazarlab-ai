@@ -5,6 +5,7 @@ effect of that field alone, not crowd noise. Validation is looser than /api/simu
 its name or a long enough description.
 """
 
+from functools import lru_cache
 from typing import Any, Optional
 
 from fastapi import APIRouter, Depends
@@ -125,6 +126,13 @@ def _candidates(draft: DraftRequest) -> list[tuple[str, str, dict[str, Any]]]:
     dependencies=[Depends(RateLimit("RATE_LIMIT_DRAFT_PER_MIN", 60))],
 )
 def draft_check(draft: DraftRequest) -> DraftResponse:
+    # ~12 simulations per call; the same draft (undo, reload, a second tab) is answered from memory.
+    return _check(draft.model_dump_json(by_alias=True))
+
+
+@lru_cache(maxsize=256)
+def _check(draft_json: str) -> DraftResponse:
+    draft = DraftRequest.model_validate_json(draft_json)
     words = len(draft.description.split())
     if not draft.price:
         return DraftResponse(score=None, buyers=None, descriptionWords=words, gains=[])

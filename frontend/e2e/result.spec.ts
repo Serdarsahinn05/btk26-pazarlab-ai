@@ -57,3 +57,20 @@ test("result fits a 375 px phone", async ({ page, request }) => {
   await expect(page.getByRole("heading", { name: "Ağızdan ağıza" })).toBeVisible();
   await noHorizontalOverflow(page);
 });
+
+test("the result bar marks the section you are at, down to the last one", async ({ page, request }) => {
+  const id = await createSimulation(request);
+  await page.goto(`/dashboard?r=${id}`);
+  await expect(page.getByRole("heading", { name: "Ağızdan ağıza" })).toBeVisible();
+  const bar = page.getByRole("navigation", { name: "Sonuç bölümleri" });
+  const current = bar.locator('[aria-current="location"]');
+
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  await expect(current).toHaveText("Parametreler");
+
+  // A clicked link stays current even when its section cannot scroll up to the top.
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await bar.getByRole("link", { name: "Açıklama" }).click();
+  await page.waitForTimeout(1500);
+  await expect(current).toHaveText("Açıklama");
+});

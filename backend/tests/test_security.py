@@ -205,6 +205,27 @@ def test_rate_limit_counts_by_configured_header(monkeypatch):
         limiter(request("198.51.100.1"))
 
 
+def test_rate_limit_forgets_idle_clients(monkeypatch):
+    from starlette.requests import Request
+
+    from app import security
+    from app.security import RateLimit
+
+    clock = [1000.0]
+    monkeypatch.setattr(security.time, "monotonic", lambda: clock[0])
+    limiter = RateLimit("TEST_LIMIT_PER_MIN", 5)
+
+    def call(ip):
+        limiter(Request({"type": "http", "headers": [], "client": (ip, 1)}))
+
+    for i in range(100):
+        call(f"203.0.113.{i}")
+    assert len(limiter._hits) == 100
+    clock[0] += 61  # a minute later only the visitor who is still active is kept
+    call("198.51.100.7")
+    assert set(limiter._hits) == {"198.51.100.7"}
+
+
 def test_cors_origin_tolerates_trailing_slash(monkeypatch):
     from app.main import _get_allowed_origins
 
