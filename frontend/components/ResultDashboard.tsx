@@ -5,9 +5,10 @@ import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import confetti from "canvas-confetti";
-import { Check, Copy, FileDown, Link2, Loader2, Printer, RotateCcw, Sparkles } from "lucide-react";
+import { Check, Copy, FileDown, ImageDown, Link2, Loader2, Printer, RotateCcw, Sparkles } from "lucide-react";
 import { downloadBlob } from "@/lib/history";
 import { simulationToMarkdown } from "@/lib/report";
+import { renderShareCard } from "@/lib/shareImage";
 import { CompareResponse, Competitor, NormalizedProduct, Persona, SimulationRequest, SimulationResponse } from "@/types";
 import { aiFallbackNote, compareVariants } from "@/lib/api";
 import WhatIf from "@/components/WhatIf";
@@ -208,6 +209,23 @@ function ActionCard({ data, productName, onReset }: { data: SimulationResponse; 
     }
   };
 
+  const fileSlug = productName.toLowerCase().replace(/[^a-z0-9ğüşıöç]+/gi, "-").slice(0, 40) || "simulasyon";
+
+  /** Phones (touch) with file sharing get the share sheet; desktops, and a failed share, download the PNG. */
+  const shareImage = async () => {
+    const blob = await renderShareCard(data, productName);
+    const file = new File([blob], `pazarlab-${fileSlug}.png`, { type: "image/png" });
+    if (window.matchMedia("(pointer: coarse)").matches && navigator.canShare?.({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: `PazarLab: ${productName}`, text: shareUrl });
+        return;
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") return; // the seller closed the sheet
+      }
+    }
+    downloadBlob(blob, file.name);
+  };
+
   const downloadMarkdown = () => {
     const md = simulationToMarkdown(data, productName, shareUrl);
     const slug = productName.toLowerCase().replace(/[^a-z0-9ğüşıöç]+/gi, "-").slice(0, 40) || "simulasyon";
@@ -251,6 +269,9 @@ function ActionCard({ data, productName, onReset }: { data: SimulationResponse; 
         )}
         <button type="button" onClick={downloadMarkdown} className="btn-sticker px-3.5" title="Raporu Markdown dosyası olarak indir">
           <FileDown className="h-4 w-4" aria-hidden /> .md
+        </button>
+        <button type="button" onClick={shareImage} className="btn-sticker px-3.5" title="Sonucun paylaşılabilir görseli (PNG)">
+          <ImageDown className="h-4 w-4" aria-hidden /> Görsel
         </button>
         <button type="button" onClick={() => window.print()} className="btn-sticker px-3.5" title="Yazdır ya da PDF olarak kaydet">
           <Printer className="h-4 w-4" aria-hidden /> PDF
