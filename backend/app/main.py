@@ -1,4 +1,5 @@
 import contextlib
+import logging
 import os
 
 from fastapi import FastAPI
@@ -24,7 +25,12 @@ configure_logging()
 
 def _get_allowed_origins() -> list[str]:
     raw = os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
-    return [origin.strip() for origin in raw.split(",") if origin.strip() and origin.strip() != "*"]
+    # Browsers send the origin without a trailing slash; a copied site address often has one.
+    origins = [origin.strip().rstrip("/") for origin in raw.split(",")]
+    origins = [origin for origin in origins if origin and origin != "*"]
+    # Shown at startup: a site that "cannot reach the API" is almost always a mismatch here (preflight gets 400).
+    logging.getLogger("startup").info("CORS allowed origins: %s", ", ".join(origins) or "(none)")
+    return origins
 
 
 def create_app() -> FastAPI:
