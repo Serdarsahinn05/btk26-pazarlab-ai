@@ -1,0 +1,41 @@
+# Render Blueprint: the PazarLab API (backend/). The website itself runs on Vercel (frontend/).
+# Steps and trade-offs: docs/deployment.md, "Vercel + Render".
+services:
+  - type: web
+    name: pazarlab-api
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    region: frankfurt # closest to Turkey; cannot be changed later
+    # free: sleeps after 15 min idle (~1 min to wake) and loses saved results on every restart.
+    # For share links that last, use 0.5c-512mb and uncomment the disk below.
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: ENV
+        value: production
+      - key: LOG_FORMAT
+        value: json
+      # Render reaches the service only through its Cloudflare edge, which writes this header itself.
+      # Check after the first deploy: /api/health shows "clientIp" (see docs/deployment.md).
+      - key: CLIENT_IP_HEADER
+        value: CF-Connecting-IP
+      - key: CORS_ALLOWED_ORIGINS # https://<project>.vercel.app (and your own domain, comma-separated)
+        sync: false
+      - key: PUBLIC_SITE_URL # same site address, used in links the MCP connector returns
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL # a fixed model you know your key can use; empty = picked automatically
+        sync: false
+      - key: SERPER_API_KEY
+        sync: false
+      - key: MCP_ALLOWED_HOSTS # pazarlab-api.onrender.com (or your API domain)
+        sync: false
+      - key: MCP_ACCESS_KEY
+        generateValue: true
+    # disk:
+    #   name: pazarlab-data
+    #   mountPath: /app/data # HISTORY_DB_PATH in the image points here
+    #   sizeGB: 1

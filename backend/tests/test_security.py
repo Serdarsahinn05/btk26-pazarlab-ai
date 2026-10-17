@@ -175,3 +175,31 @@ def test_docs_hidden_in_production(monkeypatch):
 
     monkeypatch.setenv("ENV", "production")
     assert TestClient(main.create_app()).get("/openapi.json").status_code == 404
+
+
+def test_client_ip_header_only_when_configured(client, monkeypatch):
+    """CLIENT_IP_HEADER: the platform proxy's own header (Render/Cloudflare); ignored unless set."""
+    spoof = {"CF-Connecting-IP": "203.0.113.7"}
+    assert client.get("/api/health", headers=spoof).json()["clientIp"] != "203.0.113.7"
+    monkeypatch.setenv("CLIENT_IP_HEADER", "CF-Connecting-IP")
+    assert client.get("/api/health", headers=spoof).json()["clientIp"] == "203.0.113.7"
+    # Missing header: fall back to the socket peer rather than one shared empty key.
+    assert client.get("/api/health").json()["clientIp"] not in ("", "203.0.113.7")
+
+
+def test_rate_limit_counts_by_configured_header(monkeypatch):
+    from fastapi import HTTPException
+    from starlette.requests import Request
+
+    from app.security import RateLimit
+
+    monkeypatch.setenv("CLIENT_IP_HEADER", "CF-Connecting-IP")
+    limiter = RateLimit("TEST_LIMIT_PER_MIN", 1)
+
+    def request(ip):
+        return Request({"type": "http", "headers": [(b"cf-connecting-ip", ip.encode())], "client": ("10.0.0.1", 1)})
+
+    limiter(request("198.51.100.1"))
+    limiter(request("198.51.100.2"))  # another visitor behind the same proxy has its own budget
+    with pytest.raises(HTTPException):
+        limiter(request("198.51.100.1"))

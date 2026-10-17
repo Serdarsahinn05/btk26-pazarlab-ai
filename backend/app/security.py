@@ -22,13 +22,29 @@ logger = logging.getLogger("security")
 MAX_BODY_BYTES = int(os.getenv("MAX_BODY_BYTES", str(10 * 1024 * 1024)))
 
 
+def client_ip(request: Request) -> str:
+    """Address the rate limits and the AI quota count by.
+
+    CLIENT_IP_HEADER names a header the hosting platform's proxy writes itself (Render sits behind
+    Cloudflare: CF-Connecting-IP). Set it only for such a header: one the client can send unchanged
+    would let anyone pick their own address. Without it, the socket peer is used (uvicorn's
+    --proxy-headers has already applied a trusted X-Forwarded-For, see docs/deployment.md §3).
+    """
+    header = os.getenv("CLIENT_IP_HEADER", "").strip()
+    if header:
+        value = request.headers.get(header, "").split(",")[0].strip()
+        if value:
+            return value
+    return request.client.host if request.client else "unknown"
+
+
 def install(app: FastAPI) -> None:
     @app.middleware("http")
     async def request_guard(request: Request, call_next):
         request_id = uuid.uuid4().hex[:12]
         request.state.request_id = request_id
         request_id_var.set(request_id)
-        client_ip_var.set(request.client.host if request.client else "unknown")
+        client_ip_var.set(client_ip(request))
         started = time.perf_counter()
         method, path = request.method, request.url.path
 
@@ -106,7 +122,7 @@ class RateLimit:
     def __call__(self, request: Request) -> None:
         if self.limit <= 0:
             return
-        client = request.client.host if request.client else "unknown"
+        client = client_ip(request)
         now = time.monotonic()
         with self._lock:
             hits = self._hits[client]

@@ -2,6 +2,8 @@
 
 Bu belge PazarLab AI'ı herkese açık bir sunucuda, nginx ters proxy'si arkasında çalıştırmak içindir. Yerel geliştirme için [README](../README.md) yeterli.
 
+İki yol var: **tek sunucu + nginx** (§1–5, kalıcı kullanım için önerilen) ve **Vercel + Render** (§6, en hızlı başlangıç). Hangisinin ne zaman uygun olduğu §6.1'de.
+
 ## Mimari
 
 ```
@@ -145,3 +147,64 @@ curl -s -D - -o /dev/null -X OPTIONS https://pazarlab.example.com/api/simulate \
 ```
 
 `ornek-istek.json` için `backend/tests/conftest.py` içindeki `VALID_REQUEST` kullanılabilir.
+
+## 6. Vercel + Render
+
+Website (`frontend/`) Vercel'de, API (`backend/`) Render'da. Repoda hazır: `render.yaml` (Render Blueprint) ve Vercel'in Next.js'i kendiliğinden tanıması. Kaynaklar: Render [ücretsiz plan](https://render.com/docs/free), [kalıcı disk](https://render.com/docs/disks), [Blueprint](https://render.com/docs/blueprint-spec); Vercel [kullanım kuralları](https://vercel.com/docs/limits/fair-use-guidelines) (Ekim 2026'da okundu).
+
+```
+tarayıcı ──▶ https://<proje>.vercel.app          (Next.js, Vercel)
+        └──▶ https://pazarlab-api.onrender.com   (FastAPI, Render; Cloudflare kenarı üzerinden)
+```
+
+### 6.1 Ne zaman bu yol?
+
+| | Vercel Hobby + Render Free | Vercel + Render ücretli | Tek VPS + Docker (§1–5) |
+|---|---|---|---|
+| Aylık maliyet | 0 | Render ~7 $ + disk; ticari kullanımda Vercel Pro (kişi başı ~20 $) | ~5 € (küçük bir VPS) |
+| İlk ziyaret | API 15 dk boşta kalınca uyur; uyanması ~1 dk | Uyumaz | Uyumaz |
+| Kayıtlı sonuçlar ve paylaşım linkleri | Her yeniden başlatma, uyuma ve deploy'da **silinir** (disk yok) | Kalıcı disk (1 GB yeter) | Kalıcı volume |
+| Ticari kullanım | Vercel Hobby **yasak** (ödeme, reklam, satış tanıtımı da sayılır) | Vercel Pro ile serbest | Serbest |
+| Bakım | Yok | Yok | Güncellemeler, TLS, yedek sizde |
+
+Kısaca: deneme, jüri ya da portföy için **ücretsiz Vercel + Render** yeterli; kalıcı paylaşım linki ve ticari kullanım için Render'ı ücretli plana + diske geçirin ya da tek VPS kullanın. Tarayıcıdaki "Son simülasyonlar" ve persona sohbetleri kullanıcının kendi tarayıcısında durduğu için ücretsiz planda da kaybolmaz; kaybolan şey sunucudaki kayıt (başkasına gönderilen link).
+
+### 6.2 Render: API
+
+1. Render'da **New → Blueprint**, GitHub reposunu seçin. `render.yaml` okunur: Docker ile `backend/` build edilir, bölge Frankfurt, sağlık kontrolü `/api/health`.
+2. Sorulan değerleri girin (sonradan Environment sekmesinden değiştirilebilir):
+
+   | Değişken | Değer |
+   |---|---|
+   | `CORS_ALLOWED_ORIGINS` | Vercel adresi, ör. `https://pazarlab.vercel.app` (henüz bilinmiyorsa geçici bir değer; §6.4'te düzeltilir). Kendi alan adı varsa virgülle ekleyin. |
+   | `PUBLIC_SITE_URL` | Aynı site adresi |
+   | `GEMINI_API_KEY`, `SERPER_API_KEY` | Anahtarlar; boşsa site AI'sız (kural tabanlı) çalışır |
+   | `GEMINI_MODEL` | Anahtarınızın kullanabildiği sabit bir model; boş bırakılırsa otomatik seçilir |
+   | `MCP_ALLOWED_HOSTS` | `pazarlab-api.onrender.com` (servis adını değiştirdiyseniz kendi adresi) |
+
+   `ENV=production`, `LOG_FORMAT=json`, `CLIENT_IP_HEADER=CF-Connecting-IP` ve rastgele bir `MCP_ACCESS_KEY` dosyadan gelir. `PORT`'u Render verir; imaj onu kullanıyor.
+3. Deploy bitince `https://pazarlab-api.onrender.com/api/health` `"status": "ok"` dönmeli.
+4. **İstemci IP'sini doğrulayın.** Hız sınırları ve günlük AI kotası istemci IP'sine göre sayılır. Render, trafiği Cloudflare kenarından geçiriyor ve servise doğrudan erişilemiyor; `CLIENT_IP_HEADER` bu yüzden Cloudflare'in kendisinin yazdığı başlığı okur. Render bu başlığı belgelemediği için ilk deploy'dan sonra elle kontrol edin: `/api/health` yanıtındaki `clientIp`, bilgisayarınızdan ve telefonun mobil verisinden açınca **iki farklı, gerçek** adres göstermeli. Aynı adresi gösteriyorsa (bütün kullanıcılar tek kotayı paylaşır) ya da tarayıcıda `CF-Connecting-IP` başlığını elle göndererek değiştirebiliyorsanız (herkes sınırı aşabilir), değişkeni silin ve Render desteğine hangi başlığın güvenilir olduğunu sorun.
+
+### 6.3 Vercel: website
+
+1. Vercel'de **Add New → Project**, aynı repoyu seçin.
+2. **Root Directory: `frontend`**. Framework olarak Next.js kendiliğinden seçilir; build komutu ve çıktı ayarları değiştirilmez.
+3. **Environment Variables**: `NEXT_PUBLIC_API_URL` = `https://pazarlab-api.onrender.com` (Production ve Preview için). Bu değer **build sırasında** koda gömülür: sonradan değiştirirseniz projeyi yeniden deploy edin.
+4. Deploy. Site adresi `https://<proje>.vercel.app` olur.
+
+### 6.4 Bağlama ve kontrol
+
+1. Render'da `CORS_ALLOWED_ORIGINS` ve `PUBLIC_SITE_URL`'yi Vercel adresiyle güncelleyin (kayıt servis yeniden başlatır).
+2. Sitede sağ üstteki API noktası yeşil olmalı; bir simülasyon çalıştırın, adımlar tek tek akmalı (SSE). §5'teki komutlar adresler değiştirilerek kullanılabilir.
+3. Vercel'in her dal/PR için açtığı **önizleme adresleri** farklıdır ve CORS'ta yoktur; önizlemede API çağrıları engellenir. Gerekirse o adresi geçici olarak `CORS_ALLOWED_ORIGINS`'e ekleyin (`*` kabul edilmez).
+4. Kendi alan adı: Vercel'de domain ekleyin, sonra Render'da `CORS_ALLOWED_ORIGINS` ve `PUBLIC_SITE_URL`'ye yazın. API için de alan adı isterseniz (ör. `api.alanadi.com`) Render'a ekleyip `NEXT_PUBLIC_API_URL` ve `MCP_ALLOWED_HOSTS`'u ona çevirin.
+5. MCP connector adresi: `https://pazarlab-api.onrender.com/mcp?key=<MCP_ACCESS_KEY>` (değer Render'ın Environment sekmesinde); ayrıntı [mcp-connector.md](mcp-connector.md).
+
+### 6.5 Ücretsiz planda bilinen davranışlar
+
+- API uyurken ilk ziyarette API noktası birkaç saniye kırmızı görünür, canlı tahmin paneli "güncellenemedi" der; ~1 dk içinde düzelir. Simülasyonun kendi zaman aşımı (3 dk) uyanmayı bekler.
+- Uyuma ve her deploy: kayıtlı sonuçlar, AI önbelleği ve günlük AI kotası sıfırlanır.
+- Ayda 750 ücretsiz instance saati çalışma alanı başına; tek servis sürekli açık kalsa bile yeter.
+- Ücretliye geçiş: `render.yaml`'da `plan: 0.5c-512mb` ve yorumdaki `disk` bloğu (`mountPath: /app/data`; imajdaki `HISTORY_DB_PATH` oraya bakıyor). Diskli serviste deploy sırasında kısa bir kesinti olur ve servis tek kopyada kalır; bu proje zaten tek süreç bekliyor (§4).
+
