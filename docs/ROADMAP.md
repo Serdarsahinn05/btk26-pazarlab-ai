@@ -44,6 +44,7 @@
 | 18c | `feat/extension-store` | Chrome Web Mağazası paketi, gizlilik sayfası, mağaza görselleri | 0,5 gün | ✅ (yükleme kullanıcıda) |
 | 18b | `feat/debate-avatars` | Tartışmadaki konuşmacılara avatar (kullanıcı isteği) | 0,25 gün | ✅ |
 | 18d | `fix/small-items` | Küçük işler: B10, F24, F28, F30, F31, ölü kod, IMPROVEMENTS durumları | 0,5 gün | ✅ |
+| 18f | `feat/resident-chat` | Kasabadaki bir sakinle sohbet | 0,5 gün | ✅ |
 | 19 | `feat/bring-your-population` | Kendi nüfusunu yükle + kalibrasyon (hesap sistemi, KVKK) | 3+ gün | ⬜ |
 | 20 | `feat/claude-artifact` | Claude içinde bağımsız PazarLab sayfası (11b, seçenek B) | 1,5 gün | ⬜ isteğe bağlı |
 
@@ -329,7 +330,7 @@ Dört alt faza bölündü (12a–12d); her biri ayrı dalda, ayrı testlerle. A�
 - [ ] **Rakipli seçim (multinomial logit):** ürün, benchmark'tan gelen 1–3 rakip ve "almamak" arasında seçim; "tahmini pazar payı".
 - [ ] **Monte Carlo:** 20–50 tohum, sonuç aralıkla ("%58 ± 4"). Döngü numpy ile vektörleştirilir; sonuçlar istek özetine göre önbelleğe alınır.
 - [ ] **"En etkili iyileştirme":** tek tek değişkenler (kargo, iade, garanti, fiyat −%10, açıklama tamamlama) denenir; alıcı kazancına göre sıralanır.
-- [ ] Sonuç ekranında "kasabadan 5 temsilci" (tek AI çağrısı; AI yoksa şablon). Persona sohbeti belirli bir sakinle de yapılabilir (hikâyesi prompt'a girer).
+- [x] Sonuç ekranında "kasabadan 5 temsilci" (12c/12d). Belirli bir sakinle sohbet: Faz 18f.
 - [ ] Klişe ve önyargı denetimi: demografi tek başına tercihi belirlemez; çeşitlilik testleri. Arayüzde sakinlerin sentetik olduğu açıkça yazılır.
 - [ ] Kayda motor sürümü (`engineVersion`) yazılır; eski sonuçlar açılınca "eski motorla hesaplandı" notu.
 - Kabul: fiyat düştükçe fiyat hassas sakinlerde alıcı sayısı artıyor (test); aynı girdi + tohum deterministik; 500 sakin × 30 tohum simülasyonu < 1 sn; mevcut API sözleşmesi geriye uyumlu (yeni alanlar ek).
@@ -443,6 +444,12 @@ Dört alt faza bölündü (12a–12d); her biri ayrı dalda, ayrı testlerle. A�
 - [x] **B8:** `backend/venv` silinip Python 3.13 ile yeniden kuruldu.
 - **Kararlar (kullanıcı, 2026-10-17):** F29 görsel puanı simülasyona girmez; B12 sıralı kalır.
 - **Doğrulama:** ruff, pytest 288/288, pip-audit 0; tsc, eslint, e2e 36/36 (yeni venv ile); `docker compose build` iki imaj.
+
+### Faz 18f ✅: Sakinle sohbet (`feat/resident-chat`, Faz 12'den ertelenen madde)
+- [x] **Backend:** `/api/persona-chat` isteğe bağlı `resident` ("r014") alıyor; yalnızca o sonuçta gösterilen 5 sakin kabul ediliyor (kararı ve gerekçesi kayıtta), diğerleri 404. Prompt: ad, yaş, şehir, hikâye, meslek, hobiler, Big Five'tan türetilen mizaç (yalnızca belirgin uçlar: "kaygılı, riskten kaçınan" gibi), alışveriş tipi ve bu üründeki kararı/gerekçesi; "hikâyende olmayan kişisel ayrıntı uydurma" kuralı. `persona` artık isteğe bağlı (biri gerekli).
+- [x] **AI yokken:** sakin kendi gerekçesini birinci şahısla söylüyor (`town_insights.first_person`: "Almadı: fiyatı pahalı buluyor (en fazla 149 TL verirdi)" → "Almadım: fiyatı pahalı buluyorum (en fazla 149 TL verirdim)"; ifade tablosu `explain()`'in yanında). Fiyat sorusunda kategori ortalaması yerine kendi sınırı ("399 TL bana pahalı; en fazla 149 TL verirdim").
+- [x] **Arayüz:** sakin kartlarında "… ile konuş" (`/dashboard?view=debate&r=…&chat=r014`); sohbet seçicisinde "Personalar" ve "Kasabadan" grupları; başlık "Sakine sor"; avatar sakin kartındakiyle aynı (`residentAvatars`); sohbet geçmişi sakin başına ayrı.
+- **Doğrulama:** `tests/test_resident_chat.py` (11 test; toplam 298): 5 sakinin kural tabanlı cevabı kendi gerekçesiyle ve birinci şahısla başlıyor, üçüncü şahıs kalıntısı ve ASCII Türkçe yok; AI prompt'u sakinin adını, şehrini, gerekçesini taşıyor; gösterilmeyen sakin 404, geçersiz kimlik 422, ikisi de yoksa 422; `explain()`'in her ifadesinin birinci şahıs karşılığı var; pahalı bulan sakin kendi sınırını söylüyor. e2e 37/37 (yeni: karttan sohbete, kural tabanlı cevap, aynı avatar; `--repeat-each=2` 74/74). **Gerçek Gemini ile denendi:** "Rabia O." (36, İnegöl, kasiyer, iki çocuğunu tek başına büyütüyor) 399 TL'yi bütçesine göre pahalı buldu, "en fazla 160-170 lira" dedi (kendi ödeme isteği 169 TL), hikâyesindeki bilgileri kullandı, uydurma ayrıntı yok.
 
 ### Faz 19: Kendi nüfusunu yükle + kalibrasyon
 - [ ] Satıcı kendi sipariş dökümünden (Trendyol satıcı paneli, Shopify vb.) **anonim/toplu segmentler** yükler (JSON/CSV şeması); kasaba bu dağılımlara göre üretilir.

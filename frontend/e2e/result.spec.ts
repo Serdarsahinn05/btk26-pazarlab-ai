@@ -74,3 +74,25 @@ test("the result bar marks the section you are at, down to the last one", async 
   await page.waitForTimeout(1500);
   await expect(current).toHaveText("Açıklama");
 });
+
+test("a resident card opens a chat with that resident, who answers in their own words", async ({ page, request }) => {
+  const id = await createSimulation(request);
+  await page.goto(`/dashboard?r=${id}`);
+  const card = page.locator("article", { has: page.getByRole("link", { name: /ile konuş$/ }) }).first();
+  const name = (await card.locator("h3").textContent())!.trim();
+  const cardAvatar = await card.locator("img").first().getAttribute("src");
+
+  await card.getByRole("link", { name: `${name} ile konuş` }).click();
+  await expect(page).toHaveURL(/view=debate.*chat=r\d{3}/);
+  await expect(page.getByRole("heading", { name: "Sakine sor" })).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "Kiminle konuşulacağını seçin" })).toContainText(name);
+
+  await page.getByRole("button", { name: "Neden bu kararı verdin?" }).click();
+  const answer = page.locator("ol li").last();
+  await expect(answer).toContainText(/^.*(Aldım|Almadım|Sepete ekledim)/, { timeout: 15_000 });
+  await expect(answer).toContainText(name);
+  await expect(answer.getByText("kural tabanlı")).toBeVisible();
+  // Same drawing (next/image only asks for another size).
+  const drawing = (src: string | null) => decodeURIComponent(src ?? "").match(/pp_icons\/\d+\.jpeg/)?.[0];
+  expect(drawing(await answer.locator("img").getAttribute("src"))).toBe(drawing(cardAvatar));
+});

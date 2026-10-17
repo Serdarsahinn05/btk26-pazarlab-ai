@@ -87,6 +87,32 @@ def explain(parts: dict[str, Any], decision: str) -> str:
     return f"{verb}: {', '.join(chosen)}." if chosen else f"{verb}."
 
 
+# explain() in the resident's own voice (resident chat without AI). Keep in step with explain().
+_FIRST_PERSON_VERBS = {"Aldı": "Aldım", "Sepete ekledi ama bekliyor": "Sepete ekledim ama bekliyorum", "Almadı": "Almadım"}
+_FIRST_PERSON_PHRASES = [
+    ("fiyat bütçesine uygun", "fiyat bütçeme uygun"),
+    ("pahalı buluyor (", "pahalı buluyorum ("),
+    ("TL verirdi)", "TL verirdim)"),
+    ("hoşuna gidiyor", "hoşuma gidiyor"),
+    ("onu tatmin etmiyor", "beni tatmin etmiyor"),
+    ("olmasından şüpheleniyor", "olmasından şüpheleniyorum"),
+    ("tam onun gibi biri için", "tam benim gibi biri için"),
+    ("kendisine hitap etmediğini düşünüyor", "bana hitap etmediğini düşünüyorum"),
+    ("arkadaşlarının aldığını gördü", "arkadaşlarımın aldığını gördüm"),
+    ("aradığı türden bir ürün", "aradığım türden bir ürün"),
+]
+
+
+def first_person(reason: str) -> str:
+    """explain()'s sentence as the resident would say it: "Almadı: fiyatı pahalı buluyor." → "Almadım: fiyatı pahalı buluyorum."."""
+    verb, colon, rest = reason.partition(":")
+    end = "." if not colon and verb.endswith(".") else ""
+    verb = _FIRST_PERSON_VERBS.get(verb.rstrip("."), verb.rstrip(".")) + end
+    for third, first in _FIRST_PERSON_PHRASES:
+        rest = rest.replace(third, first)
+    return verb + colon + rest
+
+
 def representatives(town: dict[str, Any], count: int = 5) -> list[dict[str, Any]]:
     """A small cast for the result screen: the clearest buyers, one undecided, the clearest refusals.
 

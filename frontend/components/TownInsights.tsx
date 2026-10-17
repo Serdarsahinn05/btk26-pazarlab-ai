@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { ArrowDown, ArrowUp } from "lucide-react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { ArrowDown, ArrowUp, MessageCircle } from "lucide-react";
 import { Improvement, SegmentRate, SimulationResponse, TownRepresentative } from "@/types";
 import { DECISION_LABEL, DECISION_TEXT_CLASS, personaColor } from "@/lib/personas";
-import { avatarSrc, pickAvatars } from "@/lib/avatars";
+import { avatarSrc, residentAvatars } from "@/lib/avatars";
 import { cn } from "@/lib/utils";
 
 /* Town views of the v2 engine (Faz 12c data): what-ifs, word of mouth, segments and residents.
@@ -226,7 +228,9 @@ function SegmentTable({ groups }: { groups: Array<{ key: string; title: string; 
 
 export function TownCast({ residents }: { residents: TownRepresentative[] }) {
   // Each resident keeps the same avatar; the five on screen never share one.
-  const avatars = pickAvatars(residents.map((r) => Number(r.id.replace(/\D/g, "")) || 0));
+  const avatars = residentAvatars(residents.map((r) => r.id));
+  // Chatting needs the result saved on the server (its id in the URL).
+  const resultId = useSearchParams().get("r");
   return (
     <section className="flex flex-col gap-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -235,8 +239,8 @@ export function TownCast({ residents }: { residents: TownRepresentative[] }) {
       </div>
       {/* Phones: a swipeable row (like the persona rings). Wider: wrapping flex, 5 cards leave no empty cell. */}
       <div className="-mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-3 *:w-[85%] *:shrink-0 *:snap-start md:mx-0 md:flex-wrap md:overflow-visible md:px-0 md:pb-0 md:*:w-auto md:*:min-w-0 md:*:shrink md:*:grow md:*:basis-[300px]">
-        {residents.map((r, i) => (
-          <ResidentCard key={r.id} resident={r} avatar={avatars[i]} />
+        {residents.map((r) => (
+          <ResidentCard key={r.id} resident={r} avatar={avatars.get(r.id) ?? 1} chatHref={resultId ? `/dashboard?view=debate&r=${encodeURIComponent(resultId)}&chat=${r.id}` : null} />
         ))}
       </div>
     </section>
@@ -249,7 +253,7 @@ function shortOccupation(occupation: string): string {
   return title === occupation ? occupation : title.charAt(0).toLocaleUpperCase("tr") + title.slice(1);
 }
 
-function ResidentCard({ resident: r, avatar }: { resident: TownRepresentative; avatar: number }) {
+function ResidentCard({ resident: r, avatar, chatHref }: { resident: TownRepresentative; avatar: number; chatHref: string | null }) {
   return (
     <article className="card-paper flex flex-col gap-3 p-4! md:p-5!">
       <div className="flex items-start gap-3">
@@ -278,6 +282,14 @@ function ResidentCard({ resident: r, avatar }: { resident: TownRepresentative; a
         <summary className="cursor-pointer font-bold text-accent underline-offset-2 hover:underline">Hikâyesi</summary>
         <p className="mt-2 text-foreground-2">{r.story}</p>
       </details>
+      {chatHref && (
+        <Link
+          href={chatHref}
+          className="mt-auto inline-flex min-h-11 items-center gap-1.5 self-start rounded-full border-2 border-border px-3.5 text-sm font-bold text-foreground-2 hover:bg-secondary"
+        >
+          <MessageCircle className="h-4 w-4" aria-hidden /> {r.name} ile konuş
+        </Link>
+      )}
     </article>
   );
 }

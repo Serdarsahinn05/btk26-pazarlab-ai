@@ -8,6 +8,7 @@ import re
 from typing import Any
 
 from app.services.normalization_service import get_category_rule
+from app.services.town_insights import first_person
 from app.utils.text_utils import fold_text
 
 # Checked in order; the first topic with a keyword hit wins. Keywords are folded ASCII (see fold_text).
@@ -37,8 +38,15 @@ def topic_of(question: str) -> str:
     return "general"
 
 
-def rule_based_reply(persona: dict[str, Any], request: dict[str, Any], response: dict[str, Any], question: str) -> str:
+RESIDENT_DECISION = {"buy": "ALDI", "watch": "KARARSIZ", "skip": "ALMADI"}
+
+
+def rule_based_reply(persona: dict[str, Any], request: dict[str, Any], response: dict[str, Any], question: str,
+                     resident: dict[str, Any] | None = None) -> str:
+    """`resident`: a town resident shown on this result (its own decision and reason replace the persona's)."""
     result = next((p for p in response.get("allPersonas", []) if p.get("name") == persona["name"]), {})
+    if resident:
+        result = {**result, "purchaseProbability": resident.get("buyProbability", 0), "decisionLabel": RESIDENT_DECISION.get(resident.get("decision"))}
     probability = round(float(result.get("purchaseProbability", 0)) * 100)
     decision = f"{DECISION.get(result.get('decisionLabel'), 'Şu an kararsızım')} (alma ihtimalim %{probability})"
     traits = persona.get("personalityTraits", {})
@@ -54,7 +62,10 @@ def rule_based_reply(persona: dict[str, Any], request: dict[str, Any], response:
 
     topic = topic_of(question)
     if topic == "price":
-        lines = [_price_line(request), f"{decision}."]
+        # A resident who found it too dear knows their own limit ("… pahalı buluyor (en fazla 149 TL verirdi)").
+        limit = re.search(r"en fazla ([\d.]+) TL", (resident or {}).get("reason", ""))
+        price_line = f"{_tl(float(request.get('price') or 0))} bana pahalı; en fazla {limit.group(1)} TL verirdim" if limit else _price_line(request)
+        lines = [price_line, f"{decision}."]
         if "fiyat" in fold_text(advice):
             lines.append(advice)
     elif topic == "shipping":
@@ -72,9 +83,13 @@ def rule_based_reply(persona: dict[str, Any], request: dict[str, Any], response:
         if weaknesses:
             lines.append(f"Bir de şuna dikkat et: {_lower_first(weaknesses[0])}")
     else:  # why / general
-        lines = [f"{decision}."]
-        if values:
-            lines.append(f"Alışverişte benim için önemli olan: {_lower_first(values)}")
+        if resident and resident.get("reason"):
+            # "Almadım: fiyatı pahalı buluyorum (en fazla 149 TL verirdim)…" is this resident's own why.
+            lines = [first_person(resident["reason"]), f"Alma ihtimalim %{probability}."]
+        else:
+            lines = [f"{decision}."]
+            if values:
+                lines.append(f"Alışverişte benim için önemli olan: {_lower_first(values)}")
         if weaknesses:
             lines.append(f"Beni en çok düşündüren: {_lower_first(weaknesses[0])}")
     return " ".join(_sentence(line) for line in lines if line)
