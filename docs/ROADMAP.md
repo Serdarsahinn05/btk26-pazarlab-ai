@@ -230,7 +230,7 @@ Kabul kriteri: DESIGN.md'deki tüm kalıplar uygulanmış; bileşenlerde ham ren
 - **Kullanıcıdan beklenen (isteğe bağlı):** Trendyol, Hepsiburada, Amazon TR, n11, Çiçeksepeti'den birer ürün sayfasını tarayıcıda "Farklı kaydet → Yalnızca HTML" ile kaydedip `backend/tests/fixtures/links/` altına koymak; siteye özel okuma kuralları bu gerçek sayfalara göre yazılır.
 - **Ertelenen (kullanıcı kararı, 2026-10-17):** Faz 11'in Claude.ai denemesi sonra birlikte yapılacak. Gerekenler: `cloudflared` kurulumu (`winget install Cloudflare.cloudflared`), tünel adresinin `MCP_ALLOWED_HOSTS`'a yazılması, Claude'da connector eklenmesi; açık soru `?key=` sorgu dizesinin korunup korunmadığı. Adımlar: docs/mcp-connector.md. (sıra aşağıdaki tabloda). Her faz kendi dalında, bitince bu bölüm güncellenir.
 - **Bekleyen kararlar:** Faz 9 için API anahtarı yok. Süpermarket/gıda, pet shop, otomotiv, kitap/kırtasiye aileleri bilerek dışarıda ("Diğer"e düşüyorlar); talep olursa eklenecek.
-- **Ortam notları:** `backend/venv` bozuk (eski bir kullanıcı yolunu gösteriyor). Testler geçici bir venv ile koşuyor. Gemini sık sık 429 veriyor; arayüz testlerinde AI kapalı ya da sahte SSE kullanılıyor. `gh` ve nginx yok; Docker Desktop açıldığında çalışıyor (29.6, Faz 17).
+- **Ortam notları:** `backend/venv` Python 3.13 ile yeniden kuruldu (2026-10-17). Gemini sık sık 429 veriyor; arayüz testlerinde AI kapalı ya da sahte SSE kullanılıyor. `gh` ve nginx yok; Docker Desktop açıldığında çalışıyor (29.6, Faz 17).
 
 ## Yol haritası v2 (2026-10-17'de kararlaştırıldı)
 
@@ -434,6 +434,15 @@ Dört alt faza bölündü (12a–12d); her biri ayrı dalda, ayrı testlerle. A�
 - [x] **F23** (`feat/subtype-guess`): "Ürün türü" "Genel / emin değilim"deyken ürün adından alt tür öneriliyor ("Ürün adına göre: Tişört · seç"); düğme yalnızca alt türü değiştiriyor (satın alma sebebi ve doldurulan alanlar kalıyor). Altında "Seçmezsen giyim ortalaması (800 TL) referans alınır." notu. Otomatik seçilmiyor: alt tür 2. adımın alanlarını değiştirdiği için kullanıcının haberi olmalı. Tanıma kuralı backend'in `detect_from_text`'iyle aynı (`lib/categories.ts` → `detectCategory`, `foldText`); `e2e/categories.spec.ts` backend'in 19 başlık vakasının aynısını denetliyor; form testi öneri → seçim akışını deniyor. e2e 36/36. Açık/koyu ve 375 px'te görüldü.
 - [x] **F25:** kapatıldı, bilerek böyle (IMPROVEMENTS.md'de ölçümüyle).
 - Açık kalan: B12 (AI çağrıları ardışık; kullanıcı kararıyla şimdilik böyle).
+
+### Faz 18e ✅: Bağımlılıklar ve ortam (`chore/deps-update`)
+- [x] Dependabot'un 12 dalı tek dalda değerlendirildi: GitHub Actions `checkout`/`setup-node`/`setup-python` v7; npm minor/patch (`npm update`; üç grup dalının istediği sürümler karşılandı); **framer-motion 14** (build temiz); pip **ruff 0.17**, **pip-audit 2.10**. `next 14 → 16.4.0` dalı eskiydi (zaten 16.4.2).
+- [x] Alınmayanlar: **eslint 10** ve **TypeScript 7**. Next'in eslint eklentileri eslint ≤ 9, typescript-eslint TS < 6.1 istiyor; bağımlılık ağacı "invalid" oluyor ve `npm ci` düşerdi (TS 7 ayrıca `baseUrl`'i kaldırmış). `dependabot.yml`'da gerekçeli `ignore`; eklentiler güncellenince kaldırılır.
+- [x] ruff 0.17 varsayılan kuralları genişletti (~380 stil önerisi: PEP 604/585, import sırası). Kural seti `ruff.toml`'da açıkça eskisi gibi (`E4, E7, E9, F`); stil geçişi istenirse ayrı bir iş.
+- [x] **S15:** `postcss-selector-parser` `overrides` ile 7.1.6 (derlenen CSS'in hash'i değişmedi); tam audit 7 → 5 (kalan `braces` zinciri: düzeltilmiş sürüm yok, yalnızca lint). Çalışma zamanı audit'i 0.
+- [x] **B8:** `backend/venv` silinip Python 3.13 ile yeniden kuruldu.
+- **Kararlar (kullanıcı, 2026-10-17):** F29 görsel puanı simülasyona girmez; B12 sıralı kalır.
+- **Doğrulama:** ruff, pytest 288/288, pip-audit 0; tsc, eslint, e2e 36/36 (yeni venv ile); `docker compose build` iki imaj.
 
 ### Faz 19: Kendi nüfusunu yükle + kalibrasyon
 - [ ] Satıcı kendi sipariş dökümünden (Trendyol satıcı paneli, Shopify vb.) **anonim/toplu segmentler** yükler (JSON/CSV şeması); kasaba bu dağılımlara göre üretilir.
