@@ -18,6 +18,7 @@ logger = logging.getLogger("graph_service")
 class GraphState(TypedDict):
     request: SimulationRequest
     competitors: List[Dict[str, Any]]
+    research_problem: Optional[str]
     benchmark_analysis: str
     debate_logs: List[Dict[str, str]]
     simulation_response: Optional[SimulationResponse]
@@ -46,7 +47,16 @@ def research_node(state: GraphState) -> Dict[str, Any]:
     serper = SerperShoppingService()
     results = serper.search(state["product_name"])
     competitors = serper.filter_competitors(results, state["product_name"])
-    return {"competitors": competitors}
+    return {"competitors": competitors, "research_problem": serper.problem}
+
+
+# Shown in the Benchmark tab when there is nothing to compare, by cause.
+NO_COMPETITORS = {
+    "no_key": "Rakip araması bu sunucuda kapalı (arama anahtarı tanımlı değil).",
+    "timeout": "Rakip araması zaman aşımına uğradı. Biraz sonra simülasyonu yeniden başlatmayı deneyebilirsin.",
+    "error": "Rakip araması şu an yanıt vermedi. Biraz sonra yeniden deneyebilirsin.",
+    None: "Bu ürün için yakın rakip bulunamadı.",
+}
 
 
 def competitors_for_response(raw: List[Dict[str, Any]]) -> List[Competitor]:
@@ -73,7 +83,7 @@ def benchmark_node(state: GraphState) -> Dict[str, Any]:
     
     competitors = state["competitors"]
     if not competitors:
-        return {"benchmark_analysis": "Yakın rakip verisi bulunamadı."}
+        return {"benchmark_analysis": NO_COMPETITORS[state.get("research_problem")]}
 
     instructions = (
         "Sen bir pazar analiz uzmanısın. Verilen ürünü rakipleriyle karşılaştır: "
@@ -300,6 +310,7 @@ def iter_agentic_simulation(request: SimulationRequest) -> Iterator[tuple[str, A
         "product_name": request.product_name,
         "category": category_label(request.category),
         "competitors": [],
+        "research_problem": None,
         "benchmark_analysis": "",
         "debate_logs": [],
         "simulation_response": None,
