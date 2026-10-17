@@ -25,7 +25,7 @@ Durum değerleri: `açık`, `düzeltildi`, `kabul edildi`.
 | S12 | Orta | 422 yanıtı girdiyi geri yansıtıyor; `inf` fiyatı sunucuyu 500'e düşürüyor | düzeltildi |
 | S13 | Düşük | Link okuyucu ile API sınırları uyumsuz (görsel sayısı, kategori) | düzeltildi |
 | S14 | Yüksek | Next.js 14.2'de yamasız açıklar (`npm audit`: 1 kritik, 1 yüksek) | düzeltildi (Faz 6, `next@16.4.2`) |
-| S15 | Düşük | Dev araç zincirinde açıklar (`braces` ← `eslint-plugin-next`, `postcss-selector-parser` ← `@tailwindcss/typography`) | kabul edildi (Faz 7'de daraldı) |
+| S15 | Düşük | Dev araç zincirinde açıklar (`braces` ← `eslint-plugin-next`, `postcss-selector-parser` ← `@tailwindcss/typography`) | kısmen düzeltildi: `postcss-selector-parser` 7.1.6'ya `overrides` ile (derlenen CSS birebir aynı); `braces` zinciri kabul edildi (düzeltilmiş sürümü yok, yalnızca lint sırasında; Next güncellemesi bekleniyor). Çalışma zamanında açık: 0 |
 
 Kontrol edildi, sorun bulunmadı:
 - `.env` dosyaları git'te takip edilmiyor. `.gitignore` artık `.env.*` kalıbını da kapsıyor.
