@@ -120,6 +120,15 @@ class Improvement(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
 
+class Competitor(BaseModel):
+    """A similar product from the shopping search (Faz 16): what the seller's price is compared with."""
+
+    title: str
+    price: Optional[float] = None
+    source: Optional[str] = None
+    link: Optional[str] = None
+
+
 class SimulationResponse(BaseModel):
     overall_score: int = Field(alias="overallScore", ge=0, le=100)
     market_breadth_score: int = Field(alias="marketBreadthScore", ge=0, le=100)
@@ -136,6 +145,7 @@ class SimulationResponse(BaseModel):
     ai_insights: AiInsights = Field(alias="aiInsights")
     debate_logs: list[dict[str, str]] = Field(default_factory=list, alias="debateLogs")
     benchmark_analysis: Optional[str] = Field(default=None, alias="benchmarkAnalysis")
+    competitors: list[Competitor] = Field(default_factory=list)
     images: list[str] = Field(default_factory=list)
 
 

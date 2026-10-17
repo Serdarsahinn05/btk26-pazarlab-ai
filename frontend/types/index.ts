@@ -226,6 +226,15 @@ export interface SimulationResponse {
   segments?: Record<"age" | "gender" | "incomeLevel" | "cityType", SegmentRate[]>;
   representatives?: TownRepresentative[];
   improvements?: Improvement[];
+  /** Similar products from the shopping search; empty without SERPER_API_KEY (Faz 16). */
+  competitors?: Competitor[];
+}
+
+export interface Competitor {
+  title: string;
+  price: number | null;
+  source: string | null;
+  link: string | null;
 }
 
 export interface SegmentRate {

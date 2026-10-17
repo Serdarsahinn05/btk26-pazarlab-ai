@@ -95,3 +95,17 @@ def test_rating_raises_buyers_end_to_end(client, payload):
     plain = client.post("/api/simulate", json=payload).json()["estimatedBuyers"]
     loved = client.post("/api/simulate", json={**payload, "rating": 4.9, "reviewCount": 5000}).json()["estimatedBuyers"]
     assert loved > plain
+
+
+def test_competitors_become_typed_rows():
+    from app.services.graph import competitors_for_response
+
+    rows = competitors_for_response([
+        {"title": "Basic Tişört Siyah", "price": "₺299,90", "source": "Örnek Mağaza", "link": "https://example.com/a"},
+        {"title": "Oversize Tişört", "price": "1.049,00 TL", "source": "", "link": "javascript:alert(1)"},
+        {"title": "", "price": "10 TL"},
+    ])
+    assert [(r.title, r.price, r.source, r.link) for r in rows] == [
+        ("Basic Tişört Siyah", 299.9, "Örnek Mağaza", "https://example.com/a"),
+        ("Oversize Tişört", 1049.0, None, None),
+    ]

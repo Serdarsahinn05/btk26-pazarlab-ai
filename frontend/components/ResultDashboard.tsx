@@ -8,7 +8,7 @@ import confetti from "canvas-confetti";
 import { Check, Copy, FileDown, Link2, Loader2, Printer, RotateCcw, Sparkles } from "lucide-react";
 import { downloadBlob } from "@/lib/history";
 import { simulationToMarkdown } from "@/lib/report";
-import { CompareResponse, NormalizedProduct, Persona, SimulationRequest, SimulationResponse } from "@/types";
+import { CompareResponse, Competitor, NormalizedProduct, Persona, SimulationRequest, SimulationResponse } from "@/types";
 import { aiFallbackNote, compareVariants } from "@/lib/api";
 import WhatIf from "@/components/WhatIf";
 import PersonaChat from "@/components/PersonaChat";
@@ -44,7 +44,7 @@ export default function ResultDashboard({ data, view, productName, request, onRe
     [request, data.inputAnalysis]
   );
 
-  if (view === "benchmark") return <BenchmarkView markdown={data.benchmarkAnalysis} />;
+  if (view === "benchmark") return <BenchmarkView markdown={data.benchmarkAnalysis} competitors={data.competitors ?? []} request={whatIfRequest} />;
   if (view === "debate") {
     const personas = data.allPersonas?.length ? data.allPersonas : data.topPersonas;
     return (
@@ -457,11 +457,12 @@ function ImprovedDescription({ text, images, request }: { text: string; images?:
   );
 }
 
-function BenchmarkView({ markdown }: { markdown?: string }) {
+function BenchmarkView({ markdown, competitors, request }: { markdown?: string; competitors: Competitor[]; request: SimulationRequest | null }) {
   const content = useMemo(() => markdown?.trim(), [markdown]);
   return (
     <section className="space-y-5">
       <h2 className="squiggle text-2xl font-bold">Rakip ve pazar analizi</h2>
+      {request && competitors.some((c) => c.price) && <CompetitorCard competitors={competitors} request={request} />}
       {content ? (
         <article className="card-paper prose prose-neutral max-w-none dark:prose-invert prose-headings:font-display prose-strong:text-foreground prose-li:my-1">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
@@ -495,15 +496,6 @@ function BeforeAfter({ request, description }: { request: SimulationRequest; des
     }
   };
 
-  const rows: Array<[string, number, number, (n: number) => string]> = result
-    ? [
-        ["Genel skor", result.base.overallScore, result.variant.overallScore, String],
-        ["Alıcı", result.base.estimatedBuyers, result.variant.estimatedBuyers, String],
-        ["Tahmini ciro", result.base.estimatedBuyers * result.base.price, result.variant.estimatedBuyers * result.variant.price,
-          (n) => `${Math.round(n).toLocaleString("tr-TR")} TL`],
-      ]
-    : [];
-
   return (
     <div className="no-print flex flex-col gap-3 rounded-wobble border-2 border-dashed border-border bg-secondary px-4 py-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -516,7 +508,20 @@ function BeforeAfter({ request, description }: { request: SimulationRequest; des
         </button>
       </div>
       {state === "error" && <p className="note-risk">Karşılaştırma şu an yapılamadı; biraz sonra tekrar dene.</p>}
-      {result && (
+      {result && <BeforeAfterTable result={result} />}
+    </div>
+  );
+}
+
+/** Score, buyers and revenue of two runs on the same 500 people. */
+function BeforeAfterTable({ result }: { result: CompareResponse }) {
+  const rows: Array<[string, number, number, (n: number) => string]> = [
+    ["Genel skor", result.base.overallScore, result.variant.overallScore, String],
+    ["Alıcı", result.base.estimatedBuyers, result.variant.estimatedBuyers, String],
+    ["Tahmini ciro", result.base.estimatedBuyers * result.base.price, result.variant.estimatedBuyers * result.variant.price,
+      (n) => `${Math.round(n).toLocaleString("tr-TR")} TL`],
+  ];
+  return (
         <table className="w-full text-sm" aria-live="polite">
           <thead>
             <tr className="text-left text-muted-foreground">
@@ -542,7 +547,93 @@ function BeforeAfter({ request, description }: { request: SimulationRequest; des
             })}
           </tbody>
         </table>
-      )}
+  );
+}
+
+const tl = (n: number) => `${Math.round(n).toLocaleString("tr-TR")} TL`;
+
+/** Where the seller's price sits among similar products, and the town re-run with their median as the going price (Faz 16).
+ *  Not a market share: the engine does not simulate the competitors themselves (multinomial choice is a later step). */
+function CompetitorCard({ competitors, request }: { competitors: Competitor[]; request: SimulationRequest }) {
+  const [result, setResult] = useState<CompareResponse | null>(null);
+  const [state, setState] = useState<"idle" | "busy" | "error">("idle");
+  const prices = competitors.flatMap((c) => (c.price ? [c.price] : [])).sort((a, b) => a - b);
+  const median = prices.length % 2 ? prices[(prices.length - 1) / 2] : (prices[prices.length / 2 - 1] + prices[prices.length / 2]) / 2;
+  const own = request.price;
+  const diff = Math.round(((own - median) / median) * 100);
+  const cheaper = prices.filter((p) => p < own).length;
+  const lo = Math.min(own, prices[0]);
+  const hi = Math.max(own, prices[prices.length - 1]);
+  const at = (p: number) => `${hi > lo ? ((p - lo) / (hi - lo)) * 100 : 50}%`;
+
+  const run = async () => {
+    setState("busy");
+    try {
+      setResult(await compareVariants(request, { ...request, marketPrice: median }));
+      setState("idle");
+    } catch {
+      setState("error");
+    }
+  };
+
+  return (
+    <div className="card-paper flex flex-col gap-4">
+      <h3 className="text-[19px] font-bold">Fiyatın rakipler arasında</h3>
+      <p className="text-foreground-2">
+        Senin fiyatın <b className="font-display">{tl(own)}</b>; {prices.length} benzer ürünün medyanı <b className="font-display">{tl(median)}</b>
+        {" "}({diff === 0 ? "aynı" : diff > 0 ? `%${diff} daha pahalı` : `%${-diff} daha ucuz`}). {cheaper} rakip senden ucuz.
+      </p>
+      <figure>
+        <figcaption className="sr-only">Rakip fiyatları ve senin fiyatın, en ucuzdan en pahalıya</figcaption>
+        <div className="relative mx-3 h-12" aria-hidden>
+          <div className="absolute inset-x-0 top-6 h-0.5 bg-border" />
+          {prices.map((p, i) => (
+            <span key={i} title={tl(p)} className="absolute top-[18px] h-3.5 w-3.5 -translate-x-1/2 rounded-full border-2 border-card bg-accent" style={{ left: at(p) }} />
+          ))}
+          <span className="absolute top-0 -translate-x-1/2 text-center" style={{ left: at(own) }}>
+            <span className="block text-xs font-bold">sen</span>
+            <span className="mx-auto mt-0.5 block h-4 w-4 rotate-45 rounded-[3px] border-2 border-card bg-primary" />
+          </span>
+        </div>
+        <div className="mx-3 flex justify-between text-xs text-muted-foreground" aria-hidden>
+          <span>{tl(lo)}</span>
+          <span>{tl(hi)}</span>
+        </div>
+      </figure>
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="text-left text-muted-foreground">
+            <th className="py-1 pr-3 font-bold">Ürün</th>
+            <th className="py-1 pr-3 font-bold">Satıcı</th>
+            <th className="py-1 text-right font-bold">Fiyat</th>
+          </tr>
+        </thead>
+        <tbody>
+          {competitors.map((c, i) => (
+            <tr key={i} className="border-t border-dashed border-border">
+              <td className="py-1.5 pr-3">
+                {c.link ? <a href={c.link} target="_blank" rel="noopener noreferrer nofollow" className="text-accent underline-offset-2 hover:underline">{c.title}</a> : c.title}
+              </td>
+              <td className="py-1.5 pr-3 text-muted-foreground">{c.source ?? "–"}</td>
+              <td className="py-1.5 text-right font-bold">{c.price ? tl(c.price) : "–"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div className="no-print flex flex-col gap-3 rounded-wobble border-2 border-dashed border-border bg-secondary px-4 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-foreground-2">
+            <b className="font-bold">Kasaba rakip fiyatlarını bilseydi?</b> Kategori ortalaması yerine rakiplerin medyanıyla yeniden hesapla.
+          </p>
+          <button type="button" onClick={run} disabled={state === "busy"} className="btn-sticker-primary min-h-11">
+            {state === "busy" ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Sparkles className="h-4 w-4" aria-hidden />}
+            Rakip fiyatlarını referans al
+          </button>
+        </div>
+        {state === "error" && <p className="note-risk">Hesaplama şu an yapılamadı; biraz sonra tekrar dene.</p>}
+        {result && <BeforeAfterTable result={result} />}
+      </div>
+      <p className="text-xs text-muted-foreground">Bu bir pazar payı tahmini değil: kasaba rakip ürünleri ayrıca seçmiyor, yalnızca fiyat karşılaştırmasının dayanağı değişiyor.</p>
     </div>
   );
 }
