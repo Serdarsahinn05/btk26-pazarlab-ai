@@ -12,24 +12,31 @@ Açık ürün sayfasını tek tıkla PazarLab'a taşır. Ürün, alanları doldu
 - Sunucu mağazaya **hiç istek atmaz**. Eklenti, tarayıcının zaten açtığı sayfayı gönderir. Engellemeye takılmaz, mağazaları sunucudan taramak gerekmez.
 - Gönderilen HTML küçültülür: stil, SVG, iframe ve dış script'ler atılır. Ürün verisi taşıyabilen satır içi JSON ve JSON-LD kalır, sınır 3 MB'tır.
 - Sonuç siteye URL'nin `#` kısmıyla geçer. Bu kısım sunucuya gitmez ve kullanıldıktan sonra adresten silinir. Site bu veriye güvenmez: her alanı yeniden doğrular ve kırpar ([frontend/lib/extensionImport.ts](../frontend/lib/extensionImport.ts)).
-- İzinler: `activeTab` (yalnızca düğmeye bastığın sekme), `scripting`, `storage` (iki adres). Yerel API için host izni manifestte tanımlı. Ayarlardan başka bir API adresi verilirse ilk gönderimde o adres için izin istenir.
+- İzinler: `activeTab` (yalnızca düğmeye bastığın sekme), `scripting` ve yalnızca PazarLab API'si için host izni. Ayar ya da depolama yok.
+- Adresler `config.js`'te: site `https://pazarlab-ai.vercel.app`, API `https://pazarlab-api.onrender.com`. Ücretsiz planda API uyuyorsa ilk istek bir dakika kadar sürebilir; popup bunu söylüyor.
+- Gizlilik politikası: <https://pazarlab-ai.vercel.app/gizlilik>.
 
-## Kurulum (geliştirici modu)
+## Kurulum
 
-1. Chrome'da `chrome://extensions` sayfasını aç ve **Geliştirici modu**'nu aç.
-2. **Paketlenmemiş öğe yükle** düğmesiyle bu `extension/` klasörünü seç.
-3. Araç çubuğunda PazarLab ikonunu sabitle.
+**Mağazadan:** yayınlandığında Chrome Web Mağazası'ndan. Yükleme adımları ve mağaza metinleri: [store/LISTING.md](store/LISTING.md).
 
-Varsayılan adresler yerel geliştirme içindir (`http://localhost:3000`, `http://localhost:8000`). Yayındaki site için popup'taki **Ayarlar** bölümüne site ve API adresini yaz.
+**Yayındaki siteyle, geliştirici modunda:** `chrome://extensions` → **Geliştirici modu** → **Paketlenmemiş öğe yükle** → bu `extension/` klasörü.
 
-Edge ve diğer Chromium tabanlı tarayıcılarda da aynı şekilde çalışır. Firefox desteği yok.
+**Yerel geliştirme:** `python extension/build.py --dev` → `extension/dist/dev/` klasörünü aynı şekilde yükle. Bu kopya `localhost:3000` ve `localhost:8000`'e bağlanır.
+
+**Mağaza paketi:** `python extension/build.py` → `extension/dist/pazarlab-extension-<sürüm>.zip` (yalnızca çalışan dosyalar).
+
+Edge ve diğer Chromium tabanlı tarayıcılarda da çalışır. Firefox desteği yok.
 
 ## Dosyalar
 
 | Dosya | Görev |
 |---|---|
 | `manifest.json` | Manifest V3 |
-| `popup.html` · `popup.css` · `popup.js` | Düğme, durum mesajları, ayarlar |
+| `config.js` | Site ve API adresi |
+| `build.py` | Mağaza zip'i ve yerel kopya |
+| `store/` | Mağaza görselleri ve [LISTING.md](store/LISTING.md) |
+| `popup.html` · `popup.css` · `popup.js` | Düğme, durum mesajları |
 | `snapshot.js` | Sayfada çalışır: işlenmiş DOM'un küçültülmüş kopyası |
 | `handoff.js` | Sonucu `#import=` parçasına çevirir |
 | `icons/` | Sitenin favicon'undan üretilmiş ikonlar (geçici) |

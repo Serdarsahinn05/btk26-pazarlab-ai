@@ -104,7 +104,8 @@ export default function LandingPage() {
       </main>
 
       <footer className="border-t-2 border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
-        AI destekli sentetik tüketici simülasyonu · sonuçlar talep sinyalidir, satış garantisi değildir.
+        AI destekli sentetik tüketici simülasyonu · sonuçlar talep sinyalidir, satış garantisi değildir. ·{" "}
+        <a href="/gizlilik" className="underline underline-offset-2 hover:text-foreground">Gizlilik</a>
       </footer>
     </div>
   );
