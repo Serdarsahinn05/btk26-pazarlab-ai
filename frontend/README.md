@@ -1,36 +1,32 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PazarLab frontend
 
-## Getting Started
+Next.js 16 (App Router), React 19, Tailwind 4. Tasarım kuralları: [../DESIGN.md](../DESIGN.md). Kurulum ve backend: [../README.md](../README.md).
 
-First, run the development server:
+## Komutlar
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run dev        # http://localhost:3000 (backend: http://localhost:8000)
+npm run lint
+npx tsc --noEmit
+npm run build
+npm run test:e2e   # Playwright uçtan uca testleri
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`NEXT_PUBLIC_API_URL` backend adresidir (varsayılan `http://localhost:8000`); build sırasında koda gömülür.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Veri dosyaları
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+`data/personas.json` ve `data/category_rules.json`, `backend/app/data`'daki dosyaların kopyasıdır. Backend'de düzenleyip `python backend/scripts/sync_frontend_data.py` çalıştırın; kopya eskiyse backend testi düşer.
 
-## Learn More
+## Uçtan uca testler
 
-To learn more about Next.js, take a look at the following resources:
+`e2e/` altındaki testler gerçek backend'i AI ve rakip araması kapalı (`GEMINI_API_KEY=`, `SERPER_API_KEY=`) başlatır, frontend'in production build'ini açar ve tarayıcıda dener. Konsol hatası çıkan test düşer. Link okuyucunun cevabı testte taklit edilir; başka dış istek yoktur.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Yerelde backend bağımlılıkları kurulu bir Python ve bir tarayıcı gerekir:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npx playwright install chromium            # ya da yüklü Chrome için: PW_CHANNEL=chrome
+PYTHON=../backend/venv/Scripts/python npm run test:e2e
+```
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Çalışan sunucular varsa (3000 ve 8000) yeniden kullanılır. CI'da `e2e` işi aynı komutları çalıştırır, hata olursa raporu artifact olarak yükler.
