@@ -33,7 +33,7 @@
 | 12a | `feat/town-population` | Kasaba nüfusu: 500 sakin, hikâye, Big Five, türetilen özellikler | 0,5 gün | ✅ |
 | 12b | `feat/engine-v2` | Motor v2: ödeme isteği, lojistik karar, Monte Carlo, `engineVersion` | 1 gün | ✅ |
 | 12c | `feat/town-dynamics` | Arkadaşlık ağı ve yayılma, "en etkili iyileştirme", segmentler | 1 gün | ✅ |
-| 12d | `feat/engine-v2-ui` | Arayüz: ± aralık, kasaba temsilcileri, segment grafiği, iyileştirme kartı | 1 gün | ⬜ |
+| 12d | `feat/engine-v2-ui` | Arayüz: ± aralık, kasaba temsilcileri, segment grafiği, iyileştirme kartı | 1 gün | ✅ |
 | 13 | `feat/product-entry-v2` | Ürün ekleme ekranı: link öncelikli akış + yeni yerleşim | 2 gün | ⬜ |
 | 14 | `feat/link-reader-v2` | Site okuyucuları, kayıtlı HTML testleri, "HTML ver" ucu | 2 gün | ⬜ |
 | 15 | `feat/layout-pass` | Diğer ekranların yerleşimi (audit → critique → ponytail-review) | 1,5 gün | ⬜ |
@@ -215,17 +215,8 @@ Kabul kriteri: DESIGN.md'deki tüm kalıplar uygulanmış; bileşenlerde ham ren
 
 ## Şu an neredeyiz
 
-- **Son tamamlanan:** Faz 12c (arkadaşlık ağı, ağızdan ağıza yayılma, segmentler, kasaba temsilcileri, en etkili iyileştirme). Backend verileri hazır; arayüz henüz göstermiyor. Tüm dallar `main`'e merge edildi ve `origin`'e push'landı.
-- **Sıradaki:** Faz 12d (arayüz), dal `feat/engine-v2-ui` açıldı ama **henüz kod yazılmadı** (oturum 2026-10-17'de burada durdu). Backend verileri hazır: `buyersRange`, `adoptionCurve`, `segments`, `representatives`, `improvements`, `engineVersion` (tipler `frontend/types/index.ts`'te). Plan:
-  1. KPI "Tahmini alıcı": `291 (279–308)` aralığı (`buyersRange`).
-  2. "En etkili 3 değişiklik" kartı: `improvements` (alıcı farkı + ciro farkı birlikte; ciro düşüyorsa açıkça yaz).
-  3. "Ağızdan ağıza" kartı: `adoptionCurve` için 4 çubuk (tek seri, başlık yeterli, hover ipucu); WhatIf'teki `RevenueBars` kalıbı.
-  4. Segment grafiği: yaş/cinsiyet/gelir/şehir tipi için yatay çubuklar, tek ton (`--accent`), değerler metin renginde, hover'da sakin sayısı; tablo görünümü.
-  5. "Kasabadan 5 sakin" kartları: ad, yaş, şehir, meslek, persona chip'i, karar chip'i, gerekçe, katlanabilir hikâye; "kurgusal sakinler" notu.
-  6. `engineVersion` yoksa (v1 kaydı): "Bu sonuç eski motorla hesaplandı; yeniden simüle edersen sonuç değişebilir" notu.
-  7. Rehberler: DESIGN.md §4/§9.3 kalıpları; grafiklerde dataviz kuralları (tek eksen, ince işaret, hover, tablo görünümü). Bittiğinde Puppeteer ile 1280/375 ve açık/koyu kontrol.
-  8. **DESIGN.md düzeltmesi gerekli:** §7 hâlâ "Tailwind v3" diyor ve "v4 sözdizimini" yasaklıyor; Faz 7'de v4'e geçildi, kural güncellenecek.
-  Ardından → 13 …
+- **Son tamamlanan:** Faz 12d (motor v2 arayüzü): alıcı aralığı, en etkili 3 değişiklik, ağızdan ağıza, kasabadan 5 sakin, segment grafiği, eski motor notu. Faz 12 bütünüyle bitti.
+- **Sıradaki:** Faz 13 (ürün ekleme ekranı v2). Başlamadan önce kategori genişletme kararı konuşulacak (bkz. bekleyen kararlar). 12'nin ertelenen maddeleri (rakipli seçim, belirli bir sakinle sohbet) Faz 16'da değerlendirilebilir.
 - **Ertelenen (kullanıcı kararı, 2026-10-17):** Faz 11'in Claude.ai denemesi sonra birlikte yapılacak. Gerekenler: `cloudflared` kurulumu (`winget install Cloudflare.cloudflared`), tünel adresinin `MCP_ALLOWED_HOSTS`'a yazılması, Claude'da connector eklenmesi; açık soru `?key=` sorgu dizesinin korunup korunmadığı. Adımlar: docs/mcp-connector.md. (sıra aşağıdaki tabloda). Her faz kendi dalında, bitince bu bölüm güncellenir.
 - **Bekleyen kararlar:** kategori genişletme (hangi aileler) Faz 13'e gelince konuşulacak; Faz 9 için API anahtarı yok.
 - **Ortam notları:** `backend/venv` bozuk (eski bir kullanıcı yolunu gösteriyor). Testler geçici bir venv ile koşuyor. Gemini sık sık 429 veriyor; arayüz testlerinde AI kapalı ya da sahte SSE kullanılıyor. `gh`, nginx ve Docker daemon yok.
@@ -309,6 +300,15 @@ Dört alt faza bölündü (12a–12d); her biri ayrı dalda, ayrı testlerle. A�
 - **En etkili iyileştirme:** aynı kasabada tek tek kargo 2 gün, kolay iade, garanti, fiyat −%10 ve +%10 deneniyor (girdi analizi sabit tutularak); alıcı kazancına göre ilk 3. Fiyat artışı yalnızca ciroyu artırıyorsa listeleniyor; her öneri alıcı ve ciro farkını birlikte taşıyor (ör. "Fiyatı %10 düşür" +12 alıcı ama −5.808 TL ciro).
 - MCP `simulate_product` artık benimseme eğrisi, iyileştirmeler, segmentler ve temsilcileri de dönüyor. Tam simülasyon ~170 ms (5 ek senaryo dahil); fiyat taraması iyileştirme hesaplamıyor.
 - Doğrulama: `tests/test_town_dynamics.py` (10 test, toplam 170): ağ simetrik ve benzerlik eğilimli, yayılma haftadan haftaya alıcı ekliyor ve kapatılınca kimse arkadaş yoluyla dönüşmüyor, segmentler 500'ü kapsıyor ve unisex üründe cinsiyet farksız / hedeflenince ayrışıyor, temsilciler 5 farklı persona ve karar yönünde gerekçe, gerekçe birim testleri, iyileştirmeler yalnızca anlamlı değişiklikleri deniyor ve sıralı, API alanları, tam simülasyon < 1,5 sn.
+
+**12d ✅ Arayüz** (`feat/engine-v2-ui`)
+- `components/TownInsights.tsx`: **En etkili 3 değişiklik** (alıcı ve ciro farkı yan yana; ciro düşüyorsa "ama ciro … TL düşer" mercan metinle), **Ağızdan ağıza** (4 haftalık kümülatif alıcı, tek seri `--accent`, hover/odakta haftanın değeri ve o haftaki artış, özet cümlesi), **Kim alıyor?** (yaş/cinsiyet/gelir/yaşadığı yer için yatay çubuklar, değerler metin renginde, hover'da sakin sayısı, "Tablo olarak göster"), **Kasabadan 5 sakin** (ad, yaş · şehir · meslek, persona noktası, karar chip'i, gerekçe, katlanabilir hikâye, "sakinler kurgusaldır" notu; `flex-wrap` ile 3 + 2, boş hücre yok).
+- "Tahmini alıcı" KPI'ı aralığı gösteriyor: `276 (260–289)`; açıklama `title`'da (30 turun %80'i). Mobilde aralık alt satırda.
+- `engineVersion` olmayan kayıtta (v1) en üstte "Eski motor" notu; kasaba kartları yalnızca veri varsa çiziliyor.
+- `personaColor` artık Türkçe etiketi de tanıyor (sakinler persona adını etiket olarak taşıyor). Markdown raporu: alıcı aralığı, eski motor notu, "En etkili değişiklikler".
+- DESIGN.md: §7 Tailwind 4'e göre düzeltildi (yasak artık `tailwind.config`, grafik kütüphanesi eklenmez); §4'e "tek serili grafik" ve "sakin kartı" kalıpları, §9.3'e yeni satırlar.
+- Doğrulama: tsc + eslint temiz. Puppeteer (gerçek backend, AI kapalı): 1280 açık/koyu ve 375'te yatay taşma yok, konsol hatası yok; haftalık çubuğa klavyeyle odaklanınca "2. hafta: toplam 273 alıcı (o hafta +24)"; segment tablosu 13 satır; v2 alanları silinmiş yanıtla v1 kaydında not görünüyor, kasaba kartları ve aralık gizleniyor. Ekran görüntüleri elle incelendi. Backend değişmedi.
+- Yeni bulgu: F21 (sakin kartında meslek cümle parçası olarak geliyor).
 
 - [ ] **Ödeme isteği (WTP):** her sakine kategori fiyatı × persona/gelir çarpanıyla log-normal bir üst fiyat. Fiyat düştükçe alma ihtimali artar; "çok ucuz şüphesi" yalnızca kalite odaklı sakinlerde. B15 kapanır.
 - [ ] **Lojistik karar:** `P = 1 / (1 + e^-fayda)`; ağırlıklar ve parametreler tek bir yapılandırma dosyasında, belgelenmiş varsayımlar olarak.

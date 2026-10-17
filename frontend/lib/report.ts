@@ -8,6 +8,7 @@ export function simulationToMarkdown(result: SimulationResponse, productName: st
   const personas = [...(result.allPersonas?.length ? result.allPersonas : result.topPersonas)].sort(
     (a, b) => b.purchaseProbability - a.purchaseProbability
   );
+  const range = result.buyersRange && result.buyersRange.high > result.buyersRange.low ? result.buyersRange : null;
   const lines = [
     `# PazarLab AI raporu: ${productName}`,
     "",
@@ -18,6 +19,8 @@ export function simulationToMarkdown(result: SimulationResponse, productName: st
     "",
     `- Genel skor: **${result.overallScore}/100**`,
     dist ? `- ${result.simulatedConsumers} sentetik tüketici: ${dist.buy} aldı · ${dist.watch} kararsız · ${dist.skip} almadı` : "",
+    range ? `- Tahmini alıcı: ${result.estimatedBuyers} (${range.runs} turun %80'inde ${range.low}–${range.high})` : "",
+    result.engineVersion ? "" : "- Not: bu sonuç eski simülasyon motoruyla hesaplandı; yeniden simüle edilirse değişebilir.",
     `- Pazar genişliği ${result.marketBreadthScore}/100 · Niyet dönüşümü ${result.intentConversionScore}/100 · Problem uyumu ${result.problemSolutionFit}/100`,
     "",
     "## Özet",
@@ -28,6 +31,16 @@ export function simulationToMarkdown(result: SimulationResponse, productName: st
     "",
     ...result.aiInsights.salesRecipe.map((a, i) => `${i + 1}. ${a}`),
     "",
+    ...(result.improvements?.length
+      ? [
+          "## En etkili değişiklikler",
+          "",
+          ...result.improvements.map(
+            (m) => `- ${m.label}: ${m.deltaBuyers >= 0 ? "+" : ""}${m.deltaBuyers} alıcı, ciro ${m.deltaRevenue >= 0 ? "+" : "−"}${Math.abs(Math.round(m.deltaRevenue)).toLocaleString("tr-TR")} TL`
+          ),
+          "",
+        ]
+      : []),
     "## Zayıflıklar",
     "",
     ...(result.weaknesses.length ? result.weaknesses.map((w) => `- ${w}`) : ["- Belirgin bir zayıflık bulunmadı."]),

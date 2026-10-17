@@ -110,6 +110,8 @@ Persona kartı zemini: kendi renginin %7'si kart rengine karışır. Etiket (chi
 | **Tırtıklı başlıklı kart** | Başlık şeridi `--secondary`, alt kenarı `clip-path` ile dalgalı | Zayıflıklar, kanal önerileri |
 | **Konuşma satırı** | 6px sol kenar persona rengi, `4px 16px 16px 4px` köşe, sticker gölge | Tartışma mesajları |
 | **Numara rozeti** | Sarı blob, Bricolage 800 | Aksiyon listesi, form adımları |
+| **Tek serili grafik** | Tek ton `--accent`; değer ve etiketler metin renginde (seri renginde değil); başlık seriyi adlandırır, lejant yok; hover/odakta değer; "Tablo olarak göster" | Ağızdan ağıza (haftalık çubuk), Kim alıyor? (yatay çubuk), fiyat eğrisi |
+| **Sakin kartı** | Ad (Bricolage), yaş · şehir · meslek, persona noktası + adı (metin renginde), karar chip'i, gerekçe, katlanabilir "Hikâyesi"; satır `flex-wrap` + `basis-[300px]` (boş hücre kalmaz) | Kasabadan 5 sakin |
 | **Durum toast'u** | Alt-orta, tam yuvarlak, sticker gölge; `info` / `error` + "Tekrar dene" | API hataları |
 
 ## 5. Hareket
@@ -129,8 +131,8 @@ Persona kartı zemini: kendi renginin %7'si kart rengine karışır. Etiket (chi
 ## 7. Yasaklar
 
 - Turuncu/şeftali/krem kâğıt veya kenar tonları; büyük kırmızı/mercan dolgular.
-- Yeni UI/animasyon kütüphanesi eklemek (mevcut: Tailwind v3, shadcn, framer-motion, lucide).
-- Bileşen içinde ham renk ve Tailwind palet renkleri; Tailwind v4 sözdizimi.
+- Yeni UI/animasyon/grafik kütüphanesi eklemek (mevcut: Tailwind 4, shadcn, framer-motion, lucide). Grafikler elle SVG/HTML.
+- Bileşen içinde ham renk ve Tailwind palet renkleri; `tailwind.config` dosyası (Tailwind 4: tema `globals.css` içindeki `@theme inline` bloğunda, yardımcılar `@utility` ile).
 - Sahte durum verisi.
 
 ## 8. Uygulama notları
@@ -194,8 +196,13 @@ Mevcut düzenin sorunları IMPROVEMENTS.md F11'de. Hedef: **bir rapor gibi yukar
 │ Pazar    │ Niyet    │ Problem  │ Tahmini    │   4 KPI: ince bar + mono yüzde        │
 │ genişliği│ dönüşümü │ uyumu    │ alıcı      │                                       │
 ├──────────┴──────────┴──────────┴────────────┴──────────────────────────────────────┤
+│ En etkili 3 değişiklik (alıcı + ciro farkı) │ Ağızdan ağıza (4 haftalık çubuk)           │
+├──────────────────────────────────────────┴──────────────────────────────────────────┤
 │ PERSONALAR  ◯ ◯ ◯ ◯ ◯ ◯  (12 halka kartı, auto-fit minmax(150px,1fr))                │
 │             ◯ ◯ ◯ ◯ ◯ ◯  tıklayınca → Tartışma sekmesinde o persona                  │
+│ KASABADAN 5 SAKİN  (3 + 2 kart, kurgusal notu)                                       │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│ Kim alıyor?  yaş · cinsiyet · gelir · yaşadığı yer (yatay çubuklar, tablo görünümü)  │
 ├──────────────────────────────────────────┬──────────────────────────────────────────┤
 │ Zayıflıklar (renkli başlıklı kart)       │ Kanal önerileri (renkli başlıklı kart)    │
 ├──────────────────────────────────────────┴──────────────────────────────────────────┤
@@ -210,6 +217,8 @@ Kurallar:
 - Izgaralar içerik sayısına göre kurulur; boş hücre kalmaz (2 kart = 2 sütun, 4 KPI = 4 sütun).
 - Kart içi kaydırma yok; uzun listeler "Tümünü göster" ile açılır.
 - Mobil: her satır tek sütuna iner; KPI'lar 2×2; persona halkaları yatay kaydırılır.
+- Motor v1 ile kaydedilmiş sonuçta (yanıtta `engineVersion` yok) en üstte "Eski motor" notu; kasaba kartları gizlenir.
+- "Tahmini alıcı" KPI'ı Monte Carlo aralığını gösterir: `276 (260–289)`; mobilde aralık alt satırda.
 - Benchmark ve Tartışma sekmeleri aynı 1180 px okuma düzenini kullanır. Tartışma: solda konuşan persona halkası, sağda mesaj (`slot` kalıbı).
 
 ## 10. Stil seçimi geçmişi
