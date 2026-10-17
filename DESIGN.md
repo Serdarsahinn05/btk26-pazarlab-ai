@@ -108,7 +108,7 @@ Persona kartı zemini: kendi renginin %7'si kart rengine karışır. Etiket (chi
 | **Chip** | Tam yuvarlak, 1.5px kenar, metin renginin %12'si zemin, koyu metin tonu | Karar etiketleri, kanallar |
 | **Not kutusu** | 2px kesikli `--skip` kenar, yamuk köşe, `--secondary` zemin | Kritik risk, girdi uyarısı |
 | **Tırtıklı başlıklı kart** | Başlık şeridi `--secondary`, alt kenarı `clip-path` ile dalgalı | Zayıflıklar, kanal önerileri |
-| **Konuşma satırı** | 6px sol kenar persona rengi, `4px 16px 16px 4px` köşe, sticker gölge | Tartışma mesajları |
+| **Konuşma satırı** | 6px sol kenar persona rengi, `4px 16px 16px 4px` köşe, sticker gölge; solda 40 px çizim avatar (`rounded-blob`, 2px kenar persona renginde, dekoratif `alt=""`). Avatar personanın sırasından sabit (sohbette de aynı), aynı tartışmadaki konuşmacılarda tekrarsız; "Sistem" gibi persona olmayan konuşmacıda harf rozeti | Tartışma mesajları; Personaya sor cevabında 28 px |
 | **Numara rozeti** | Sarı blob, Bricolage 800 | Aksiyon listesi, form adımları |
 | **Tek serili grafik** | Tek ton `--accent`; değer ve etiketler metin renginde (seri renginde değil); başlık seriyi adlandırır, lejant yok; hover/odakta değer; "Tablo olarak göster" | Ağızdan ağıza (haftalık çubuk), Kim alıyor? (yatay çubuk), fiyat eğrisi |
 | **Sakin kartı** | Solda 56 px çizim avatar (`public/pp_icons/1–10`, `rounded-blob`, 2px kenar; sakinin kimliğinden sabit, ekrandaki kartlarda tekrarsız, dekoratif `alt=""`), ad (Bricolage), yaş · şehir · meslek, persona noktası + adı (metin renginde), karar chip'i, gerekçe, katlanabilir "Hikâyesi"; satır `flex-wrap` + `basis-[300px]` (boş hücre kalmaz) | Kasabadan 5 sakin |

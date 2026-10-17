@@ -7,6 +7,11 @@ const order = new Map(
   personasData.personaTypes.flatMap((p, index) => [[p.name, index] as const, [p.displayName, index] as const])
 );
 
+/** Position in personas.json for an id or label; undefined for unknown speakers such as "Sistem". */
+export function personaIndex(name: string): number | undefined {
+  return order.get(name);
+}
+
 /** CSS colour for a persona id or label; neutral for unknown speakers such as "Sistem". */
 export function personaColor(name: string): string {
   const index = order.get(name);

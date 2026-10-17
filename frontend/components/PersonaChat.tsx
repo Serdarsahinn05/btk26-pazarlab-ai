@@ -5,7 +5,9 @@ import { Loader2, Send, Square } from "lucide-react";
 import { postSse } from "@/lib/sse";
 import { apiErrorMessage } from "@/lib/api";
 import { ChatMessage, loadChat, saveChat } from "@/lib/history";
-import { personaColor, personaLabel } from "@/lib/personas";
+import Image from "next/image";
+import { avatarSrc, pickAvatars } from "@/lib/avatars";
+import { personaColor, personaIndex, personaLabel } from "@/lib/personas";
 import { Persona } from "@/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -123,6 +125,8 @@ export default function PersonaChat({ simulationId, personas }: { simulationId?:
   };
 
   const color = personaColor(persona);
+  const index = personaIndex(persona);
+  const avatar = index === undefined ? null : pickAvatars([index])[0];
 
   return (
     <section className="card-paper space-y-4" aria-labelledby="persona-chat-title">
@@ -164,6 +168,9 @@ export default function PersonaChat({ simulationId, personas }: { simulationId?:
                 style={{ borderLeftColor: color }}
               >
                 <b className="flex items-center gap-2 font-display text-sm">
+                  {avatar && (
+                    <Image src={avatarSrc(avatar)} alt="" width={28} height={28} className="h-7 w-7 rounded-blob border-2 object-cover" style={{ borderColor: color }} />
+                  )}
                   {personaLabel(persona)}
                   {m.ruleBased && (
                     <span className="chip font-sans text-muted-foreground" title={RULE_BASED_NOTE[m.ruleBased]}>

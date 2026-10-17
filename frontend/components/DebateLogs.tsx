@@ -3,9 +3,11 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useMediaQuery } from "@/lib/hooks";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { DebateLog, Persona } from "@/types";
-import { personaColor, personaLabel, personaSlug } from "@/lib/personas";
+import { avatarSrc, pickAvatars } from "@/lib/avatars";
+import { personaColor, personaIndex, personaLabel, personaSlug } from "@/lib/personas";
 import { cn } from "@/lib/utils";
 
 interface DebateLogsProps {
@@ -96,6 +98,13 @@ export const DebateLogs: React.FC<DebateLogsProps> = ({ logs, personas = [] }) =
     document.querySelector(`[data-persona="${focusSlug}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" });
   }, [focusSlug, visibleCount]);
 
+  // Each speaker keeps its persona's avatar (same as in the chat); speakers never share one. "Sistem" has none.
+  const avatarOf = useMemo(() => {
+    const speakers = [...new Set(normalizedLogs.map((log) => log.name))].filter((name) => personaIndex(name) !== undefined);
+    const avatars = pickAvatars(speakers.map((name) => personaIndex(name) as number));
+    return new Map(speakers.map((name, i) => [name, avatars[i]]));
+  }, [normalizedLogs]);
+
   if (normalizedLogs.length === 0) return null;
 
   return (
@@ -118,13 +127,25 @@ export const DebateLogs: React.FC<DebateLogsProps> = ({ logs, personas = [] }) =
               )}
               style={{ borderLeftColor: color, borderTopColor: "hsl(var(--border))", borderRightColor: "hsl(var(--border))", borderBottomColor: "hsl(var(--border))" }}
             >
-              <span
-                aria-hidden
-                className="grid h-9 w-9 shrink-0 place-items-center rounded-blob font-display text-sm font-extrabold text-card"
-                style={{ background: color }}
-              >
-                {personaLabel(log.name).charAt(0)}
-              </span>
+              {avatarOf.has(log.name) ? (
+                // Decorative: the name next to it says who is speaking.
+                <Image
+                  src={avatarSrc(avatarOf.get(log.name) as number)}
+                  alt=""
+                  width={40}
+                  height={40}
+                  className="h-10 w-10 shrink-0 rounded-blob border-2 object-cover"
+                  style={{ borderColor: color }}
+                />
+              ) : (
+                <span
+                  aria-hidden
+                  className="grid h-10 w-10 shrink-0 place-items-center rounded-blob font-display text-sm font-extrabold text-card"
+                  style={{ background: color }}
+                >
+                  {personaLabel(log.name).charAt(0)}
+                </span>
+              )}
               <div className="min-w-0">
                 <b className="font-display text-sm font-bold">{personaLabel(log.name)}</b>
                 <p className="mt-0.5 text-foreground-2">{log.text}</p>
