@@ -57,3 +57,18 @@ test("form fits a 375 px phone", async ({ page }) => {
   await expect(page.locator("#productName")).toBeVisible();
   await noHorizontalOverflow(page);
 });
+
+test("with a general product type, the product name suggests the subtype (F23)", async ({ page }) => {
+  await page.goto("/dashboard");
+  await page.locator("#subtype").click();
+  await page.waitForTimeout(400); // Radix menu zooms in
+  await page.getByRole("option", { name: "Genel / emin değilim" }).click();
+  await expect(page.getByText(/Seçmezsen giyim ortalaması \(.+ TL\) referans alınır/)).toBeVisible();
+
+  await page.locator("#productName").fill("Krem Rengi Oversize Tişört");
+  const suggestion = page.getByRole("button", { name: /Ürün adına göre: Tişört/ });
+  await expect(suggestion).toBeVisible();
+  await suggestion.click();
+  await expect(page.locator("#subtype")).toHaveText("Tişört");
+  await expect(suggestion).toBeHidden();
+});

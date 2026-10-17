@@ -95,3 +95,37 @@ export function categoryLabel(id: string): string {
   const info = categoryInfo(id);
   return info.id === info.family ? info.familyLabel : `${info.familyLabel} / ${info.label}`;
 }
+
+/* ------------------------------------------------------------------ detection (same rule as backend services/categories.py) */
+
+const FOLD: Record<string, string> = { ç: "c", ğ: "g", ı: "i", ö: "o", ş: "s", ü: "u", Ç: "c", Ğ: "g", İ: "i", Ö: "o", Ş: "s", Ü: "u", â: "a", î: "i", û: "u" };
+
+/** Lowercase with Turkish letters as ASCII, like backend fold_text ("Tişört KUMAŞ" → "tisort kumas"). */
+export const foldText = (text: string) => text.replace(/[çğıöşüÇĞİÖŞÜâîû]/g, (c) => FOLD[c]).toLowerCase();
+
+const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const KEYWORDS = [...Object.entries(families), ...Object.entries(subtypes)].flatMap(([id, rule]) =>
+  ((rule as RawRule & { keywords?: string[] }).keywords ?? []).map((keyword) => {
+    const folded = foldText(keyword);
+    // Short keywords need word boundaries ("bot" is not "robot"); longer ones may sit inside a word ("çantası").
+    return { id, length: folded.length, re: new RegExp(folded.length <= 4 ? `\\b${escape(folded)}\\b` : escape(folded), "g") };
+  }),
+);
+
+/** Category named in a text such as a product name. Turkish compounds put the head noun last ("laptop çantası"),
+    so the match that ends last wins; at the same place the longer keyword wins ("akıllı bileklik" over "bileklik"). */
+export function detectCategory(text: string): string | null {
+  const folded = foldText(text);
+  let best: [number, number, string] | null = null;
+  for (const { id, length, re } of KEYWORDS) {
+    for (const match of folded.matchAll(re)) {
+      const after = folded.slice(match.index + length);
+      const wordEnd = after.search(/\W/);
+      const candidate: [number, number, string] = [match.index + length + (wordEnd === -1 ? after.length : wordEnd), length, id];
+      if (!best || candidate[0] > best[0] || (candidate[0] === best[0] && (candidate[1] > best[1] || (candidate[1] === best[1] && candidate[2] > best[2])))) {
+        best = candidate;
+      }
+    }
+  }
+  return best ? best[2] : null;
+}

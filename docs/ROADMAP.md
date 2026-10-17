@@ -431,7 +431,9 @@ Dört alt faza bölündü (12a–12d); her biri ayrı dalda, ayrı testlerle. A�
 - [x] Ölü kod: `_looks_like_noise`, `ImageProcessor.clean`. IMPROVEMENTS.md'de güncel olmayan 13 satırın durumu koddan doğrulanarak düzeltildi.
 - **Doğrulama:** pytest 280/280, ruff temiz; tsc/eslint temiz; e2e 15/15 (`--repeat-each=2` ile 30/30); `docker compose build frontend` + healthy.
 - [x] **B13** (`fix/serper-timeout`): rakip araması 15 sn tek deneme yerine 8 sn + 1 tekrar (4xx tekrar edilmez). Boş sonucun sebebi ayrılıyor; Benchmark sekmesi "arama anahtarı tanımlı değil", "zaman aşımına uğradı, biraz sonra yeniden dene", "şu an yanıt vermedi" ya da "yakın rakip bulunamadı" diyor (önceden hepsi "Yakın rakip verisi bulunamadı."). `tests/test_serper.py` (8 test; toplam 288) ikinci denemede başarılı olunca eski hata işaretinin kaldığı bir hatayı yakaladı, düzeltildi.
-- Açık kalan küçükler: B12 (AI çağrıları ardışık; karar kullanıcıda), F23, F25.
+- [x] **F23** (`feat/subtype-guess`): "Ürün türü" "Genel / emin değilim"deyken ürün adından alt tür öneriliyor ("Ürün adına göre: Tişört · seç"); düğme yalnızca alt türü değiştiriyor (satın alma sebebi ve doldurulan alanlar kalıyor). Altında "Seçmezsen giyim ortalaması (800 TL) referans alınır." notu. Otomatik seçilmiyor: alt tür 2. adımın alanlarını değiştirdiği için kullanıcının haberi olmalı. Tanıma kuralı backend'in `detect_from_text`'iyle aynı (`lib/categories.ts` → `detectCategory`, `foldText`); `e2e/categories.spec.ts` backend'in 19 başlık vakasının aynısını denetliyor; form testi öneri → seçim akışını deniyor. e2e 36/36. Açık/koyu ve 375 px'te görüldü.
+- [x] **F25:** kapatıldı, bilerek böyle (IMPROVEMENTS.md'de ölçümüyle).
+- Açık kalan: B12 (AI çağrıları ardışık; kullanıcı kararıyla şimdilik böyle).
 
 ### Faz 19: Kendi nüfusunu yükle + kalibrasyon
 - [ ] Satıcı kendi sipariş dökümünden (Trendyol satıcı paneli, Shopify vb.) **anonim/toplu segmentler** yükler (JSON/CSV şeması); kasaba bu dağılımlara göre üretilir.
