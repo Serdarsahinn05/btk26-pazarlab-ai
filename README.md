@@ -47,7 +47,7 @@ Aynı kasabada kargo, iade, garanti ve ±%10 fiyat tek tek denenir. **En etkili 
 <td width="33%" valign="top">
 
 ### 🔗 Linkten okur
-JSON-LD, Open Graph, microdata, özellik tabloları ve sayfa içi JSON'dan ad, fiyat, görsel, kategori, **mağaza puanı** ve değerlendirme sayısı. Link okunamazsa sayfanın metnini yapıştırmak yeter.
+JSON-LD, Open Graph, microdata, özellik tabloları ve sayfa içi JSON'dan ad, fiyat, görsel, kategori, **mağaza puanı** ve değerlendirme sayısı. Link okunamazsa sayfanın metnini yapıştırmak yeter; ya da **tarayıcı eklentisiyle** tek tıkla gönder.
 
 </td>
 </tr>
@@ -297,8 +297,8 @@ Ayrıntılar: [docs/SECURITY_AUDIT.md](docs/SECURITY_AUDIT.md).
 ✅ Güvenlik · çekirdek hatalar · "Canlı pazar yeri" tasarımı · geçmiş ve paylaşım
 ✅ Fiyat eğrisi · A/B · canlı ilerleme · persona sohbeti · CI · Next 16 · Tailwind 4
 ✅ AI bütçesi · AI'sız sohbet · MCP connector · Motor v2 + kasaba · 12 kategori ailesi
-✅ Ürün ekleme v2 · link okuma v2 · sonuç yerleşimi · içgörü özellikleri · temizlik + e2e
-⬜ Tarayıcı eklentisi · kendi nüfusunu yükle (KVKK) · çoklu LLM · Claude içinde PazarLab
+✅ Ürün ekleme v2 · link okuma v2 · sonuç yerleşimi · içgörü özellikleri · temizlik + e2e · tarayıcı eklentisi
+⬜ Kendi nüfusunu yükle (KVKK) · çoklu LLM · Claude içinde PazarLab
 ```
 
 Fazlar, kabul kriterleri ve her adımın doğrulaması: [docs/ROADMAP.md](docs/ROADMAP.md).
@@ -316,6 +316,7 @@ Fazlar, kabul kriterleri ve her adımın doğrulaması: [docs/ROADMAP.md](docs/R
 | 📡 | [api-contract.md](docs/api-contract.md) | HTTP sözleşmesi |
 | 🚢 | [deployment.md](docs/deployment.md) | nginx, SSE, Vercel + Render |
 | 🔌 | [mcp-connector.md](docs/mcp-connector.md) | PazarLab'ı Claude'a ekleme |
+| 🧩 | [extension/](extension/README.md) | "PazarLab'a gönder" tarayıcı eklentisi |
 | 🏗️ | [architecture.md](docs/architecture.md) | Sistem akışı |
 | 🎬 | [demo-script.md](docs/demo-script.md) | Sunum akışı |
 
