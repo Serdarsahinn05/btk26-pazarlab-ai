@@ -30,11 +30,13 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.api.simulate import _history_enabled
 from app.api.whatif import _metrics, price_sweep
 from app.models.category import Category
+from app.models.competitor import MAX_COMPETITORS, CompetitorInput
 from app.models.product import CommerceInfo, ProductFeatures, PurchaseMotivation, SimulationRequest, TargetAudience
 from app.services import history_store, llm_client
 from app.services.labels import MOTIVATION_LABELS, persona_label
 from app.services import categories
 from app.services.categories import load_category_rules
+from app.services.competitor_choice import competitor_choice
 from app.services.normalization_service import load_persona_data
 from app.services.link_reader import URLValidationError, read_product_link
 from app.services.simulation_service import run_simulation
@@ -48,6 +50,7 @@ Sayılar deterministik bir modelden gelir; gerçek dönüşüm oranı değil, g�
 2. `simulate_product` ile simülasyonu çalıştır. Sonucu yorumla: genel skor, alıcı sayısı, hangi personalar alıyor/almıyor,
    zayıflıklar ve kural tabanlı öneriler. `siteUrl` varsa kullanıcıya sitede açabileceğini söyle.
 3. Fiyat sorusu varsa `price_sweep`; iki sürümü kıyaslamak için `compare_variants` kullan.
+   Rakiplere karşı pay sorusu varsa rakip linklerini `read_product_link` ile oku, sonra `compare_with_competitors`.
 4. Kullanıcı bir personayla konuşmak isterse `list_personas` ile karakteri al ve o persona olarak, simülasyon sonucuyla
    tutarlı şekilde birinci tekil şahısla cevap ver.
 Kullanıcıya Türkçe, Türkçe karakterlerle cevap ver."""
@@ -279,6 +282,27 @@ def get_simulation(simulation_id: str) -> dict[str, Any]:
         ],
         "weaknesses": response.get("weaknesses", []),
     }
+
+
+@mcp.tool(title="Rakiplerle karşılaştır", annotations=ToolAnnotations(readOnlyHint=False, idempotentHint=True, openWorldHint=False))
+def compare_with_competitors(simulation_id: str, competitors: list[CompetitorInput]) -> dict[str, Any]:
+    """Kayıtlı bir simülasyondaki ürünü 1–3 rakiple aynı 500 kişilik kasabada yarıştırır; tahmini pay (aralıkla),
+    rakibe gidenlerin sebebi (fiyat mı ürünün kendisi mi), persona kırılımı ve rakibe karşı en etkili değişiklik.
+    Rakibin ad ve fiyatı zorunlu; bilinmeyen alanlar (açıklama, özellikler, puan, kargo, iade, garanti) senin ürününle
+    aynı varsayılır ve `assumed` içinde listelenir. Rakip sayfası varsa önce `read_product_link` ile oku.
+    Sonuç tahminidir ve sentetik bir kasabaya dayanır; kullanıcıya böyle söyle. Rakipler kayda eklenir (site linkinde görünür)."""
+    rate_limit.check()
+    record = history_store.get(simulation_id) if history_store.is_valid_id(simulation_id) else None
+    if record is None:
+        raise ToolError("Bu kimlikle kayıtlı bir sonuç yok ya da süresi doldu.")
+    if not record["request"]:
+        raise ToolError("Bu sonuç eski bir sürümle kaydedilmiş; önce ürünü yeniden simüle et.")
+    if not 1 <= len(competitors) <= MAX_COMPETITORS:
+        raise ToolError(f"1 ile {MAX_COMPETITORS} arasında rakip ver.")
+    with llm_client.without_ai():
+        result = competitor_choice(SimulationRequest.model_validate(record["request"]), competitors)
+    history_store.save_competitors(simulation_id, [c.model_dump(mode="json", by_alias=True, exclude_none=True) for c in competitors])
+    return {"simulationId": simulation_id, "siteUrl": _site_url(simulation_id), **result}
 
 
 def _transport_security() -> TransportSecuritySettings:

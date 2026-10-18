@@ -38,7 +38,7 @@
 | 13b | `feat/product-entry-v2` | Ürün ekleme ekranı: link öncelikli akış, canlı Hazırlık paneli, taslak | 1,5 gün | ✅ |
 | 14 | `feat/link-reader-v2` | Okuyucu paketi, "HTML/metin ver" ucu, puan ve değerlendirme (sosyal kanıt), kayıtlı sayfa testleri | 2 gün | ✅ (siteye özel kurallar gerçek sayfa geldikçe) |
 | 15 | `feat/layout-pass` | Sonuç sayfası: yapışkan sonuç çubuğu, gruplar, katlanır bölümler; Personalar mobil | 1,5 gün | ✅ |
-| 16 | `feat/insight-features` | İlan yeniden yazma, rakip kartı, segment grafiği, görsel analizi, paylaşım görseli | 2–3 gün | ✅ (pazar payı Faz 12'nin ertelenen rakipli seçimine bağlı) |
+| 16 | `feat/insight-features` | İlan yeniden yazma, rakip kartı, segment grafiği, görsel analizi, paylaşım görseli | 2–3 gün | ✅ (pazar payı: Faz 21) |
 | 17 | `chore/cleanup-e2e` | Ölü kod temizliği, Playwright testleri CI'da | 1 gün | ✅ |
 | 18 | `feat/browser-extension` | "PazarLab'a gönder" tarayıcı eklentisi | 1–2 gün | ✅ |
 | 18c | `feat/extension-store` | Chrome Web Mağazası paketi, gizlilik sayfası, mağaza görselleri | 0,5 gün | ✅ (yükleme kullanıcıda) |
@@ -47,7 +47,7 @@
 | 18f | `feat/resident-chat` | Kasabadaki bir sakinle sohbet | 0,5 gün | ✅ |
 | 19 | `feat/bring-your-population` | Kendi nüfusunu yükle + kalibrasyon (hesap sistemi, KVKK) | 3+ gün | ⬜ |
 | 20 | `feat/claude-artifact` | Claude içinde bağımsız PazarLab sayfası (11b, seçenek B) | 1,5 gün | ⬜ isteğe bağlı |
-| 21 | `feat/competitor-choice` | Rakipli seçim: rakip linkleri aynı motordan, sakin başına çok seçenekli karar, tahmini pay | 1,5 gün | ⬜ sıradaki |
+| 21 | `feat/competitor-choice` | Rakipli seçim: rakip linkleri aynı motordan, sakin başına çok seçenekli karar, tahmini pay | 1,5 gün | ✅ |
 
 Sıralamanın gerekçesi: Önce güvenlik geliyor, çünkü açık CORS ve SSRF ile kota ve iç ağ riski demo sırasında bile var. Sonra B1 geliyor; AI katmanı çalışmıyorsa tasarımın gösterecek içeriği olmaz. Tasarım bunların üzerine kurulur.
 
@@ -227,10 +227,9 @@ Kabul kriteri: DESIGN.md'deki tüm kalıplar uygulanmış; bileşenlerde ham ren
 - **Ara iş (2026-10-17, `chore/deploy-vercel-render`):** Vercel (website) + Render (API) ile yayın hazırlığı: `render.yaml` Blueprint, [deployment.md §6](deployment.md#6-vercel--render) (adımlar, ücretsiz planın kısıtları, ne zaman VPS), `CLIENT_IP_HEADER` (platform proxy'sinin yazdığı IP başlığı; Render'da `CF-Connecting-IP`, ilk deploy'da `/api/health`'teki `clientIp` ile doğrulanacak). 2 test (toplam 257). Gerçek bir Render/Vercel hesabında denenmedi.
 - **Önceki:** Faz 16 (yeni özellikler) dört adımıyla bitti ve main'e merge edildi: ilan yeniden yazma + öncesi/sonrası, rakip fiyat kartı, AI görsel analizi, paylaşım görseli.
 - **Son biten (2026-10-17):** Faz 17–18f: temizlik ve CI testleri, tarayıcı eklentisi + mağaza paketi + gizlilik sayfası, tartışmada avatarlar, küçük işler (F31 kırık Docker build'i dahil), B13, F23, bağımlılıklar ve venv, sakinle sohbet.
-- **Son biten (2026-10-18):** Faz 11'in Claude.ai denemesi: connector Render'daki API ile çalışıyor (ayrıntı Faz 11'de).
+- **Son biten (2026-10-18):** Faz 11'in Claude.ai denemesi (connector Render'daki API ile çalışıyor) ve **Faz 21 Rakipli seçim** (Benchmark'ta "Rakiplerle yarıştır", `POST /api/competitor-choice`, MCP `compare_with_competitors`).
 - **Sıradaki:**
-  1. **Faz 21 Rakipli seçim** (aşağıda, öneri onaylandı, uygulanmadı).
-  2. Kullanıcıda: eklentiyi Chrome Web Mağazası'na yüklemek ([LISTING.md](../extension/store/LISTING.md)), kalıcı eklenti ikonu.
+  1. Kullanıcıda: eklentiyi Chrome Web Mağazası'na yüklemek ([LISTING.md](../extension/store/LISTING.md)), kalıcı eklenti ikonu.
   Sonra: Faz 19 (kapsam kullanıcıyla netleşmeli), Faz 9 (API anahtarı gelince), Faz 20 (isteğe bağlı).
 - **Kullanıcıdan beklenen (isteğe bağlı):** Trendyol, Hepsiburada, Amazon TR, n11, Çiçeksepeti'den birer ürün sayfasını tarayıcıda "Farklı kaydet → Yalnızca HTML" ile kaydedip `backend/tests/fixtures/links/` altına koymak; siteye özel okuma kuralları bu gerçek sayfalara göre yazılır.
 - **Bekleyen kararlar:** Faz 9 için API anahtarı yok. Süpermarket/gıda, pet shop, otomotiv, kitap/kırtasiye aileleri bilerek dışarıda ("Diğer"e düşüyorlar); talep olursa eklenecek.
@@ -332,7 +331,7 @@ Dört alt faza bölündü (12a–12d); her biri ayrı dalda, ayrı testlerle. A�
 - [ ] **Kasaba nüfusu (500 sakin):** ad, yaş, meslek, hane, gelir, şehir büyüklüğü, hobiler, alışveriş alışkanlıkları, kısa hikâye. Bir kez üretilir ve JSON olarak saklanır; simülasyon sırasında AI çağrılmaz.
 - [ ] **Üç katman:** hayat hikâyesi + **Big Five** + alışveriş tipi (mevcut 12 persona, artık sakin kümeleri). Sayısal özellikler bu üçünden birlikte türetilir; hikâye ↔ sayı tutarlılığı testle denetlenir.
 - [ ] **Arkadaşlık ağı:** her sakinin birkaç arkadaşı; alan sakinler arkadaşlarının ihtimalini artırır (ağızdan ağıza yayılma, graf algoritması, AI yok). Trend ürünlerde 30 günlük benimseme eğrisi.
-- [ ] **Rakipli seçim (multinomial logit):** ürün, benchmark'tan gelen 1–3 rakip ve "almamak" arasında seçim; "tahmini pazar payı".
+- [x] **Rakipli seçim (multinomial logit):** ürün, benchmark'tan gelen 1–3 rakip ve "almamak" arasında seçim; "tahmini pazar payı". Faz 21'de yapıldı.
 - [ ] **Monte Carlo:** 20–50 tohum, sonuç aralıkla ("%58 ± 4"). Döngü numpy ile vektörleştirilir; sonuçlar istek özetine göre önbelleğe alınır.
 - [ ] **"En etkili iyileştirme":** tek tek değişkenler (kargo, iade, garanti, fiyat −%10, açıklama tamamlama) denenir; alıcı kazancına göre sıralanır.
 - [x] Sonuç ekranında "kasabadan 5 temsilci" (12c/12d). Belirli bir sakinle sohbet: Faz 18f.
@@ -461,18 +460,18 @@ Dört alt faza bölündü (12a–12d); her biri ayrı dalda, ayrı testlerle. A�
 - [ ] Gerçek dönüşüm verisiyle motor ağırlıklarının kalibrasyonu ve geriye dönük test.
 - [ ] Ön koşullar: hesap sistemi, satıcı başına ayrı veri, açık rıza, silme. Ham kişisel veri kabul edilmez (KVKK).
 
-### Faz 21: Rakipli seçim (öneri, 2026-10-17; uygulanmadı)
-**Neden bu biçimde:** Serper'dan rakiplerin yalnızca adı ve fiyatı geliyor; kalite, açıklama, puan, kargo yok. Bu veriyle "pazar payı %23" demek fiilen yalnızca fiyat karşılaştırması olur ama gerçek pay gibi görünür (yanıltıcı kesinlik). Bugünkü "Rakip fiyatlarını referans al" bu karşılaştırmayı zaten dürüstçe yapıyor. Gerçek pay için rakiplerin de bizim ürün kadar bilinmesi gerekir.
+### Faz 21 ✅: Rakipli seçim (`feat/competitor-choice`, 2026-10-18)
+**Neden bu biçimde:** Serper'dan rakiplerin yalnızca adı ve fiyatı geliyor; kalite, açıklama, puan, kargo yok. Bu veriyle "pazar payı %23" demek fiilen yalnızca fiyat karşılaştırması olur ama gerçek pay gibi görünür (yanıltıcı kesinlik). Gerçek pay için rakiplerin de bizim ürün kadar bilinmesi gerekir; bilinmeyen her alan açıkça "varsayıldı" diye yazılır.
 
-**Plan**
-- [ ] **Girdi:** sonuç ekranında (Benchmark sekmesi ya da "Ne olur?") satıcı 1–3 rakip **linki** ekler. Her link mevcut okuyucuyla okunur (`/api/read-product-link`; olmazsa sayfa metni yapıştırma ya da eklenti): ad, fiyat, açıklama, özellikler, puan, yorum sayısı. Okunan alanlar düzenlenebilir (yanlış okunan fiyat düzeltilebilsin).
-- [ ] **Motor:** her rakip bizim ürünle aynı kategori ve aynı kasaba üzerinde aynı faydayla puanlanır (`engine.py`: uyum + `β·ln(ödeme isteği / fiyat)` + sosyal kanıt…). Her sakin için seçenekler: bizim ürün, rakipler, "hiçbiri" (sabit fayda = bugünkü alma eşiği). **Multinomial logit:** `P(i) = e^{U_i} / Σ e^{U_j}`; 30 Monte Carlo turu, aynı tohum. Yeni uç: `POST /api/competitor-choice` (`simulationId` + rakip girdileri; AI yok, deterministik, rate limit).
-- [ ] **Çıktı:** tahmini pay (bizim / her rakip / hiçbiri, aralıkla), kimin hangi rakibe kaçtığı (segment ve persona kırılımı), en çok kaçıran sebep (fiyat mı, uyum mu, güven mi; `town_insights` gerekçeleri gibi), "rakibe karşı en etkili değişiklik" (bugünkü iyileştirme denemelerinin rakipli hâli).
-- [ ] **Linksiz yedek:** rakip linki yoksa Serper fiyatlarıyla yalnızca fiyat farkı üzerinden aynı hesap; kartta açıkça **"eşit kalite varsayımıyla"** etiketi.
-- [ ] **Dürüstlük:** her yerde "tahmini" ve "sentetik kasaba"; rakip okunamayan alanlarda kategori ortalaması kullanıldığı yazılır. Kayda `competitorInputs` (görseller hariç) yazılır ki paylaşılan link aynı sonucu göstersin.
-- [ ] MCP: `simulate_product` yanına `compare_with_competitors` aracı (isteğe bağlı).
-- **Kabul:** rakip bizimkiyle aynı girdiye sahipse paylar eşit (± Monte Carlo aralığı); rakip ucuzladıkça bizim payımız monoton düşer; "hiçbiri" payı tek ürünlü simülasyondaki almayanlarla tutarlı; deterministik; 3 rakiple < 1,5 sn; linksiz yedek etiketli; e2e: link ekle → pay kartı.
-- **Bağımlılık:** sunucudan pazar yeri sayfası okumak bazı sitelerde engellenebilir (F26); eklenti ve "sayfa metnini yapıştır" yolları rakip için de çalışmalı.
+- [x] **Motor:** `engine.utilities()` (tek ürün için sakin başına fayda; `run_town` artık bunu kullanıyor, sonuçlar birebir aynı) + `engine.run_choice()`: `P(j) = pazar ilgisi · e^{U_j} / (1 + Σ e^{U_k})`, "hiçbiri" faydası 0 (tek ürünlü sigmoid'in eşiği). Tek seçenekle tek ürünlü motorun 1. haftasıyla **aynı gürültü çekilişleri, aynı sonuç** (testle). 30 Monte Carlo turu, satıcının ürünüyle aynı tohum. Ağızdan ağıza yayılma yok: karar ilk haftanınki.
+- [x] **Rakip girdisi** (`models/competitor.py`): ad ve fiyat zorunlu; açıklama, özellikler, puan, kargo, iade, garanti boşsa **satıcının ürünüyle aynı** alınır ve `assumed` içinde listelenir. Yalnızca ad ve fiyat varsa `equalQuality` ("eşit kalite varsayımıyla"). Aynı kategori, hedef kitle ve referans fiyat. Bütün seçenekler kural tabanlı girdi analiziyle puanlanır (AI yok), bu yüzden aynı metinli rakip aynı faydayı alır.
+- [x] **Çıktı** (`services/competitor_choice.py`): seçenek başına pay + %10–%90 aralığı + sakin sayısı; rakibe yönelenlerin gerekçesi (faydanın fiyat tarafı mı ürün tarafı mı, rakibi seçme ihtimaliyle ağırlıklı; ürün tarafında en büyük fark hangi özellikte); 12 persona için [bizim, rakipler…, hiçbiri] payı; "rakiplere karşı en etkili değişiklik" (tek ürünlü iyileştirme denemelerinin rakipli hâli; `candidate_changes` ortak).
+- [x] **API:** `POST /api/competitor-choice` (`simulationId` + 1–3 rakip; rate limit what-if ile ortak) ve `GET /api/competitor-choice/{id}` (kayıtlı rakipler, yeniden hesaplanmış). Rakipler kayda `competitors_json` sütunu olarak yazılıyor (şema geçişi); `GET /api/simulations/{id}` de `competitors` döndürüyor. Eski (request'siz) kayıt 409.
+- [x] **Arayüz** (`components/CompetitorChoice.tsx`, Benchmark sekmesi): rakip başına link + "Linkten oku" (`/api/read-product-link`), okunamazsa "Metin yapıştır" (`/api/read-product-page`, sunucu istek atmaz), düzenlenebilir ad/fiyat ve katlanır ayrıntılar (açıklama, puan, değerlendirme, kargo, iade/garanti: Bilinmiyor/Var/Yok). Fiyat aramasında bulunanlar tek tıkla eklenebiliyor (eşit kalite varsayımıyla). Sonuç: pay çubukları + aralık, rakip başına gerekçe ve varsayımlar, en etkili değişiklik, katlanır persona tablosu, "tahmini / sentetik kasaba / AI analizi yok / ilk hafta" notu. Paylaşılan link aynı rakipleri ve payı gösteriyor. Eski "Fiyatın rakipler arasında" kartının notu yeni karta yönlendiriyor.
+- [x] **MCP:** `compare_with_competitors(simulation_id, competitors)` (sunucu AI'ı yok; rakipler kayda eklenir); talimata "rakip linklerini önce `read_product_link` ile oku" adımı.
+- **Plandan sapmalar:** (1) Okunamayan rakip alanları için "kategori ortalaması" yerine **satıcının kendi değeri** kullanıldı: metin alanlarının (açıklama, özellikler) kategori ortalaması yok ve "seninkiyle aynı" varsayımı karşılaştırmayı iki yönde de tarafsız tutuyor. (2) "Linksiz yedek" ayrı bir hesap değil: aynı uç, yalnızca ad + fiyatla çağrılınca kendiliğinden fiyat farkına iner ve etiketlenir. (3) "Rakip ucuzladıkça payımız monoton düşer" kabul kriteri **"çok ucuz" eşiğinin üstünde** geçerli: rakip kategori fiyatının %60'ının altına inince kalite odaklı sakinler şüphelenir (tek ürünlü motorun bilinçli kuralı), bu yüzden payımız orada biraz geri gelir. Test 1,6×–0,65× aralığında monotonluğu denetliyor.
+- **Tarayıcı eklentisi:** değişmedi; rakip linki okunamazsa "Metin yapıştır" yolu aynı `/api/read-product-page` ucunu kullanıyor. "Bu sayfayı rakip olarak ekle" düğmesi istenirse ayrı bir eklenti sürümü (1.1) olur.
+- **Doğrulama:** `tests/test_competitor_choice.py` (7 test) + MCP testi; toplam pytest 306/306, ruff temiz. Aynı girdili rakip → paylar aralık içinde eşit, hiç gerekçe yok; tek seçenek = 1. hafta alıcıları (226 = 226); çok ucuz eşiğinin üstünde monotonluk; ucuz rakibin gerekçesi fiyat, garantili/puanlı rakibinki ürünün kendisi; persona satırlarının toplamı 1; deterministik; 3 rakiple < 1,5 sn (ölçülen ~0,15 sn). e2e 38/38 (yeni: iki rakip ekle → pay kartı → varsayım ve eşit kalite etiketleri → persona tablosu → yenilemede aynı rakipler → 375 px taşma yok). Açık/koyu ve 375 px ekran görüntüleri elle incelendi. tsc, eslint, `next build` temiz.
 
 ## Riskler
 - **Gemini model adları sık değişiyor.** B1'de model env'den okunacak; varsayılan seçilirken o günkü güncel model listesi kontrol edilecek.

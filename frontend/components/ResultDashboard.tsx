@@ -12,6 +12,7 @@ import { renderShareCard } from "@/lib/shareImage";
 import { CompareResponse, Competitor, NormalizedProduct, Persona, SimulationRequest, SimulationResponse } from "@/types";
 import { aiFallbackNote, compareVariants } from "@/lib/api";
 import WhatIf from "@/components/WhatIf";
+import CompetitorChoice from "@/components/CompetitorChoice";
 import PersonaChat from "@/components/PersonaChat";
 import { SegmentRing, Ring } from "@/components/ui/ring";
 import { DebateLogs } from "@/components/DebateLogs";
@@ -45,7 +46,7 @@ export default function ResultDashboard({ data, view, productName, request, onRe
     [request, data.inputAnalysis]
   );
 
-  if (view === "benchmark") return <BenchmarkView markdown={data.benchmarkAnalysis} competitors={data.competitors ?? []} request={whatIfRequest} />;
+  if (view === "benchmark") return <BenchmarkView markdown={data.benchmarkAnalysis} competitors={data.competitors ?? []} request={whatIfRequest} simulationId={data.simulationId} />;
   if (view === "debate") {
     const personas = data.allPersonas?.length ? data.allPersonas : data.topPersonas;
     return (
@@ -478,12 +479,15 @@ function ImprovedDescription({ text, images, request }: { text: string; images?:
   );
 }
 
-function BenchmarkView({ markdown, competitors, request }: { markdown?: string; competitors: Competitor[]; request: SimulationRequest | null }) {
+function BenchmarkView({ markdown, competitors, request, simulationId }: {
+  markdown?: string; competitors: Competitor[]; request: SimulationRequest | null; simulationId?: string | null;
+}) {
   const content = useMemo(() => markdown?.trim(), [markdown]);
   return (
     <section className="space-y-5">
       <h2 className="squiggle text-2xl font-bold">Rakip ve pazar analizi</h2>
       {request && competitors.some((c) => c.price) && <CompetitorCard competitors={competitors} request={request} />}
+      {request && simulationId && <CompetitorChoice simulationId={simulationId} found={competitors} />}
       {content ? (
         <article className="card-paper prose prose-neutral max-w-none dark:prose-invert prose-headings:font-display prose-strong:text-foreground prose-li:my-1">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
@@ -574,7 +578,7 @@ function BeforeAfterTable({ result }: { result: CompareResponse }) {
 const tl = (n: number) => `${Math.round(n).toLocaleString("tr-TR")} TL`;
 
 /** Where the seller's price sits among similar products, and the town re-run with their median as the going price (Faz 16).
- *  Not a market share: the engine does not simulate the competitors themselves (multinomial choice is a later step). */
+ *  Not a market share: that is CompetitorChoice (Faz 21), where the town chooses between the products. */
 function CompetitorCard({ competitors, request }: { competitors: Competitor[]; request: SimulationRequest }) {
   const [result, setResult] = useState<CompareResponse | null>(null);
   const [state, setState] = useState<"idle" | "busy" | "error">("idle");
@@ -654,7 +658,7 @@ function CompetitorCard({ competitors, request }: { competitors: Competitor[]; r
         {state === "error" && <p className="note-risk">Hesaplama şu an yapılamadı; biraz sonra tekrar dene.</p>}
         {result && <BeforeAfterTable result={result} />}
       </div>
-      <p className="text-xs text-muted-foreground">Bu bir pazar payı tahmini değil: kasaba rakip ürünleri ayrıca seçmiyor, yalnızca fiyat karşılaştırmasının dayanağı değişiyor.</p>
+      <p className="text-xs text-muted-foreground">Bu bir pazar payı tahmini değil, yalnızca fiyat karşılaştırmasının dayanağı değişiyor. Pay için aşağıdaki “Rakiplerle yarıştır” kartını kullan.</p>
     </div>
   );
 }

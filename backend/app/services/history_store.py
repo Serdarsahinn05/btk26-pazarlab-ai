@@ -49,6 +49,9 @@ def _connect() -> sqlite3.Connection:
     columns = {row[1] for row in conn.execute("PRAGMA table_info(simulations)")}
     if "request_json" not in columns:
         conn.execute("ALTER TABLE simulations ADD COLUMN request_json TEXT")
+    # v3: rivals added on the result (Faz 21), so a shared link shows the same competitor share.
+    if "competitors_json" not in columns:
+        conn.execute("ALTER TABLE simulations ADD COLUMN competitors_json TEXT")
     return conn
 
 
@@ -86,7 +89,8 @@ def get(sim_id: str) -> Optional[dict[str, Any]]:
         return None
     with _lock, _connect() as conn:
         row = conn.execute(
-            "SELECT id, created_at, product_name, category, response_json, request_json FROM simulations WHERE id = ?",
+            "SELECT id, created_at, product_name, category, response_json, request_json, competitors_json"
+            " FROM simulations WHERE id = ?",
             (sim_id,),
         ).fetchone()
     if row is None:
@@ -98,4 +102,12 @@ def get(sim_id: str) -> Optional[dict[str, Any]]:
         "category": row[3],
         "response": json.loads(row[4]),
         "request": json.loads(row[5]) if row[5] else None,
+        "competitors": json.loads(row[6]) if row[6] else [],
     }
+
+
+def save_competitors(sim_id: str, competitors: list[dict[str, Any]]) -> bool:
+    """Replace the rivals stored with a result; False if the result is gone."""
+    with _lock, _connect() as conn:
+        cursor = conn.execute("UPDATE simulations SET competitors_json = ? WHERE id = ?", (json.dumps(competitors), sim_id))
+    return cursor.rowcount > 0

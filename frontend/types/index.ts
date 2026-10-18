@@ -272,6 +272,7 @@ export interface StoredSimulation {
   category: string;
   response: SimulationResponse;
   request?: SimulationRequest | null; // images stripped; null for rows saved before v2
+  competitors?: CompetitorInput[]; // rivals added on the result (Faz 21)
 }
 
 /** POST /api/analyze-images (optional, needs AI) */
@@ -375,4 +376,57 @@ export interface ProductLinkReadResponse {
   /** Store rating out of 5 and how many ratings it is based on. */
   rating?: number | null;
   review_count?: number | null;
+}
+
+/** POST /api/competitor-choice (Faz 21): a rival; empty fields are taken from the seller's product ("assumed"). */
+export interface CompetitorInput {
+  name: string;
+  price: number;
+  url?: string;
+  description?: string;
+  features?: Record<string, string | number | boolean>;
+  rating?: number;
+  reviewCount?: number;
+  shippingDays?: number;
+  returnAvailable?: boolean;
+  warranty?: boolean;
+}
+
+export interface ShareStats {
+  share: number;
+  low: number;
+  high: number;
+  residents: number;
+}
+
+export interface ChoiceReason {
+  key: "price" | "fit";
+  label: string;
+  detail?: string | null;
+  share: number;
+}
+
+export interface ChoiceOption extends ShareStats {
+  key: string; // "own", "c1"…
+  name: string;
+  price: number;
+  url?: string | null;
+  assumed: string[];
+  equalQuality: boolean;
+  reasons?: ChoiceReason[];
+}
+
+export interface CompetitorChoiceResult {
+  options: ChoiceOption[];
+  none: ShareStats;
+  /** shares = [own, rivals…, none] */
+  personas: Array<{ persona: string; residents: number; shares: number[] }>;
+  bestChanges: Array<{ key: string; label: string; deltaBuyers: number; deltaShare: number; deltaRevenue: number }>;
+  simulatedConsumers: number;
+  runs: number;
+}
+
+export interface CompetitorChoiceResponse {
+  competitors: CompetitorInput[];
+  result: CompetitorChoiceResult | null;
 }
