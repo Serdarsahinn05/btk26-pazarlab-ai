@@ -13,7 +13,8 @@ from app.services import llm_client
 from tests.conftest import VALID_REQUEST
 
 PRODUCT = {k: v for k, v in VALID_REQUEST.items() if k != "images"}
-TOOLS = {"list_categories", "list_personas", "read_product_link", "simulate_product", "price_sweep", "compare_variants", "get_simulation"}
+TOOLS = {"list_categories", "list_personas", "read_product_link", "simulate_product", "price_sweep", "compare_variants", "get_simulation",
+         "compare_with_competitors"}
 
 
 def call(name, args=None):
@@ -81,6 +82,17 @@ def test_price_sweep_and_compare(no_network_ai):
     cmp = call("compare_variants", {"base": PRODUCT, "variant": variant}).structured_content
     assert cmp["variant"]["overallScore"] >= cmp["base"]["overallScore"]
     assert cmp["base"]["topPersona"] and "Takipcisi" not in cmp["base"]["topPersona"]  # display name, not the id
+
+
+def test_compare_with_competitors_without_server_ai(no_network_ai):
+    sim_id = call("simulate_product", {"product": PRODUCT}).structured_content["simulationId"]
+    rivals = [{"name": "Ucuz rakip tişört", "price": 249.9}, {"name": "Pahalı rakip tişört", "price": 499.9, "warranty": True}]
+    result = call("compare_with_competitors", {"simulation_id": sim_id, "competitors": rivals})
+    assert not result.is_error, result.content
+    data = result.structured_content
+    assert [o["key"] for o in data["options"]] == ["own", "c1", "c2"] and data["options"][1]["equalQuality"]
+    assert call("compare_with_competitors", {"simulation_id": "aaaaaaaaaaaa", "competitors": rivals}).is_error
+    assert call("compare_with_competitors", {"simulation_id": sim_id, "competitors": rivals * 2}).is_error
 
 
 def test_bad_input_and_unknown_ids_are_tool_errors():

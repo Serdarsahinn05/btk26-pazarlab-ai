@@ -2,6 +2,8 @@ import axios from "axios";
 import { SseError, postSse } from "@/lib/sse";
 import {
   CompareResponse,
+  CompetitorChoiceResponse,
+  CompetitorInput,
   DraftCheckResponse,
   ImageAnalysis,
   HealthStatus,
@@ -109,6 +111,18 @@ export const analyzeImages = async (images: string[], category: string, productN
 /** POST /api/draft-check: estimated score of a half-filled form and what each empty field would add. */
 export const draftCheck = async (draft: object, signal?: AbortSignal): Promise<DraftCheckResponse> => {
   const response = await client.post("/api/draft-check", draft, { timeout: 15_000, signal });
+  return response.data;
+};
+
+/** POST /api/competitor-choice: the saved result against 1–3 rivals on the same town; the rivals are saved with it. */
+export const competitorChoice = async (simulationId: string, competitors: CompetitorInput[]): Promise<CompetitorChoiceResponse> => {
+  const response = await client.post("/api/competitor-choice", { simulationId, competitors }, { timeout: 30_000 });
+  return response.data;
+};
+
+/** The rivals saved with a result and their share (empty when none were added). */
+export const savedCompetitorChoice = async (simulationId: string): Promise<CompetitorChoiceResponse> => {
+  const response = await client.get(`/api/competitor-choice/${encodeURIComponent(simulationId)}`, { timeout: 30_000 });
   return response.data;
 };
 

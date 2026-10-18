@@ -15,6 +15,7 @@ PazarLab, bir **uzak MCP sunucusu** olarak da çalışır. Claude kullanan biri 
 | `price_sweep` | Fiyatın %60–140'ında 9 nokta: alıcı, skor, ciro |
 | `compare_variants` | İki sürümü aynı kalabalıkla karşılaştırır |
 | `get_simulation` | Sitedeki paylaşım linkinin kimliğiyle kayıtlı sonucu getirir |
+| `compare_with_competitors` | Kayıtlı sonuçtaki ürünü 1–3 rakiple aynı kasabada yarıştırır: tahmini pay (aralıkla), rakibe gidenlerin gerekçesi, persona kırılımı, rakibe karşı en etkili değişiklik. Rakipler kayda eklenir, site linkinde de görünür (Faz 21) |
 
 **Sunucu tarafında AI çağrılmaz** (`llm_client.without_ai()`): Gemini anahtarı tanımlı olsa bile MCP araçları deterministik çekirdeği ve kural tabanlı metinleri kullanır. Sunucu sahibinin maliyeti yalnızca barındırmadır.
 
@@ -63,6 +64,7 @@ Arayüz zamanla değişebilir; güncel adımlar için Claude yardım sayfası: [
 - "Fiyatı kaça çekersem ciro en yüksek olur?"
 - "Garanti eklersem ne değişir? İki sürümü karşılaştır."
 - "Trend Takipçisi personası olarak bana neden almadığını anlat."
+- "Şu iki rakibe karşı payım ne olur? https://… https://…"
 
 ## Güvenlik notları
 

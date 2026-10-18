@@ -114,15 +114,16 @@ def willingness_to_pay(resident: dict[str, Any], category: str, average_price: f
     return average_price * INCOME_WTP[resident["incomeLevel"]] * (1.35 - 0.7 * traits["priceSensitivity"]) * (0.8 + 0.4 * quality) * personal
 
 
-def run_town(
+def utilities(
     request: SimulationRequest,
     product: NormalizedProduct,
     weights: dict[str, float],
     preferred: dict[str, list[str]],
-    market_relevance: float,
-    seed: int,
-) -> dict[str, Any]:
-    """Decisions of the whole town for one product. `seed` fixes the crowd's noise (price is not part of it)."""
+) -> tuple[list[float], list[dict[str, Any]], list[float]]:
+    """Every resident's utility for one product, before noise: (bases, signed parts, willingness to pay).
+
+    Shared by the single-product town and the choice between competitors (Faz 21), so a rival is scored
+    exactly like the seller's own product."""
     rule = get_category_rule(request.category)
     average_price = categories.reference_price(request.category, request.market_price, request.price)
     applicable = set(rule.get("applicableAudienceFields", []))
@@ -135,10 +136,8 @@ def run_town(
     motivation = request.purchase_motivation.value
     ratio = price / average_price if average_price else 1.0
 
-    residents = residents_with_traits()
-    index = {r["id"]: i for i, r in enumerate(residents)}
-    bases, wtps, parts, sociability = [], [], [], []
-    for r in residents:
+    bases, wtps, parts = [], [], []
+    for r in residents_with_traits():
         t = r["traits"]
         cared = {k: feature_weight[k] * t[SENSITIVITY[k]] for k in values}
         cared_total = sum(cared.values()) or 1.0
@@ -158,7 +157,23 @@ def run_town(
         contrib = {k: cared[k] / cared_total * (values[k] - 0.5) for k in values}
         parts.append({"fit": fit_term, "price": price_term, "cheap": -cheap, "motivation": bonus, "audience": audience_term,
                       "bestFeature": max(contrib, key=contrib.get), "worstFeature": min(contrib, key=contrib.get), "wtp": wtp})
-        sociability.append((r["bigFive"]["extraversion"] + r["bigFive"]["agreeableness"]) / 2)
+    return bases, parts, wtps
+
+
+def run_town(
+    request: SimulationRequest,
+    product: NormalizedProduct,
+    weights: dict[str, float],
+    preferred: dict[str, list[str]],
+    market_relevance: float,
+    seed: int,
+) -> dict[str, Any]:
+    """Decisions of the whole town for one product. `seed` fixes the crowd's noise (price is not part of it)."""
+    price = float(request.price)
+    residents = residents_with_traits()
+    index = {r["id"]: i for i, r in enumerate(residents)}
+    bases, parts, wtps = utilities(request, product, weights, preferred)
+    sociability = [(r["bigFive"]["extraversion"] + r["bigFive"]["agreeableness"]) / 2 for r in residents]
 
     n = len(residents)
     friends = [[index[f] for f in r.get("friends", []) if f in index] for r in residents]
@@ -216,6 +231,38 @@ def run_town(
         "priceRisk": round(too_expensive, 2),
         "medianWtp": round(sorted(wtps)[n // 2], 2),
     }
+
+
+def run_choice(option_bases: list[list[float]], market_relevance: float, seed: int) -> dict[str, Any]:
+    """Each resident picks one of several products or none (multinomial logit, Faz 21).
+
+    P(option j) = market_relevance · e^U_j / (1 + Σ e^U_k); "none" takes the rest (its utility is 0, the same
+    threshold the single-product sigmoid uses). With one option this is exactly run_town's first week: the
+    same noise draws in the same order, so the seller's product alone gets the same direct buyers.
+    No word of mouth here: the choice is the direct, first-week decision.
+
+    Returns per-run pick counts (index k = none) and every resident's mean probability per option."""
+    k = len(option_bases)
+    n = len(option_bases[0])
+    prob_sum = [[0.0] * n for _ in range(k)]
+    runs: list[list[int]] = []
+    for run in range(MONTE_CARLO_RUNS):
+        rng = random.Random(seed * 1000 + run)
+        noisy = [[base + rng.gauss(0.0, NOISE_SD) for base in bases] for bases in option_bases]
+        counts = [0] * (k + 1)
+        for i in range(n):
+            exps = [math.exp(noisy[j][i]) for j in range(k)]
+            total = 1.0 + sum(exps)
+            roll, cumulative, pick = rng.random(), 0.0, k
+            for j in range(k):
+                p = market_relevance * exps[j] / total
+                prob_sum[j][i] += p
+                cumulative += p
+                if pick == k and roll < cumulative:
+                    pick = j
+            counts[pick] += 1
+        runs.append(counts)
+    return {"runs": runs, "probability": [[s / MONTE_CARLO_RUNS for s in row] for row in prob_sum]}
 
 
 def _mean_counts(runs: list[dict[str, int]], n: int) -> dict[str, int]:

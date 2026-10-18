@@ -57,7 +57,7 @@ def simulate_core(
     return _simulate(request, input_analysis, seed)
 
 
-def _candidate_changes(request: SimulationRequest) -> list[tuple[str, str, SimulationRequest]]:
+def candidate_changes(request: SimulationRequest) -> list[tuple[str, str, SimulationRequest]]:
     request = categories.anchored(request)
     commerce = request.commerce
     changes = []
@@ -81,7 +81,7 @@ def best_improvements(request: SimulationRequest, input_analysis: InputAnalysisR
     base_buyers = core["estimated_buyers"]
     base_revenue = base_buyers * request.price
     results = []
-    for key, label, variant in _candidate_changes(request):
+    for key, label, variant in candidate_changes(request):
         buyers = _simulate(variant, input_analysis)["estimated_buyers"]
         delta_buyers = buyers - base_buyers
         delta_revenue = round(buyers * variant.price - base_revenue, 2)
@@ -146,16 +146,28 @@ def run_simulation(request: SimulationRequest) -> SimulationResponse:
     )
 
 
+def town_context(request: SimulationRequest) -> dict[str, Any]:
+    """What the town needs besides the product: weights, persona motivations, market relevance and the crowd seed."""
+    persona_data = load_persona_data()
+    market_breadth = _market_breadth_score(request)
+    return {
+        "weights": get_normalized_weights(request.category, request.purchase_motivation),
+        "preferred": {p["name"]: p.get("preferredMotivations", []) for p in persona_data["personaTypes"]},
+        "market_breadth": market_breadth,
+        "market_relevance": _market_relevance_factor(market_breadth),
+        "seed": stable_seed(_seed_payload(request), persona_data["simulationConfig"]["seedSalt"]),
+    }
+
+
 def _simulate(request: SimulationRequest, input_analysis: InputAnalysisResponse, seed: Optional[int] = None) -> dict[str, Any]:
     normalized = normalize_product(request, input_analysis.signals)
     persona_data = load_persona_data()
-    config = persona_data["simulationConfig"]
-    seed = seed if seed is not None else stable_seed(_seed_payload(request), config["seedSalt"])
-    market_breadth = _market_breadth_score(request)
-    weights = get_normalized_weights(request.category, request.purchase_motivation)
-    preferred = {p["name"]: p.get("preferredMotivations", []) for p in persona_data["personaTypes"]}
+    context = town_context(request)
+    seed = seed if seed is not None else context["seed"]
+    market_breadth = context["market_breadth"]
+    weights = context["weights"]
 
-    town = run_town(request, normalized, weights, preferred, _market_relevance_factor(market_breadth), seed)
+    town = run_town(request, normalized, weights, context["preferred"], context["market_relevance"], seed)
     # Price fit now means "share of the town for whom the price is within what they would pay" (B15):
     # every later consumer (intent score, weaknesses, advice, UI) sees the asymmetric, town-based value.
     normalized = normalized.model_copy(update={"price_risk": town["priceRisk"], "price_fit": round(1 - town["priceRisk"], 2)})

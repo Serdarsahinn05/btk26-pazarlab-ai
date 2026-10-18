@@ -20,6 +20,7 @@ from app.api.whatif import router as whatif_router
 from app.api.draft import router as draft_router
 from app.api.images import router as images_router
 from app.api.stream import router as stream_router
+from app.api.competitors import router as competitors_router
 
 configure_logging()
 
@@ -72,6 +73,7 @@ def create_app() -> FastAPI:
     app.include_router(draft_router)
     app.include_router(images_router)
     app.include_router(stream_router)
+    app.include_router(competitors_router)
     # Last, so every API route wins; the MCP app itself only answers /mcp (Faz 11).
     app.mount("/", mcp_app)
     return app

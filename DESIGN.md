@@ -247,6 +247,7 @@ Kurallar:
 - Mobil: her satır tek sütuna iner; KPI'lar 2×2; persona halkaları yatay kaydırılır.
 - Motor v1 ile kaydedilmiş sonuçta (yanıtta `engineVersion` yok) en üstte "Eski motor" notu; kasaba kartları gizlenir.
 - "Tahmini alıcı" KPI'ı Monte Carlo aralığını gösterir: `276 (260–289)`; mobilde aralık alt satırda.
+- Benchmark'ta "Rakiplerle yarıştır" kartı (Faz 21): rakip başına kesikli kenarlı `fieldset` (link + "Linkten oku", "Metin yapıştır", ad, fiyat; ayrıntılar katlanır), ardından tahmini pay çubukları (tek ton `--accent`, "Hiçbiri" `--border`, satıcının satırı kalın, aralık parantezde soluk), rakip başına gerekçe notu, "eşit kalite varsayımıyla" etiketi, katlanır persona tablosu.
 - Benchmark ve Tartışma sekmeleri aynı 1180 px okuma düzenini kullanır. Tartışma: solda konuşan persona halkası, sağda mesaj (`slot` kalıbı).
 
 ## 10. Stil seçimi geçmişi
