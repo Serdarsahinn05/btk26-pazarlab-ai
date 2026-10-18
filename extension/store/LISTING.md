@@ -13,9 +13,11 @@ Bu dosyadaki metinler Chrome Web Store Developer Dashboard'daki alanlara olduğu
 
 1. <https://chrome.google.com/webstore/devconsole> adresine Google hesabınla gir.
 2. Geliştirici sözleşmesini kabul et, **5 USD** kayıt ücretini öde (bir kerelik).
-3. Hesap ayarlarında iletişim e-postasını doğrula (doğrulanmadan yayın yapılamaz).
+3. Sol menü → **Ayarlar** (Profil değil) → "İletişim e-posta adresi ekleyin" → **E-posta adresi ekle**, gelen bağlantıyla doğrula, **Değişiklikleri kaydet**. Doğrulanmadan "İncelemeye gönder" çalışmaz. Adres mağaza sayfasında herkese görünür. Tüccar beyanı: "tacir olmayan hesap".
 
 ## 2. Yeni öğe
+
+**Paket** sekmesinde "Doğrulanmış CRX yüklemeleri" **etkinleştirilmez**: açılırsa her güncellemeyi özel anahtarla imzalamak gerekir, anahtar kaybolursa öğe bir daha güncellenemez.
 
 **Yeni öğe** → `pazarlab-extension-1.0.0.zip` dosyasını yükle.
 

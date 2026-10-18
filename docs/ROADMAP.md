@@ -41,7 +41,7 @@
 | 16 | `feat/insight-features` | İlan yeniden yazma, rakip kartı, segment grafiği, görsel analizi, paylaşım görseli | 2–3 gün | ✅ (pazar payı: Faz 21) |
 | 17 | `chore/cleanup-e2e` | Ölü kod temizliği, Playwright testleri CI'da | 1 gün | ✅ |
 | 18 | `feat/browser-extension` | "PazarLab'a gönder" tarayıcı eklentisi | 1–2 gün | ✅ |
-| 18c | `feat/extension-store` | Chrome Web Mağazası paketi, gizlilik sayfası, mağaza görselleri | 0,5 gün | ✅ (yükleme kullanıcıda) |
+| 18c | `feat/extension-store` | Chrome Web Mağazası paketi, gizlilik sayfası, mağaza görselleri | 0,5 gün | ✅ (2026-10-18 incelemeye gönderildi) |
 | 18b | `feat/debate-avatars` | Tartışmadaki konuşmacılara avatar (kullanıcı isteği) | 0,25 gün | ✅ |
 | 18d | `fix/small-items` | Küçük işler: B10, F24, F28, F30, F31, ölü kod, IMPROVEMENTS durumları | 0,5 gün | ✅ |
 | 18f | `feat/resident-chat` | Kasabadaki bir sakinle sohbet | 0,5 gün | ✅ |
@@ -229,7 +229,7 @@ Kabul kriteri: DESIGN.md'deki tüm kalıplar uygulanmış; bileşenlerde ham ren
 - **Son biten (2026-10-17):** Faz 17–18f: temizlik ve CI testleri, tarayıcı eklentisi + mağaza paketi + gizlilik sayfası, tartışmada avatarlar, küçük işler (F31 kırık Docker build'i dahil), B13, F23, bağımlılıklar ve venv, sakinle sohbet.
 - **Son biten (2026-10-18):** Faz 11'in Claude.ai denemesi (connector Render'daki API ile çalışıyor) ve **Faz 21 Rakipli seçim** (Benchmark'ta "Rakiplerle yarıştır", `POST /api/competitor-choice`, MCP `compare_with_competitors`).
 - **Sıradaki:**
-  1. Kullanıcıda: eklentiyi Chrome Web Mağazası'na yüklemek ([LISTING.md](../extension/store/LISTING.md)), kalıcı eklenti ikonu.
+  1. Eklenti 1.0.0 Chrome Web Mağazası'nda incelemede (2026-10-18; herkese açık, ücretsiz, tüm bölgeler). Sonuç e-postayla gelecek; reddedilirse gerekçeye göre düzeltilir. Kalıcı eklenti ikonu hâlâ açık.
   Sonra: Faz 19 (kapsam kullanıcıyla netleşmeli), Faz 9 (API anahtarı gelince), Faz 20 (isteğe bağlı).
 - **Kullanıcıdan beklenen (isteğe bağlı):** Trendyol, Hepsiburada, Amazon TR, n11, Çiçeksepeti'den birer ürün sayfasını tarayıcıda "Farklı kaydet → Yalnızca HTML" ile kaydedip `backend/tests/fixtures/links/` altına koymak; siteye özel okuma kuralları bu gerçek sayfalara göre yazılır.
 - **Bekleyen kararlar:** Faz 9 için API anahtarı yok. Süpermarket/gıda, pet shop, otomotiv, kitap/kırtasiye aileleri bilerek dışarıda ("Diğer"e düşüyorlar); talep olursa eklenecek.
