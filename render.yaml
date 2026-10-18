@@ -34,8 +34,8 @@ services:
         sync: false
       - key: MCP_ALLOWED_HOSTS # pazarlab-api.onrender.com (or your API domain)
         sync: false
-      - key: MCP_ACCESS_KEY
-        generateValue: true
+      - key: MCP_ACCESS_KEY # URL-safe only, e.g. python -c "import secrets; print(secrets.token_hex(24))"
+        sync: false # generateValue makes base64 with + / =, which breaks ?key= in the connector URL
     # disk:
     #   name: pazarlab-data
     #   mountPath: /app/data # HISTORY_DB_PATH in the image points here

@@ -28,7 +28,7 @@
 | 9 | `feat/llm-providers` | B.12: Gemini + Claude + GPT, yedekli zincir | 1 gün | ⏸ API anahtarı yok, bekliyor |
 | 10a | `feat/ai-budget` | AI önbelleği, IP başına günlük AI kotası | 0,5 gün | ✅ |
 | 10b | `feat/offline-persona-chat` | AI'sız (kural tabanlı) persona sohbeti | 0,5 gün | ✅ |
-| 11 | `feat/mcp-connector` | PazarLab MCP sunucusu (Claude connector) | 1–1,5 gün | ✅ (Claude.ai denemesi bekliyor) |
+| 11 | `feat/mcp-connector` | PazarLab MCP sunucusu (Claude connector) | 1–1,5 gün | ✅ (Claude.ai'de denendi) |
 | 11b | `spike/claude-artifact` | Claude-powered artifact araştırması | 0,5 gün | ✅ karar: Motor v2'den sonra |
 | 12a | `feat/town-population` | Kasaba nüfusu: 500 sakin, hikâye, Big Five, türetilen özellikler | 0,5 gün | ✅ |
 | 12b | `feat/engine-v2` | Motor v2: ödeme isteği, lojistik karar, Monte Carlo, `engineVersion` | 1 gün | ✅ |
@@ -96,7 +96,7 @@ Sonuç: Gerçek anahtarla yapılan denemede `aiInsights.aiGenerated=true`, `inpu
 - [x] **B2** İstemciden gelen `inputAnalysis` yeniden hesaplanmıyor.
 - [x] **B3** `Category` `Literal`'i backend'de, `CATEGORIES` sabiti frontend'de. Link okuyucunun yalnızca bu değerleri döndürdüğü testle doğrulanıyor.
 - [x] **B4–B6** Graph bir kez derleniyor. Çift log doğrulaması, `build_ai_insights`, `scoring_utils` içindeki kullanılmayan fonksiyonlar, `trend_mock_data.json`, iki ayrı model yöneticisi ve `AIQuotaError` silindi.
-- [ ] **B8** Bozuk `backend/venv`: dokunulmadı (kullanıcının yerel ortamı). Silip `py -3.11 -m venv venv` ile yeniden kurulmalı.
+- [x] **B8** Bozuk `backend/venv`: bu fazda dokunulmadı; Faz 18e'de Python 3.13 ile yeniden kuruldu.
 - [x] **B9** Python sürümü README'de belirtildi (Faz 2).
 - [x] **F1** `StatusToast` + "Tekrar dene"; `apiErrorMessage()` 429/422/413/ağ/timeout durumlarını Türkçe mesaja çeviriyor. Girdi analizi başarısız olursa simülasyon devam ediyor. axios timeout 180 sn. AI kullanılamadıysa bilgi toast'u çıkıyor.
 - [x] **F1b** (yeni) Simülasyon hata verdiğinde veya uyarı iptal edildiğinde formdaki **tüm girdi siliniyordu**; form artık yükleme sırasında unmount edilmiyor, gizleniyor.
@@ -227,13 +227,12 @@ Kabul kriteri: DESIGN.md'deki tüm kalıplar uygulanmış; bileşenlerde ham ren
 - **Ara iş (2026-10-17, `chore/deploy-vercel-render`):** Vercel (website) + Render (API) ile yayın hazırlığı: `render.yaml` Blueprint, [deployment.md §6](deployment.md#6-vercel--render) (adımlar, ücretsiz planın kısıtları, ne zaman VPS), `CLIENT_IP_HEADER` (platform proxy'sinin yazdığı IP başlığı; Render'da `CF-Connecting-IP`, ilk deploy'da `/api/health`'teki `clientIp` ile doğrulanacak). 2 test (toplam 257). Gerçek bir Render/Vercel hesabında denenmedi.
 - **Önceki:** Faz 16 (yeni özellikler) dört adımıyla bitti ve main'e merge edildi: ilan yeniden yazma + öncesi/sonrası, rakip fiyat kartı, AI görsel analizi, paylaşım görseli.
 - **Son biten (2026-10-17):** Faz 17–18f: temizlik ve CI testleri, tarayıcı eklentisi + mağaza paketi + gizlilik sayfası, tartışmada avatarlar, küçük işler (F31 kırık Docker build'i dahil), B13, F23, bağımlılıklar ve venv, sakinle sohbet.
-- **Sıradaki oturum (kullanıcıyla kararlaştırıldı):**
-  1. **Faz 11 Claude.ai connector denemesi** (kullanıcı başında olmalı): API Render'da yayında, tünel gerekmiyor. Adımlar [mcp-connector.md](mcp-connector.md); Render'da `MCP_ALLOWED_HOSTS=pazarlab-api.onrender.com` ve isteğe bağlı `MCP_ACCESS_KEY`.
-  2. **Faz 21 Rakipli seçim** (aşağıda, öneri onaylandı, uygulanmadı).
-  3. Kullanıcıda: eklentiyi Chrome Web Mağazası'na yüklemek ([LISTING.md](../extension/store/LISTING.md)), kalıcı eklenti ikonu.
+- **Son biten (2026-10-18):** Faz 11'in Claude.ai denemesi: connector Render'daki API ile çalışıyor (ayrıntı Faz 11'de).
+- **Sıradaki:**
+  1. **Faz 21 Rakipli seçim** (aşağıda, öneri onaylandı, uygulanmadı).
+  2. Kullanıcıda: eklentiyi Chrome Web Mağazası'na yüklemek ([LISTING.md](../extension/store/LISTING.md)), kalıcı eklenti ikonu.
   Sonra: Faz 19 (kapsam kullanıcıyla netleşmeli), Faz 9 (API anahtarı gelince), Faz 20 (isteğe bağlı).
 - **Kullanıcıdan beklenen (isteğe bağlı):** Trendyol, Hepsiburada, Amazon TR, n11, Çiçeksepeti'den birer ürün sayfasını tarayıcıda "Farklı kaydet → Yalnızca HTML" ile kaydedip `backend/tests/fixtures/links/` altına koymak; siteye özel okuma kuralları bu gerçek sayfalara göre yazılır.
-- **Ertelenen (kullanıcı kararı, 2026-10-17):** Faz 11 Claude.ai denemesi, sıradaki oturumun ilk işi (yukarıda). API artık Render'da yayında olduğu için `cloudflared` tüneli gerekmiyor; açık soru hâlâ Claude'un connector URL'sindeki `?key=` sorgu dizesini koruyup korumadığı.
 - **Bekleyen kararlar:** Faz 9 için API anahtarı yok. Süpermarket/gıda, pet shop, otomotiv, kitap/kırtasiye aileleri bilerek dışarıda ("Diğer"e düşüyorlar); talep olursa eklenecek.
 - **Ortam notları:** `backend/venv` Python 3.13 ile yeniden kuruldu (2026-10-17). Gemini sık sık 429 veriyor; arayüz testlerinde AI kapalı ya da sahte SSE kullanılıyor. `gh` ve nginx yok; Docker Desktop açıldığında çalışıyor (29.6, Faz 17).
 
@@ -263,7 +262,7 @@ Kabul kriteri: DESIGN.md'deki tüm kalıplar uygulanmış; bileşenlerde ham ren
 - Yazım notları: persona `reason` metinleri üçüncü şahıs ("bu persona için…") olduğundan birinci şahıs cevapta kullanılmadı; yerine `values` alanı. "En büyük korku" yalnızca güven ihtiyacı yüksek personalarda (`brandTrustNeed` orta değeri ≥ 0,7) gösteriliyor, yoksa konuyla ilgisiz düşüyordu.
 - Doğrulama: `tests/test_offline_chat.py` (17 test, toplam 130): AI yokken ve kota dolunca kural tabanlı cevap + neden, yarım AI cevabına şablon eklenmemesi, 9 konu tespiti vakası, fiyat karşılaştırması (pahalı/uygun/ucuz), ürün verisinin cevaba yansıması, korkunun yalnızca güvene duyarlı personada çıkması. Eski "AI yoksa hata olayı" testi kaldırıldı (davranış bilerek değişti). Puppeteer (gerçek backend, AI kapalı, sahte yanıt yok) 5/5: cevap geliyor, etiketli, hata notu yok, yenilemede kalıyor; genel test 10/10. Örnek cevaplar elle okundu.
 
-### Faz 11: MCP connector ✅ (Claude.ai denemesi bekliyor)
+### Faz 11: MCP connector ✅ (Claude.ai'de denendi, 2026-10-18)
 - [x] `app/mcp_server.py`, `mcp==2.3.0` (2 Ekim 2026; 2.x'te `FastMCP` → `MCPServer` olmuş, API kaynak koddan doğrulandı). 7 araç: `list_categories`, `list_personas`, `read_product_link`, `simulate_product`, `price_sweep`, `compare_variants`, `get_simulation`. Türkçe başlık/açıklamalar, okuma/yazma ipuçları (`ToolAnnotations`), Claude için kullanım talimatı.
 - [x] **Sunucu tarafında AI yok:** `llm_client.without_ai()` (ContextVar). İçinde bütün AI çağrıları "anahtar yok" gibi davranıyor ve kural tabanlı yollar çalışıyor; kontrol önbellekten önce yapılıyor, yani eski bir AI cevabı da dönmüyor. Gemini anahtarı tanımlıyken gerçek HTTP denemesinde sıfır Gemini çağrısı.
 - [x] Ürün girdisi için MCP'ye özel `ProductInput` şeması (görsel ve iç analiz alanları yok, alanlar açıklamalı). `simulate_product` sonucu kaydediyor ve `PUBLIC_SITE_URL` varsa sitede açılacak linki dönüyor; persona adları Türkçe.
@@ -271,7 +270,9 @@ Kabul kriteri: DESIGN.md'deki tüm kalıplar uygulanmış; bileşenlerde ham ren
 - [x] Koruma: `MCP_ALLOWED_HOSTS` (Host allowlist, aksi 421), isteğe bağlı `MCP_ACCESS_KEY` (`?key=`, sabit zamanlı karşılaştırma, aksi 401), tek ortak `MCP_RATE_LIMIT_PER_MIN` (Claude'un istekleri Anthropic IP'lerinden geldiği için IP başına limit anlamsız). Beklenen hatalar `ToolError` ile modele okunur mesaj olarak dönüyor; beklenmeyenlerin ayrıntısı SDK tarafından gizleniyor. `read_product_link` SSRF korumasını kullanıyor.
 - [x] Dokümantasyon: [mcp-connector.md](mcp-connector.md) (araçlar, ayarlar, tünel ile yerel deneme, Claude'a ekleme, örnek istekler, güvenlik). `deployment.md`'deki nginx örneğine `location = /mcp` eklendi; önceki örnek `/mcp`'yi frontend'e gönderirdi.
 - Doğrulama: `tests/test_mcp.py` (9 test, toplam 139): araç listesi ve şema, kategori/persona araçları, sunucu AI'ı çağrılırsa test düşecek şekilde simülasyon + kayıt + `get_simulation`, fiyat eğrisi ve karşılaştırma, hatalı girdi / bilinmeyen kimlik / iç IP'nin araç hatası olması, ortak rate limit, HTTP'de API ile yan yana çalışma, erişim anahtarı ve bilinmeyen Host. Resmî `mcp` istemcisiyle gerçek uvicorn üzerinden uçtan uca deneme (anahtarlı/anahtarsız). `pip check` ve `pip-audit` temiz.
-- **Bekleyen:** Claude.ai'de kullanıcının aboneliğiyle gerçek deneme (tünel + `MCP_ALLOWED_HOSTS`). Belirsiz nokta: Claude'un connector URL'sindeki `?key=` sorgu dizesini koruyup korumadığı; korumuyorsa geçici olarak anahtarsız denenir, uzun vadede OAuth.
+- [x] **Claude.ai denemesi (2026-10-18, `docs/connector-trial`):** Render'daki API'ye (`https://pazarlab-api.onrender.com/mcp?key=…`) custom connector olarak eklendi, kullanıcının aboneliğiyle çalıştı. Açık soru kapandı: Claude `?key=` sorgu dizesini koruyor, OAuth gerekmiyor.
+  - İlk denemede iki ayar hatası çıktı. (1) Render'ın `generateValue` ile ürettiği anahtar base64'tü; `+` URL'de boşluğa dönüştü, sunucu 401 döndü, Claude da bunu OAuth isteği sanıp "Couldn't register with … sign-in service" hatası verdi. (2) Render'da `MCP_ALLOWED_HOSTS` doğru değildi (421 `Invalid Host header`). Hex anahtar ve yalnızca alan adı ile düzeldi.
+  - `render.yaml`'da `MCP_ACCESS_KEY` artık `generateValue` değil, elle (hex) giriliyor; `.env.example` ve [mcp-connector.md](mcp-connector.md) (yeni "Sorun giderme" tablosu) güncellendi. Kod değişmedi.
 
 ### Faz 11b: Claude-powered artifact (araştırma) ✅
 Kaynak: claude.ai yayınlanmış artifact çalışma zamanı sözleşmesi 0.2.84'ün tip tanımları (`sample.d.ts`, `mcp.d.ts`, `claude.d.ts`).

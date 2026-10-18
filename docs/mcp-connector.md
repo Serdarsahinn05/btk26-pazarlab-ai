@@ -24,8 +24,8 @@ Adres: `https://<alan-adı>/mcp` (Streamable HTTP, durumsuz, JSON yanıt). Aynı
 
 | Değişken | Örnek | Neden |
 |---|---|---|
-| `MCP_ALLOWED_HOSTS` | `pazarlab.example.com` | `Host` başlığı izin listesi (DNS rebinding koruması). Boşsa yalnızca `localhost` kabul edilir; dışarıdan gelen istek 421 alır. Virgülle birden fazla. |
-| `MCP_ACCESS_KEY` | uzun rastgele bir değer | Doluysa her istek `?key=<değer>` ister (yoksa 401). Erişim logları sorgu dizesini yazmaz. |
+| `MCP_ALLOWED_HOSTS` | `pazarlab.example.com` | `Host` başlığı izin listesi (DNS rebinding koruması). Boşsa yalnızca `localhost` kabul edilir; dışarıdan gelen istek 421 alır. Virgülle birden fazla. Yalnızca alan adı: `https://` ve sondaki `/` olmadan. |
+| `MCP_ACCESS_KEY` | `python -c "import secrets; print(secrets.token_hex(24))"` | Doluysa her istek `?key=<değer>` ister (yoksa 401). **Yalnızca harf ve rakam** kullan: base64'teki `+` URL'de boşluğa dönüşür, anahtar tutmaz. Erişim logları sorgu dizesini yazmaz. |
 | `MCP_RATE_LIMIT_PER_MIN` | `60` | Bütün MCP çağrıları için **tek** limit. Claude, Anthropic'in sunucularından bağlandığı için IP başına limit bütün Claude kullanıcılarını tek kişi gibi sayardı. `0` = kapalı. |
 | `PUBLIC_SITE_URL` | `https://pazarlab.example.com` | Doluysa `simulate_product` sitede açılacak linki döner (`/dashboard?r=<id>`). |
 
@@ -71,7 +71,17 @@ Arayüz zamanla değişebilir; güncel adımlar için Claude yardım sayfası: [
 - Beklenen hatalar (okunamayan link, bilinmeyen kimlik, yoğunluk) modele anlaşılır bir mesajla döner; beklenmeyen hataların ayrıntısı gizlenir.
 - Simülasyon sonuçları paylaşım linki için kaydedilir (`HISTORY_*` ayarları geçerli; görseller kaydedilmez).
 
+## Sorun giderme
+
+| Belirti | Sebep | Çözüm |
+|---|---|---|
+| Claude: "Couldn't register with … sign-in service" / "add an OAuth Client ID" | Sunucu 401 döndü; Claude bunu OAuth isteği sanıp kayıt olmaya çalışıyor | Anahtar URL'deki ile aynı mı, içinde `+ / =` var mı bak; hex anahtarla değiştir |
+| `curl` ile 421 `Invalid Host header` | `MCP_ALLOWED_HOSTS` boş veya `https://`/`/` içeriyor | Yalnızca alan adı: `pazarlab-api.onrender.com` |
+| İlk çağrı zaman aşımı | Render ücretsiz planda servis uykuda | Bir kez daha dene |
+
+Anahtar kontrolü host kontrolünden önce yapılır: yanlış anahtarla 421 değil 401 görülür.
+
 ## Kısıtlar
 
-- **Claude.ai'de gerçek deneme** bu fazda yapılmadı (sunucunun internetten erişilebilir olması gerekiyor). Bilinmeyen tek nokta: connector URL'sindeki `?key=` sorgu dizesinin Claude tarafından korunup korunmadığı. Korunmuyorsa anahtar kapatılıp yalnızca host izin listesi ve rate limit ile denenir, uzun vadede OAuth eklenir.
+- **Claude.ai'de denendi (2026-10-18):** Render'daki API'ye `?key=` ile eklenen connector çalışıyor; Claude sorgu dizesini koruyor.
 - Persona sohbeti Claude'un içinde, `list_personas`'taki karakterle yapılır; sitedeki sohbet geçmişiyle bağlantılı değildir.
